@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>VCC 2026 — VVIP Consulting Conference</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow-x: hidden;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    #progressBar {
+      position: fixed; top: 0; left: 0;
+      height: 2px; width: 0%;
+      background: linear-gradient(90deg, #7B2FFF, #3B82F6, #F5C842);
+      z-index: 999; transition: width 0.04s linear;
+    }
+
+    #loadingOverlay {
+      position: fixed; inset: 0; background: #000; z-index: 900;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      transition: opacity 0.6s ease;
+    }
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+    .loading-logo {
+      font-size: 13px; font-weight: 600; letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.6); text-transform: uppercase;
+    }
+    .loading-bar-wrap {
+      width: 200px; height: 1px;
+      background: rgba(255,255,255,0.1); overflow: hidden;
+    }
+    .loading-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #7B2FFF, #3B82F6, #F5C842);
+      transition: width 0.15s ease;
+    }
+    .loading-pct {
+      font-size: 11px; letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ── 공통 콘텐츠 너비 (9:16 기준) ── */
+    :root {
+      --cw: min(100vw, calc(100vh * 9 / 16));
+    }
+
+    /* ════════════════════════════════
+       섹션 1 — 메인 영상 스크롤
+    ════════════════════════════════ */
+    #videoSection { position: relative; height: 600vh; }
+
+    #videoSticky {
+      position: sticky; top: 0;
+      width: 100%; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: #000;
+    }
+
+    #videoWrap {
+      position: relative;
+      width: var(--cw);
+      height: min(100vh, calc(100vw * 16 / 9));
+      flex-shrink: 0; overflow: hidden;
+    }
+
+    #scrollVideo {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transform: translateZ(0); will-change: contents;
+    }
+
+    .text-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; z-index: 10;
+    }
+    .scene-text {
+      font-size: clamp(16px, 3.5vw, 36px);
+      font-weight: 700; color: #141253;
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+      position: absolute; white-space: nowrap;
+      text-shadow: 0 0 40px rgba(255,255,255,0.7);
+    }
+    .scene-text.visible { opacity: 1; transform: translateY(0); }
+    .scene-text.fadeout {
+      opacity: 0; transform: translateY(-12px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    #scrollHint {
+      position: absolute; bottom: 36px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      animation: hintBounce 2s ease-in-out infinite;
+      transition: opacity 0.4s; z-index: 20;
+    }
+    #scrollHint span {
+      font-size: 10px; letter-spacing: 0.25em;
+      color: rgba(255,255,255,0.5); text-transform: uppercase;
+    }
+    .hint-line {
+      width: 1px; height: 36px;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.45));
+    }
+    @keyframes hintBounce {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%      { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ════════════════════════════════
+       섹션 2 — VCC 소개 텍스트
+       영상과 공백 없이 바로 붙임
+    ════════════════════════════════ */
+    #introSection {
+      width: 100%;
+      margin-top: 0;          /* 공백 제거 */
+      background: url('bg.png') center center / cover no-repeat;
+      display: flex; justify-content: center; align-items: center;
+      padding: clamp(60px, 10vw, 120px) clamp(24px, 6vw, 80px);
+    }
+
+    .intro-inner {
+      width: 100%; max-width: 680px;
+      text-align: center;
+    }
+
+    /* 부제목 — 텍스트 크기 업 */
+    .intro-subtitle {
+      font-size: clamp(26px, 5.5vw, 48px); /* 기존보다 크게 */
+      font-weight: 700;
+      background: linear-gradient(90deg, #C3BEFF 0%, #51CAFF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.3;
+      margin-bottom: clamp(36px, 6vw, 60px);
+      opacity: 0; transform: translateY(32px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .intro-block {
+      margin-bottom: clamp(28px, 4vw, 44px);
+      opacity: 0; transform: translateY(32px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .intro-block:last-child { margin-bottom: 0; }
+
+    .intro-subtitle.show,
+    .intro-block.show { opacity: 1; transform: translateY(0); }
+
+    /* 본문 — 텍스트 크기 업 */
+    .intro-block p {
+      font-size: clamp(16px, 2.6vw, 22px); /* 기존보다 크게 */
+      font-weight: 500;
+      color: #fff;
+      line-height: 1.9;
+      letter-spacing: -0.01em;
+    }
+
+    .w-black { font-weight: 900; color: #fff; }
+    .w-vcc   { font-weight: 900; color: #fff; }
+    .c-ai        { color: #E57DFF; font-weight: 900; }
+    .c-marketing { color: #92D2FF; font-weight: 900; }
+    .c-finance   { color: #51E5FF; font-weight: 900; }
+    .c-dash      { color: #fff;    font-weight: 900; }
+
+    /* 총괄 기획 크레딧 */
+    .intro-credit {
+      margin-top: clamp(36px, 6vw, 56px);
+      font-size: clamp(13px, 1.8vw, 16px);
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.04em;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .intro-credit.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 480px) {
+      .intro-subtitle { font-size: 24px; }
+      .intro-block p  { font-size: 15px; }
+    }
+
+    /* ════════════════════════════════
+       섹션 3 — After VCC
+    ════════════════════════════════ */
+    #afterSection {
+      width: 100%;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: clamp(60px, 10vw, 100px) clamp(24px, 6vw, 80px) 0;
+    }
+
+    .after-header {
+      text-align: center;
+      margin-bottom: clamp(32px, 5vw, 52px);
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .after-header.show { opacity: 1; transform: translateY(0); }
+
+    .after-title {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    /* After — 파란색, VCC — 흰색 */
+    .after-title .t-after { color: #4A90E2; }
+    .after-title .t-vcc   { color: #fff; }
+
+    .after-body {
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: -0.01em;
+    }
+
+    /* After VCC 영상 래퍼 — 16:9 */
+    .after-video-wrap {
+      width: 100%;
+      max-width: 900px;
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+      overflow: hidden;
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+      transition-delay: 0.15s;
+    }
+    .after-video-wrap.show { opacity: 1; transform: translateY(0); }
+
+    .after-video-wrap video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* 하단 패딩 */
+    .after-bottom-pad {
+      height: clamp(60px, 10vw, 100px);
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="progressBar"></div>
+
+<div id="loadingOverlay">
+  <p class="loading-logo">VCC 2026</p>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar-fill" id="loadFill"></div>
+  </div>
+  <p class="loading-pct" id="loadPct">0%</p>
+</div>
+
+<!-- ════ 섹션 1: 메인 영상 ════ -->
+<section id="videoSection">
+  <div id="videoSticky">
+    <div id="videoWrap">
+      <video id="scrollVideo" muted playsinline preload="auto" webkit-playsinline>
+        <source src="main.mp4" type="video/mp4">
+      </video>
+      <div class="text-overlay">
+        <span class="scene-text" id="text1">글로벌 AI 산업</span>
+        <span class="scene-text" id="text2">마케팅 트렌드 변화</span>
+        <span class="scene-text" id="text3">금융 시장 변화</span>
+      </div>
+      <div id="scrollHint"><span>Scroll</span><div class="hint-line"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════ 섹션 2: VCC 소개 ════ -->
+<section id="introSection">
+  <div class="intro-inner">
+
+    <p class="intro-subtitle" data-aos>
+      세 개의 전문성이 하나의 미래를 만든다.
+    </p>
+
+    <div class="intro-block" data-aos style="transition-delay:0.1s">
+      <p>
+        AI 대변혁이 시장을 뒤흔들고 있습니다.<br>
+        <span class="w-black">부는 한 곳으로 응축되고,</span><br>
+        그 기회의 창은 빠르게 닫히고 있습니다.
+      </p>
+    </div>
+
+    <div class="intro-block" data-aos style="transition-delay:0.2s">
+      <p>
+        <span class="w-vcc">VCC</span>는 그 변화의 한가운데에서<br>
+        매년 가장 먼저 답을 제시해온 컨퍼런스입니다.
+      </p>
+    </div>
+
+    <div class="intro-block" data-aos style="transition-delay:0.3s">
+      <p>
+        <span class="c-ai">AI</span><span class="c-dash"> · </span><span class="c-marketing">마케팅</span><span class="c-dash"> · </span><span class="c-finance">금융</span><span class="c-dash"> —</span><br>
+        세 가지 무기를 장착한 전문가만이<br>
+        이 시대의 주도권을 가져갑니다.
+      </p>
+    </div>
+
+    <p class="intro-credit" data-aos style="transition-delay:0.4s">
+      총괄 기획 김태우 CSO
+    </p>
+
+  </div>
+</section>
+
+<!-- ════ 섹션 3: After VCC ════ -->
+<section id="afterSection">
+
+  <div class="after-header" data-aos>
+    <h2 class="after-title">
+      <span class="t-after">After</span> <span class="t-vcc">VCC</span>
+    </h2>
+    <p class="after-body">시작이 있었고, 확장이 있었고, 이제는 융합합니다.</p>
+  </div>
+
+  <div class="after-video-wrap" data-aos>
+    <video autoplay muted loop playsinline webkit-playsinline>
+      <source src="after.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <div class="after-bottom-pad"></div>
+
+</section>
+
+<script>
+  /* ── 메인 영상 스크러빙 ── */
+  const video   = document.getElementById('scrollVideo');
+  const section = document.getElementById('videoSection');
+  const bar     = document.getElementById('progressBar');
+  const hint    = document.getElementById('scrollHint');
+  const overlay = document.getElementById('loadingOverlay');
+  const fill    = document.getElementById('loadFill');
+  const pctEl   = document.getElementById('loadPct');
+  const text1   = document.getElementById('text1');
+  const text2   = document.getElementById('text2');
+  const text3   = document.getElementById('text3');
+
+  let ticking=false, lastTime=-1, isReady=false, duration=0, videoEnded=false;
+  let scrollLocked = true;
+  document.body.style.overflow = 'hidden';
+
+  const timings = [
+    { el: text1, inStart: 3.5, outStart: 4.1 },
+    { el: text2, inStart: 4.3, outStart: 4.9 },
+    { el: text3, inStart: 5.1, outStart: 5.7 },
+  ];
+
+  function updateTexts(t) {
+    timings.forEach(({ el, inStart, outStart }) => {
+      if (t >= inStart && t < outStart) {
+        el.classList.remove('fadeout'); el.classList.add('visible');
+      } else if (t >= outStart) {
+        el.classList.remove('visible'); el.classList.add('fadeout');
+      } else {
+        el.classList.remove('visible','fadeout');
+      }
+    });
+  }
+
+  function updateBuffer() {
+    if (!video.duration) return 0;
+    let buffered = 0;
+    for (let i = 0; i < video.buffered.length; i++) {
+      if (video.buffered.start(i) <= 0.1)
+        buffered = Math.max(buffered, video.buffered.end(i));
+    }
+    const pct = Math.min((buffered / video.duration) * 100, 100);
+    fill.style.width = pct + '%';
+    pctEl.textContent = Math.floor(pct) + '%';
+    return pct;
+  }
+
+  video.addEventListener('progress', () => {
+    const pct = updateBuffer();
+    if (pct >= 30 && scrollLocked) {
+      scrollLocked = false;
+      document.body.style.overflow = '';
+      fill.style.width = '100%'; pctEl.textContent = '100%';
+      setTimeout(() => overlay.classList.add('hidden'), 300);
+      if (!isReady) onReady();
+    }
+  });
+
+  function onReady() {
+    if (isReady) return;
+    isReady = true; duration = video.duration;
+    if (scrollLocked) {
+      scrollLocked = false; document.body.style.overflow = '';
+      setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+    scrub();
+  }
+
+  video.addEventListener('canplaythrough', onReady);
+  video.addEventListener('loadedmetadata', () => {
+    duration = video.duration;
+    if (video.readyState >= 4) onReady();
+  });
+  if (video.readyState >= 4) onReady();
+
+  function scrub() {
+    ticking = false;
+    const scrollY     = window.scrollY;
+    const secTop      = section.offsetTop;
+    const scrubHeight = section.offsetHeight - window.innerHeight;
+
+    if (isReady && duration && scrubHeight > 0) {
+      const progress   = Math.max(0, Math.min((scrollY - secTop) / scrubHeight, 1));
+      const targetTime = duration * progress;
+
+      if (Math.abs(targetTime - lastTime) > 0.05) {
+        lastTime = targetTime;
+        if (!video.seeking) video.currentTime = targetTime;
+        updateTexts(targetTime);
+      }
+      if (progress >= 1 && !videoEnded) {
+        videoEnded = true; video.currentTime = duration;
+      }
+      hint.style.opacity = Math.max(0, 1 - progress * 6);
+    }
+
+    const totalH = document.body.scrollHeight - window.innerHeight;
+    bar.style.width = totalH > 0 ? (window.scrollY / totalH * 100) + '%' : '0%';
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(scrub); ticking = true; }
+  }, { passive: true });
+
+  scrub();
+
+  /* ── 스크롤 등장 애니메이션 (IntersectionObserver) ── */
+  const aosEls = document.querySelectorAll('[data-aos]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('show');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
+
+  aosEls.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
