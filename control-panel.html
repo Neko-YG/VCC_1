@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCC 2026 영상 관리 · 제어판</title>
+<style>
+  :root{ --bg:#0f1117; --card:#1a1d29; --card2:#222634; --line:#2c3142; --tx:#e8eaf0; --dim:#9aa0b4;
+         --accent:#7B2FFF; --accent2:#3B82F6; --ok:#22c55e; --warn:#f5c842; --bad:#ef4444; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--tx); font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        line-height:1.5; padding:24px; max-width:1080px; margin:0 auto; }
+  h1{ font-size:22px; font-weight:800; }
+  .sub{ color:var(--dim); font-size:13px; margin-top:4px; }
+  .banner{ margin:16px 0; padding:12px 16px; border-radius:10px; font-size:13.5px; font-weight:600; }
+  .banner.ok{ background:rgba(34,197,94,.12); color:#8ff0b0; border:1px solid rgba(34,197,94,.3); }
+  .banner.bad{ background:rgba(239,68,68,.12); color:#ffb4b4; border:1px solid rgba(239,68,68,.3); }
+  .banner code{ background:rgba(255,255,255,.1); padding:2px 6px; border-radius:5px; font-size:12.5px; }
+
+  .steps{ display:flex; gap:10px; margin:18px 0 22px; flex-wrap:wrap; }
+  .step{ flex:1; min-width:180px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .step .n{ display:inline-flex; width:24px; height:24px; border-radius:50%; align-items:center; justify-content:center;
+            font-size:13px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2)); margin-right:8px; }
+  .step b{ font-size:14.5px; }
+  .step p{ color:var(--dim); font-size:12.5px; margin-top:6px; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; transition:border-color .2s; }
+  .card.drag{ border-color:var(--accent); background:var(--card2); }
+  .card .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .card .label{ font-size:15px; font-weight:700; }
+  .card .desc{ color:var(--dim); font-size:12px; margin-top:2px; }
+  .tag{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+  .tag.hero{ background:rgba(123,47,255,.18); color:#c9b3ff; }
+  .tag.loop{ background:rgba(59,130,246,.18); color:#a9caff; }
+
+  .rows{ margin:12px 0; font-size:12.5px; }
+  .row{ display:flex; justify-content:space-between; padding:5px 0; border-top:1px solid var(--line); }
+  .row .k{ color:var(--dim); }
+  .row .v{ font-weight:600; font-variant-numeric:tabular-nums; }
+  .v.none{ color:var(--dim); font-weight:500; }
+  .v.warn{ color:var(--warn); }
+  .badge{ font-size:10.5px; padding:2px 7px; border-radius:6px; margin-left:4px; }
+  .badge.ok{ background:rgba(34,197,94,.16); color:#8ff0b0; }
+  .badge.warn{ background:rgba(245,200,66,.16); color:#ffe08a; }
+
+  .drop{ margin-top:10px; border:1.5px dashed var(--line); border-radius:10px; padding:14px; text-align:center;
+         color:var(--dim); font-size:12.5px; cursor:pointer; transition:.15s; }
+  .drop:hover{ border-color:var(--accent2); color:var(--tx); }
+  .drop b{ color:var(--tx); }
+  .drop.busy{ color:var(--accent2); border-color:var(--accent2); }
+
+  .actionbar{ position:sticky; bottom:0; margin-top:22px; padding:16px; background:var(--card);
+              border:1px solid var(--line); border-radius:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button{ font-family:inherit; font-size:14px; font-weight:700; border:none; border-radius:10px; padding:12px 20px; cursor:pointer; transition:.15s; }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .btn-main{ background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .btn-main:hover:not(:disabled){ filter:brightness(1.1); }
+  .btn-ghost{ background:var(--card2); color:var(--tx); border:1px solid var(--line); }
+  .btn-ghost:hover:not(:disabled){ border-color:var(--accent2); }
+  .spacer{ flex:1; }
+  .hint{ color:var(--dim); font-size:12px; }
+
+  .console{ margin-top:16px; background:#0b0d13; border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+            font-family:'Cascadia Code',Consolas,monospace; font-size:12.5px; max-height:280px; overflow:auto; display:none; }
+  .console.show{ display:block; }
+  .ln{ padding:1px 0; white-space:pre-wrap; }
+  .ln.ok{ color:#8ff0b0; } .ln.warn{ color:#ffe08a; } .ln.bad{ color:#ff9a9a; } .ln.dim{ color:var(--dim); }
+
+  .deploy{ margin-top:16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:13px; }
+  .deploy summary{ cursor:pointer; font-weight:700; }
+  .deploy code{ display:block; background:#0b0d13; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px;
+                font-family:Consolas,monospace; font-size:12.5px; color:#c9d3ff; overflow:auto; }
+  footer{ margin:22px 0 8px; color:var(--dim); font-size:11.5px; text-align:center; }
+</style>
+</head>
+<body>
+  <h1>🎬 VCC 2026 영상 관리</h1>
+  <p class="sub">영상을 바꾸고 · 재인코딩하고 · 미리보기까지 이 화면에서 끝냅니다. (다른 PC에서도 <b>제어판.bat</b> 더블클릭)</p>
+
+  <div id="banner" class="banner ok">상태 확인 중…</div>
+
+  <div class="steps">
+    <div class="step"><b><span class="n">1</span>영상 바꾸기</b><p>각 칸의 점선 영역에 영상 파일을 끌어다 놓거나 클릭해서 선택하세요. 이름은 자동으로 맞춰집니다.</p></div>
+    <div class="step"><b><span class="n">2</span>재인코딩</b><p>아래 <b>재인코딩 시작</b> 버튼을 누르면 웹에 맞게 자동 변환됩니다. 표가 끝날 때까지 기다리세요.</p></div>
+    <div class="step"><b><span class="n">3</span>미리보기</b><p><b>미리보기 열기</b>로 실제 사이트에서 확인 후, 문제없으면 배포하세요.</p></div>
+  </div>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="actionbar">
+    <button id="btnEncode" class="btn-main">② 재인코딩 시작</button>
+    <button id="btnPreview" class="btn-ghost">③ 미리보기 열기</button>
+    <button id="btnRefresh" class="btn-ghost">새로고침</button>
+    <span class="spacer"></span>
+    <span id="statusMsg" class="hint"></span>
+  </div>
+
+  <div id="console" class="console"></div>
+
+  <details class="deploy">
+    <summary>④ 라이브 배포 방법 (선택)</summary>
+    <p style="color:var(--dim);margin-top:8px">미리보기로 확인한 뒤, 이 폴더에서 아래 명령으로 배포합니다. (git 원격 설정이 된 PC에서만)</p>
+    <code id="deployCmd">git add *.mp4 &amp;&amp; git commit -m "perf(video): 영상 교체" &amp;&amp; git push neko main</code>
+    <button class="btn-ghost" style="margin-top:10px;padding:8px 14px;font-size:12.5px" onclick="copyDeploy()">명령 복사</button>
+    <span id="copyMsg" class="hint"></span>
+  </details>
+
+  <footer>VCC 2026 · 로컬 제어판 · 이 창(콘솔)을 닫으면 서버가 종료됩니다</footer>
+
+<script>
+const fmtMB = b => b == null ? '—' : (b/1048576).toFixed(b < 10485760 ? 2 : 1) + ' MB';
+let SITE_PORT = 8081;
+
+async function refresh(){
+  const r = await fetch('/api/status'); const d = await r.json();
+  SITE_PORT = d.sitePort;
+  const b = document.getElementById('banner');
+  if(d.ffmpeg){ b.className='banner ok'; b.innerHTML='✅ 준비됨 — ffmpeg 감지됨. 영상을 바꾸고 재인코딩하세요.'; document.getElementById('btnEncode').disabled=false; }
+  else{ b.className='banner bad'; b.innerHTML='⚠️ ffmpeg가 없습니다. 설치 후 이 창을 새로고침하세요 &nbsp;→&nbsp; <code>winget install Gyan.FFmpeg</code>'; document.getElementById('btnEncode').disabled=true; }
+
+  const grid = document.getElementById('grid'); grid.innerHTML='';
+  d.slots.forEach(s => grid.appendChild(card(s)));
+}
+
+function card(s){
+  const el = document.createElement('div'); el.className='card';
+  const hasSrc = !!s.srcName, hasOut = s.outSize != null;
+  const warnArr = s.warn || [];
+  const kfBadge = s.type==='hero' && hasOut
+      ? `<span class="badge ${s.outKeyframes>=40?'ok':'warn'}">키프레임 ${s.outKeyframes}</span>` : '';
+  el.innerHTML = `
+    <div class="top">
+      <div><div class="label">${s.label}</div><div class="desc">${s.desc}</div></div>
+      <span class="tag ${s.type}">${s.type==='hero'?'스크러빙':'배경'}</span>
+    </div>
+    <div class="rows">
+      <div class="row"><span class="k">현재 원본</span><span class="v ${hasSrc?'':'none'}">${hasSrc? s.srcName+' · '+fmtMB(s.srcSize) : '없음'}</span></div>
+      <div class="row"><span class="k">생성된 영상</span><span class="v ${hasOut?'':'none'}">${hasOut? s.out+' · '+fmtMB(s.outSize) : '아직 없음'}</span></div>
+      ${hasOut? `<div class="row"><span class="k">길이 / 키프레임</span><span class="v ${warnArr.length?'warn':''}">${(s.outDuration||0).toFixed(2)}s ${kfBadge}</span></div>`:''}
+      ${warnArr.length? `<div class="row"><span class="k">주의</span><span class="v warn">${warnArr.join(', ')}</span></div>`:''}
+    </div>
+    <div class="drop" data-slot="${s.name}">
+      <b>영상 바꾸기</b> — 파일을 끌어놓거나 클릭
+      <input type="file" accept="video/*" style="display:none">
+    </div>`;
+  const drop = el.querySelector('.drop');
+  const input = el.querySelector('input');
+  drop.addEventListener('click', ()=> input.click());
+  input.addEventListener('change', ()=> input.files[0] && upload(s.name, input.files[0], drop, el));
+  drop.addEventListener('dragover', e=>{ e.preventDefault(); el.classList.add('drag'); });
+  drop.addEventListener('dragleave', ()=> el.classList.remove('drag'));
+  drop.addEventListener('drop', e=>{ e.preventDefault(); el.classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) upload(s.name, f, drop, el); });
+  return el;
+}
+
+async function upload(slot, file, drop, card){
+  const ext = (file.name.split('.').pop()||'mp4').toLowerCase();
+  drop.classList.add('busy'); drop.innerHTML = '⏳ 업로드 중… ' + file.name;
+  try{
+    const res = await fetch('/api/upload?slot='+encodeURIComponent(slot)+'&ext='+encodeURIComponent(ext), { method:'POST', body:file });
+    if(!res.ok) throw new Error(await res.text());
+    setMsg('교체됨: '+slot+' ← '+file.name+'  (이제 ② 재인코딩을 누르세요)');
+    await refresh();
+  }catch(e){ drop.classList.remove('busy'); drop.innerHTML='❌ 실패: '+e.message; }
+}
+
+function setMsg(t){ document.getElementById('statusMsg').textContent = t; }
+const con = document.getElementById('console');
+function log(text, cls){ const l=document.createElement('div'); l.className='ln '+(cls||''); l.textContent=text; con.appendChild(l); con.scrollTop=con.scrollHeight; }
+
+document.getElementById('btnEncode').addEventListener('click', ()=>{
+  const btn = document.getElementById('btnEncode'); btn.disabled=true;
+  con.className='console show'; con.innerHTML='';
+  log('재인코딩 시작…', 'dim');
+  const es = new EventSource('/api/encode');
+  es.onmessage = ev => {
+    const d = JSON.parse(ev.data);
+    if(d.type==='start')  log('▶ '+d.label+'  ('+d.src+')');
+    if(d.type==='done')   log('  ✔ '+d.out+'  '+d.mb+' MB · '+d.kf+' kf · '+d.dur+'s'+(d.warn&&d.warn.length?'   [!] '+d.warn.join(', '):''), d.warn&&d.warn.length?'warn':'ok');
+    if(d.type==='fail')   log('  ✖ 실패: '+d.slot+' — '+d.msg, 'bad');
+    if(d.type==='error'){ log('오류: '+d.msg, 'bad'); es.close(); btn.disabled=false; }
+    if(d.type==='alldone'){ log('완료 — 합계 '+d.totalMB+' MB. ③ 미리보기로 확인하세요.', 'ok'); es.close(); btn.disabled=false; refresh(); }
+  };
+  es.onerror = ()=>{ es.close(); btn.disabled=false; };
+});
+
+document.getElementById('btnPreview').addEventListener('click', ()=>{
+  window.open('http://localhost:'+SITE_PORT+'/', '_blank');
+  setMsg('미리보기 창이 열렸습니다. 영상이 안 바뀌어 보이면 그 창에서 Ctrl+Shift+R.');
+});
+document.getElementById('btnRefresh').addEventListener('click', refresh);
+
+function copyDeploy(){
+  const t = document.getElementById('deployCmd').textContent;
+  navigator.clipboard.writeText(t).then(()=>{ document.getElementById('copyMsg').textContent='복사됨'; setTimeout(()=>document.getElementById('copyMsg').textContent='',1500); });
+}
+
+refresh();
+</script>
+</body>
+</html>
