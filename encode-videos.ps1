@@ -114,7 +114,9 @@ if ($skipped.Count -gt 0) { Write-Host ("  (건너뜀: {0} — video_src에 원�
 # ── 다음 단계 안내 ──────────────────────────────────────
 if ($OutDir -eq $root) {
   Write-Host ""
-  Write-Host "다음: 라이브 반영하려면 리포 루트에서" -ForegroundColor Cyan
-  Write-Host "  git add *.mp4; git commit -m `"perf(video): 영상 교체`"; git push neko main" -ForegroundColor White
-  Write-Host "  (배포 1~2분 후 https://neko-yg.github.io/VCC_1/ 하드리프레시 Ctrl+Shift+R)" -ForegroundColor DarkGray
+  Write-Host "다음 1) 로컬에서 먼저 확인:  미리보기.bat  더블클릭" -ForegroundColor Cyan
+  Write-Host "        → 브라우저에서 새 영상 확인 (Ctrl+Shift+R 하드 새로고침)" -ForegroundColor DarkGray
+  Write-Host "다음 2) 확인 후 라이브 반영:" -ForegroundColor Cyan
+  Write-Host "        git add *.mp4; git commit -m `"perf(video): 영상 교체`"; git push neko main" -ForegroundColor White
+  Write-Host "        (배포 1~2분 후 https://neko-yg.github.io/VCC_1/ 에서 Ctrl+Shift+R)" -ForegroundColor DarkGray
 }
