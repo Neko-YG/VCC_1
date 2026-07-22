@@ -163,13 +163,86 @@
        섹션 2 — VCC 소개 텍스트
        영상과 공백 없이 바로 붙임
     ════════════════════════════════ */
+    /* 휠 스크롤 3카드 인터랙션 컨테이너 */
     #introSection {
+      position: relative;
       width: 100%;
-      margin-top: 0;          /* 공백 제거 */
-      background: url('bg.webp') center center / cover no-repeat;
-      display: flex; justify-content: center; align-items: center;
-      padding: clamp(60px, 10vw, 120px) var(--pad-x);
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 90% at 85% 100%, rgba(124,88,237,.45) 0%, rgba(124,88,237,0) 60%),
+        url('bg.webp') center center / cover no-repeat, #0d0a1f;
     }
+    .i3-cards {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: clamp(16px, 2vw, 38px);
+      padding: 0 var(--pad-x);
+      transition: opacity .8s cubic-bezier(.22,.61,.36,1),
+                  transform .8s cubic-bezier(.22,.61,.36,1),
+                  filter .8s cubic-bezier(.22,.61,.36,1);
+    }
+    .i3-card {
+      width: min(
+        calc((min(1300px, 92vw) - clamp(16px,2vw,38px) * 2) / 3),
+        calc((100vh - 140px) * 851 / 1211)
+      );
+      aspect-ratio: 851 / 1211;
+      border-radius: clamp(14px, 1.8vw, 26px);
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+      opacity: 0;
+      transform: translateY(90px) scale(.94);
+      transition: opacity .8s cubic-bezier(.22,.61,.36,1),
+                  transform .8s cubic-bezier(.22,.61,.36,1),
+                  filter .8s cubic-bezier(.22,.61,.36,1);
+      will-change: opacity, transform;
+    }
+    .i3-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    @media (max-width: 768px) {
+      .i3-cards { padding: 0; }
+      .i3-card {
+        position: absolute; left: 50%; top: 50%;
+        width: min(68vw, calc((100dvh - 240px) * 851 / 1211));
+        transform: translate(-50%, -50%);
+      }
+    }
+    .i3-message {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 0 var(--pad-x);
+      opacity: 0; transform: translateY(60px);
+      pointer-events: none;
+      transition: opacity .8s cubic-bezier(.22,.61,.36,1),
+                  transform .8s cubic-bezier(.22,.61,.36,1);
+      will-change: opacity, transform;
+    }
+    .i3-h2 {
+      font-size: var(--fs-lg); font-weight: 800; letter-spacing: -.02em; line-height: 1.25;
+      background: linear-gradient(90deg, #C3BEFF 0%, #51CAFF 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: clamp(28px, 5vh, 56px);
+    }
+    .i3-p {
+      font-size: var(--fs-sm); font-weight: 500; line-height: 1.9;
+      color: rgba(255,255,255,.92); letter-spacing: -.01em;
+      margin-bottom: clamp(16px, 3vh, 28px);
+    }
+    .i3-p strong { font-weight: 800; color: #fff; }
+    .i3-credit {
+      margin-top: clamp(20px, 4vh, 40px);
+      font-size: clamp(13px,1.8vw,16px); color: rgba(255,255,255,.6); letter-spacing: .04em;
+    }
+    #i3Hint {
+      position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      z-index: 5; pointer-events: none; transition: opacity .4s;
+      animation: i3Bob 2s ease-in-out infinite;
+    }
+    #i3Hint span { font-size: 10px; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+    #i3Hint::after { content:''; width:1px; height:32px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,.5)); }
+    @keyframes i3Bob { 0%,100%{ transform: translateX(-50%) translateY(0);} 50%{ transform: translateX(-50%) translateY(8px);} }
 
     .intro-inner {
       width: 100%; max-width: var(--content-max);
@@ -1684,73 +1757,35 @@
   </div>
 </section>
 
-<!-- ════ 섹션 2: VCC 소개 ════ -->
+<!-- ════ 섹션 2: VCC 소개 (휠 스크롤 3카드 인터랙션) ════ -->
+<!-- 카드 이미지: 3가지/1~3.webp (AI / Marketing / Finance) — 실제 카드로 교체 -->
 <section id="introSection">
-  <div class="intro-inner">
-
-    <!-- 3카드: AI / Marketing / Finance (배경은 placeholder — 3가지/1~3.webp 교체) -->
-    <div class="intro-cards">
-      <div class="intro-card" data-aos style="transition-delay:0.05s">
-        <img class="intro-card-bg" src="3가지/1.webp" alt="AI" loading="lazy" decoding="async">
-        <div class="intro-card-shade"></div>
-        <div class="intro-card-badges"><span>Chat GPT</span><span>Claude</span></div>
-        <div class="intro-card-body">
-          <h3 class="intro-card-label">AI</h3>
-          <p class="intro-card-text">AI 대변혁이 시장을 뒤흔들고 있습니다.<br><strong>부는 한 곳으로 응축되고,</strong><br>그 기회의 창은 빠르게 닫히고 있습니다.</p>
-        </div>
-      </div>
-      <div class="intro-card" data-aos style="transition-delay:0.15s">
-        <img class="intro-card-bg" src="3가지/2.webp" alt="Marketing" loading="lazy" decoding="async">
-        <div class="intro-card-shade"></div>
-        <div class="intro-card-badges"><span>Youtube</span><span>SNS</span></div>
-        <div class="intro-card-body">
-          <h3 class="intro-card-label">Marketing</h3>
-          <p class="intro-card-text">AI 대변혁이 시장을 뒤흔들고 있습니다.<br><strong>부는 한 곳으로 응축되고,</strong><br>그 기회의 창은 빠르게 닫히고 있습니다.</p>
-        </div>
-      </div>
-      <div class="intro-card" data-aos style="transition-delay:0.25s">
-        <img class="intro-card-bg" src="3가지/3.webp" alt="Finance" loading="lazy" decoding="async">
-        <div class="intro-card-shade"></div>
-        <div class="intro-card-badges"><span>Stock</span><span>ETF</span></div>
-        <div class="intro-card-body">
-          <h3 class="intro-card-label">Finance</h3>
-          <p class="intro-card-text">AI 대변혁이 시장을 뒤흔들고 있습니다.<br><strong>부는 한 곳으로 응축되고,</strong><br>그 기회의 창은 빠르게 닫히고 있습니다.</p>
-        </div>
-      </div>
-    </div>
-
-    <p class="intro-subtitle" data-aos>
-      세 개의 전문성이 하나의 미래를 만든다.
-    </p>
-
-    <div class="intro-block" data-aos style="transition-delay:0.1s">
-      <p>
-        AI 대변혁이 시장을 뒤흔들고 있습니다.<br>
-        <span class="w-black">부는 한 곳으로 응축되고,</span><br>
-        그 기회의 창은 빠르게 닫히고 있습니다.
-      </p>
-    </div>
-
-    <div class="intro-block" data-aos style="transition-delay:0.2s">
-      <p>
-        <span class="w-vcc">VCC</span>는 그 변화의 한가운데에서<br>
-        매년 가장 먼저 답을 제시해온 컨퍼런스입니다.
-      </p>
-    </div>
-
-    <div class="intro-block" data-aos style="transition-delay:0.3s">
-      <p>
-        <span class="c-ai">AI</span><span class="c-dash"> · </span><span class="c-marketing">마케팅</span><span class="c-dash"> · </span><span class="c-finance">금융</span><span class="c-dash"> —</span><br>
-        세 가지 무기를 장착한 전문가만이<br>
-        이 시대의 주도권을 가져갑니다.
-      </p>
-    </div>
-
-    <p class="intro-credit" data-aos style="transition-delay:0.4s">
-      총괄 기획 김태우 CSO
-    </p>
-
+  <div class="i3-cards" id="i3Cards">
+    <div class="i3-card"><img src="3가지/1.webp" alt="AI" decoding="async"></div>
+    <div class="i3-card"><img src="3가지/2.webp" alt="Marketing" decoding="async"></div>
+    <div class="i3-card"><img src="3가지/3.webp" alt="Finance" decoding="async"></div>
   </div>
+
+  <div class="i3-message" id="i3Message">
+    <h2 class="i3-h2">세 개의 전문성이 하나의 미래를 만든다.</h2>
+    <p class="i3-p">
+      AI 대변혁이 시장을 뒤흔들고 있습니다.<br>
+      <strong>부는 한 곳으로 응축되고,</strong><br>
+      그 기회의 창은 빠르게 닫히고 있습니다.
+    </p>
+    <p class="i3-p">
+      <strong>VCC</strong>는 그 변화의 한가운데에서<br>
+      매년 가장 먼저 답을 제시해온 컨퍼런스입니다.
+    </p>
+    <p class="i3-p">
+      <strong>AI · 마케팅 · 금융 —</strong><br>
+      세 가지 무기를 장착한 전문가만이<br>
+      이 시대의 주도권을 가져갑니다.
+    </p>
+    <p class="i3-credit">총괄 기획 김태우 CSO</p>
+  </div>
+
+  <div id="i3Hint"><span>Scroll</span></div>
 </section>
 
 <!-- ════ 섹션 3: After VCC ════ -->
@@ -2684,6 +2719,110 @@
   document.getElementById('mpvClose').addEventListener('click',closePanel);
   document.getElementById('mpvResetAll').addEventListener('click',resetAll);
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePanel(); });
+})();
+</script>
+
+<!-- ── 인트로 휠 스크롤 3카드 인터랙션 (격리 IIFE) ── -->
+<script>
+(function(){
+  var CONFIG = {
+    wheelPerCard: 2,        // 카드 1장 등장에 필요한 휠 횟수
+    wheelForTransition: 3,  // 카드 → 텍스트 전환 휠 횟수
+    wheelHoldAfter: 2,      // 텍스트 표시 후 붙잡는 휠 횟수
+    wheelFirstHold: 2,      // (모바일) 첫 스택 유지 휠 횟수
+    tickThreshold: 50,      // 휠 1틱 인식 최소량
+    tickCooldown: 200       // 틱 최소 간격(ms)
+  };
+  var section   = document.getElementById('introSection');
+  var cardsWrap = document.getElementById('i3Cards');
+  if (!section || !cardsWrap) return;
+  var cards   = [].slice.call(cardsWrap.querySelectorAll('.i3-card'));
+  var message = document.getElementById('i3Message');
+  var hint    = document.getElementById('i3Hint');
+  var mobileQuery = window.matchMedia('(max-width: 768px)');
+
+  function clamp(v,a,b){ return Math.min(b, Math.max(a, v)); }
+  function phaseOffset(){ return mobileQuery.matches ? CONFIG.wheelFirstHold : 0; }
+  function TOTAL(){ return CONFIG.wheelPerCard*3 + CONFIG.wheelForTransition + CONFIG.wheelHoldAfter + phaseOffset(); }
+
+  var step=0, acc=0, lastTick=0, aligning=false;
+
+  function render(){
+    var t = clamp((step - (CONFIG.wheelPerCard*3 + phaseOffset())) / CONFIG.wheelForTransition, 0, 1);
+    var activeIdx = 0;
+    if (mobileQuery.matches){
+      activeIdx = Math.min(2, Math.floor(Math.max(0, step - CONFIG.wheelFirstHold)/CONFIG.wheelPerCard));
+      cards.forEach(function(card,i){
+        var off = i - activeIdx; var isFront = off===0;
+        card.style.opacity = 1;
+        card.style.transform = 'translate(-50%, -50%) translateX('+(off*36)+'%) scale('+(isFront?1:0.86)+')';
+        card.style.zIndex = isFront?3:1;
+        card.style.filter = isFront?'none':'brightness(.55)';
+      });
+    } else {
+      cards.forEach(function(card,i){
+        var p = clamp((step - i*CONFIG.wheelPerCard)/CONFIG.wheelPerCard, 0, 1);
+        card.style.opacity = p;
+        card.style.transform = 'translateY('+((1-p)*90)+'px) scale('+(0.94+0.06*p)+')';
+        card.style.zIndex=''; card.style.filter='';
+      });
+    }
+    var stackIn = mobileQuery.matches ? clamp(step,0,1) : 1;
+    cardsWrap.style.opacity = (1-t)*stackIn;
+    cardsWrap.style.transform = 'translateY('+(-t*70 + (1-stackIn)*60)+'px) scale('+(1 - t*0.06)+')';
+    cardsWrap.style.filter = 'blur('+(t*10)+'px)';
+    message.style.opacity = t;
+    message.style.transform = 'translateY('+((1-t)*60)+'px)';
+    if (hint) hint.style.opacity = step===0 ? 1 : 0;
+  }
+
+  function isEngaged(){
+    var r = section.getBoundingClientRect();
+    var mid = window.innerHeight/2;
+    return r.top < mid && r.bottom > mid;
+  }
+  function alignSection(){
+    var top = section.getBoundingClientRect().top + window.scrollY;
+    if (Math.abs(window.scrollY - top) < 2) return;
+    aligning = true;
+    window.scrollTo({ top: top, behavior:'smooth' });
+    setTimeout(function(){ aligning=false; }, 500);
+  }
+  function consume(delta){
+    acc += delta;
+    var now = performance.now();
+    if (Math.abs(acc) >= CONFIG.tickThreshold && now - lastTick >= CONFIG.tickCooldown){
+      step = clamp(step + (acc>0?1:-1), 0, TOTAL());
+      acc = 0; lastTick = now; render();
+    }
+  }
+  window.addEventListener('wheel', function(e){
+    if (!isEngaged()){ acc=0; return; }
+    var down = e.deltaY > 0;
+    var canConsume = down ? step < TOTAL() : step > 0;
+    if (!canConsume) return;         // 완료/처음이면 일반 스크롤로 통과
+    e.preventDefault();
+    if (!aligning) alignSection();
+    consume(e.deltaY);
+  }, { passive:false });
+
+  var touchY = null;
+  window.addEventListener('touchstart', function(e){ touchY = e.touches[0].clientY; }, { passive:true });
+  window.addEventListener('touchmove', function(e){
+    if (touchY===null || !isEngaged()) return;
+    var delta = touchY - e.touches[0].clientY;
+    var down = delta > 0;
+    var canConsume = down ? step < TOTAL() : step > 0;
+    if (!canConsume) return;
+    e.preventDefault();
+    if (!aligning) alignSection();
+    consume(delta*1.5);
+    touchY = e.touches[0].clientY;
+  }, { passive:false });
+  window.addEventListener('touchend', function(){ touchY = null; });
+
+  mobileQuery.addEventListener('change', render);
+  render();
 })();
 </script>
 
