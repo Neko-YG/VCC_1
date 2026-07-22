@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
 
 server.on('error', (e) => {
   if (e.code === 'EADDRINUSE') {
-    console.error(`[X] 포트 ${PORT} 가 이미 사용 중입니다. 열려 있는 미리보기 창을 닫고 다시 실행하세요.`);
+    console.error(`[X] Port ${PORT} is already in use. Close the other preview window and retry.`);
   } else {
     console.error(e.message);
   }
@@ -74,9 +74,9 @@ server.on('error', (e) => {
 
 server.listen(PORT, () => {
   console.log('==============================================');
-  console.log('  VCC 2026 로컬 미리보기 서버 실행 중');
-  console.log('  주소 : http://localhost:' + PORT + '/');
-  console.log('  종료 : 이 창을 닫거나 Ctrl+C');
+  console.log('  VCC 2026 local preview server running');
+  console.log('  URL  : http://localhost:' + PORT + '/');
+  console.log('  Stop : close this window or press Ctrl+C');
   console.log('==============================================');
-  console.log('  * 영상 교체 후에는 브라우저에서 Ctrl+Shift+R (하드 새로고침)');
+  console.log('  * After swapping videos: Ctrl+Shift+R (hard refresh) in the browser');
 });
