@@ -1,3 +1,6 @@
 # 원본 백업 (로컬 보관 — 리포 비대 방지)
 src/
 src_img/
+
+video_src/*
+!video_src/README.txt
