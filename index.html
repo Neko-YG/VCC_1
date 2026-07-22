@@ -1476,20 +1476,6 @@
              data-src="hero_pc.mp4"></video>
       <video id="scrollVideoMobile" class="scroll-video" muted playsinline preload="none" webkit-playsinline
              data-src="hero_mo.mp4"></video>
-      <div class="split-text-wrap">
-        <div class="split-row" id="text1">
-          <span class="split-left">AI</span>
-          <span class="split-right">산업</span>
-        </div>
-        <div class="split-row" id="text2">
-          <span class="split-left">주식투자</span>
-          <span class="split-right">변화</span>
-        </div>
-        <div class="split-row" id="text3">
-          <span class="split-left">마케팅</span>
-          <span class="split-right">트렌드</span>
-        </div>
-      </div>
       <div id="scrollHint"><span>Scroll</span><div class="hint-line"></div></div>
     </div>
   </div>
@@ -1916,6 +1902,7 @@
   function updateTexts(t) {
     timings.forEach(function(item) {
       var el = item.el, inStart = item.inStart, outStart = item.outStart;
+      if (!el) return;
       if (t >= inStart && t < outStart) {
         el.classList.remove('fadeout'); el.classList.add('visible');
       } else if (t >= outStart) {
