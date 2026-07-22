@@ -813,13 +813,13 @@
     }
     .main-grid.show { opacity: 1; transform: translateY(0); }
 
-    /* SUB 강사 그리드 — 3열 */
+    /* SUB 강사 그리드 — 5열 */
     .sub-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: clamp(10px, 2.5vw, 20px);
+      grid-template-columns: repeat(5, 1fr);
+      gap: clamp(10px, 1.4vw, 20px);
       width: 100%;
-      max-width: 760px;
+      max-width: var(--content-max);
       opacity: 0; transform: translateY(24px);
       transition: opacity 0.8s ease, transform 0.8s ease;
     }
@@ -1028,24 +1028,48 @@
     }
     .lucky-desc.show { opacity: 1; transform: translateY(0); }
 
-    /* 3열 그리드 */
+    /* 경품 캐러셀 — 좌우 드래그 */
     .lucky-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: clamp(8px, 2vw, 16px);
+      display: flex;
+      gap: clamp(12px, 1.5vw, 22px);
       width: 100%;
-      max-width: 680px;
+      max-width: var(--content-max);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding: 8px 2px 6px;
+      cursor: grab;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
+    .lucky-grid::-webkit-scrollbar { display: none; }
+    .lucky-grid.dragging { cursor: grabbing; scroll-snap-type: none; }
 
     /* 개별 아이템 */
     .lucky-item {
+      flex: 0 0 auto;
+      width: clamp(200px, 24vw, 320px);
+      scroll-snap-align: center;
       border-radius: 14px;
       overflow: hidden;
       opacity: 0; transform: translateY(24px);
       transition: opacity 0.7s ease, transform 0.7s ease;
     }
     .lucky-item.show { opacity: 1; transform: translateY(0); }
-    .lucky-item img { width: 100%; height: auto; display: block; }
+    .lucky-item img { width: 100%; height: auto; display: block; pointer-events: none; }
+
+    /* 드래그 안내 */
+    .lucky-hint {
+      margin-top: clamp(6px, 1.4vw, 14px);
+      font-size: var(--fs-sm);
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      letter-spacing: -0.01em;
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      transition-delay: 0.2s;
+    }
+    .lucky-hint.show { opacity: 1; transform: translateY(0); }
 
     /* ════════════════════════════════
        섹션 12 — FAQ
@@ -1722,7 +1746,7 @@
 
   <!-- 섹션 타이틀 -->
   <h2 class="speaker-title" data-aos>
-    전 분야의 믿을 수 있는 <span class="t-grad">메인 파트너</span>
+    전 분야의 믿을 수 있는 <span class="t-grad">국가대표 스피커</span>
   </h2>
 
   <!-- MAIN STAGE -->
@@ -1738,6 +1762,8 @@
     <div class="speaker-card"><img loading="lazy" decoding="async" src="sub1.webp" alt="서브 강사 1"></div>
     <div class="speaker-card"><img loading="lazy" decoding="async" src="sub2.webp" alt="서브 강사 2"></div>
     <div class="speaker-card"><img loading="lazy" decoding="async" src="sub3.webp" alt="서브 강사 3"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="sub1.webp" alt="서브 강사 4"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="sub2.webp" alt="서브 강사 5"></div>
   </div>
 
 </section>
@@ -1809,6 +1835,8 @@
         <img loading="lazy" decoding="async" src="lucky6.webp" alt="Galaxy Watch">
       </div>
     </div>
+
+    <p class="lucky-hint" data-aos>‹ 좌우로 드래그해 둘러보세요 ›</p>
 
   </div>
 </section>
@@ -2196,6 +2224,31 @@
   }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
 
   aosEls.forEach(function(el) { ioObserver.observe(el); });
+
+  /* ── 럭키드로우 경품 캐러셀 좌우 드래그 ── */
+  (function(){
+    var track = document.querySelector('.lucky-grid');
+    if (!track) return;
+    var down = false, startX = 0, startLeft = 0, moved = 0;
+    track.addEventListener('pointerdown', function(e){
+      down = true; moved = 0;
+      startX = e.clientX; startLeft = track.scrollLeft;
+      track.classList.add('dragging');
+      track.setPointerCapture && track.setPointerCapture(e.pointerId);
+    });
+    track.addEventListener('pointermove', function(e){
+      if (!down) return;
+      var dx = e.clientX - startX;
+      moved = Math.max(moved, Math.abs(dx));
+      track.scrollLeft = startLeft - dx;
+    });
+    function end(){ down = false; track.classList.remove('dragging'); }
+    track.addEventListener('pointerup', end);
+    track.addEventListener('pointercancel', end);
+    track.addEventListener('pointerleave', end);
+    /* 드래그 직후 클릭 억제 */
+    track.addEventListener('click', function(e){ if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+  })();
 
   /* ── 배경 루프 영상 지연 로드 ── */
   var lazyVideoObserver = new IntersectionObserver(function (entries) {
