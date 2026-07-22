@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCC Lucky Draw</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #030308; }
+</style>
+</head>
+<body>
+<script>
+// ============================================================
+// 럭키드로우 진입점: 접속 환경에 따라 PC / 모바일 버전으로 자동 연결
+// 파일명을 바꾸면 아래 두 경로도 같이 수정하세요
+// ============================================================
+var PC_PAGE     = 'VCC 럭키드로우 기능.html';
+var MOBILE_PAGE = 'VCC 럭키드로우 기능_모바일.html';
+
+var isMobile =
+  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+  window.innerWidth < window.innerHeight;
+
+location.replace(encodeURI(isMobile ? MOBILE_PAGE : PC_PAGE));
+</script>
+<noscript>
+  <a href="VCC 럭키드로우 기능.html" style="color:#8fa8ff">PC 버전 보기</a> ·
+  <a href="VCC 럭키드로우 기능_모바일.html" style="color:#8fa8ff">모바일 버전 보기</a>
+</noscript>
+</body>
+</html>
