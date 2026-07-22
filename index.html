@@ -1543,6 +1543,111 @@
       #siteFooter { flex-direction: column; align-items: flex-start; }
       .footer-info p { white-space: normal; }
     }
+
+    /* ════════════════════════════════
+       VCC Sponsor (신규 — 로고 placeholder)
+    ════════════════════════════════ */
+    #sponsorSection {
+      width: 100%;
+      background:
+        radial-gradient(120% 120% at 50% 0%, rgba(124,88,237,0.55) 0%, rgba(124,88,237,0) 60%),
+        linear-gradient(180deg, #1a0f3a 0%, #2a1a63 100%);
+      padding: clamp(48px, 8vw, 88px) var(--pad-x);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(28px, 4vw, 48px);
+    }
+    .sponsor-title {
+      font-size: var(--fs-lg);
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      letter-spacing: -0.01em;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .sponsor-title.show { opacity: 1; transform: translateY(0); }
+    .sponsor-title .t-sponsor {
+      background: linear-gradient(90deg, #8fd0ff 0%, #51CAFF 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .sponsor-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: clamp(8px, 1vw, 14px);
+      width: 100%;
+      max-width: var(--content-max);
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+      transition-delay: 0.1s;
+    }
+    .sponsor-grid.show { opacity: 1; transform: translateY(0); }
+    .sponsor-logo {
+      aspect-ratio: 3 / 2;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.82);
+      font-size: clamp(11px, 1vw, 15px);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+    @media (max-width: 768px) {
+      .sponsor-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ════════════════════════════════
+       지난 VCC 다시보기 (신규 — 사진 placeholder)
+    ════════════════════════════════ */
+    #pastSection {
+      width: 100%;
+      background: #000;
+      padding: clamp(48px, 8vw, 88px) var(--pad-x) clamp(32px, 5vw, 56px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(24px, 4vw, 44px);
+    }
+    .past-title {
+      display: flex; align-items: center; justify-content: center;
+      gap: clamp(8px, 1vw, 16px);
+      font-size: var(--fs-lg);
+      font-weight: 800; color: #fff;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .past-title.show { opacity: 1; transform: translateY(0); }
+    .past-title img { height: 0.8em; width: auto; display: inline-block; opacity: 0.95; }
+    .past-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(12px, 1.6vw, 24px);
+      width: 100%;
+      max-width: var(--content-max);
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+      transition-delay: 0.1s;
+    }
+    .past-grid.show { opacity: 1; transform: translateY(0); }
+    .past-item { display: flex; flex-direction: column; gap: clamp(8px, 1.2vw, 14px); }
+    .past-thumb {
+      width: 100%; aspect-ratio: 16 / 10;
+      border-radius: 14px; overflow: hidden;
+      background: #111;
+    }
+    .past-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .past-label {
+      font-size: var(--fs-md);
+      font-weight: 700; color: #fff; text-align: center; letter-spacing: -0.01em;
+    }
+    @media (max-width: 640px) {
+      .past-grid { grid-template-columns: 1fr; max-width: 420px; }
+    }
   </style>
 </head>
 
@@ -1768,6 +1873,25 @@
 
 </section>
 
+<!-- ════ 섹션 8-2: VCC Sponsor (신규, 로고 placeholder) ════ -->
+<section id="sponsorSection">
+  <h2 class="sponsor-title" data-aos>대한민국 전문직들을 위한 VCC <span class="t-sponsor">Sponsor</span></h2>
+  <div class="sponsor-grid" data-aos>
+    <div class="sponsor-logo">RICH DIVINE</div>
+    <div class="sponsor-logo">vane rich</div>
+    <div class="sponsor-logo">CHICRISE</div>
+    <div class="sponsor-logo">Dosan Chicrise<br>Museum</div>
+    <div class="sponsor-logo">RICH DIVINE</div>
+    <div class="sponsor-logo">CHICRISE</div>
+    <div class="sponsor-logo">RICH DIVINE</div>
+    <div class="sponsor-logo">vane rich</div>
+    <div class="sponsor-logo">CHICRISE</div>
+    <div class="sponsor-logo">Dosan Chicrise<br>Museum</div>
+    <div class="sponsor-logo">RICH DIVINE</div>
+    <div class="sponsor-logo">CHICRISE</div>
+  </div>
+</section>
+
 <!-- ════ 섹션 9: 커리큘럼 ════ -->
 <section id="currSection">
 
@@ -1957,6 +2081,25 @@
   <div class="contact-content" data-aos>
     <img loading="lazy" decoding="async" class="contact-title-img" src="contact_title.webp" alt="VCC 컨퍼런스 문의 채널">
     <a href="#" class="contact-btn">문의하기</a>
+  </div>
+</section>
+
+<!-- ════ 섹션 16: 지난 VCC 다시보기 (신규, 사진 placeholder) ════ -->
+<section id="pastSection">
+  <h2 class="past-title" data-aos>지난 <img src="vcc_logo.png" alt="VCC"> 다시보기</h2>
+  <div class="past-grid" data-aos>
+    <div class="past-item">
+      <div class="past-thumb"><img loading="lazy" decoding="async" src="timer_bg.webp" alt="2025 VCC"></div>
+      <p class="past-label">2025 VCC</p>
+    </div>
+    <div class="past-item">
+      <div class="past-thumb"><img loading="lazy" decoding="async" src="emotion_bg.webp" alt="2024 VCC"></div>
+      <p class="past-label">2024 VCC</p>
+    </div>
+    <div class="past-item">
+      <div class="past-thumb"><img loading="lazy" decoding="async" src="contact_bg.webp" alt="2023 VCC"></div>
+      <p class="past-label">2023 VCC</p>
+    </div>
   </div>
 </section>
 
