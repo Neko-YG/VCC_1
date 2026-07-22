@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>VCC 2026 — VVIP Consulting Conference</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -51,7 +51,7 @@
        섹션 1 — 메인 영상 스크롤
        PC: 16:9(가로) 영상 / 모바일: 9:16(세로) 영상
     ════════════════════════════════ */
-    #videoSection { position: relative; height: 2000vh; }
+    #videoSection { position: relative; height: 500vh; }
 
     #videoSticky {
       position: sticky; top: 0;
@@ -72,7 +72,7 @@
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: cover; object-position: center; display: block;
-      transform: translateZ(0); will-change: contents;
+      transform: translateZ(0);
     }
 
     /* PC 기본: 가로(16:9) 영상만 표시 */
@@ -143,7 +143,7 @@
     #introSection {
       width: 100%;
       margin-top: 0;          /* 공백 제거 */
-      background: url('bg.png') center center / cover no-repeat;
+      background: url('bg.webp') center center / cover no-repeat;
       display: flex; justify-content: center; align-items: center;
       padding: clamp(60px, 10vw, 120px) clamp(24px, 6vw, 80px);
     }
@@ -1472,12 +1472,10 @@
 <section id="videoSection">
   <div id="videoSticky">
     <div id="videoWrap">
-      <video id="scrollVideoDesktop" class="scroll-video" muted playsinline preload="auto" webkit-playsinline>
-        <source src="VCC_웹_테스트_가로.mp4" type="video/mp4">
-      </video>
-      <video id="scrollVideoMobile" class="scroll-video" muted playsinline preload="auto" webkit-playsinline>
-        <source src="VCC_웹_테스트_세로.mp4" type="video/mp4">
-      </video>
+      <video id="scrollVideoDesktop" class="scroll-video" muted playsinline preload="none" webkit-playsinline
+             data-src="hero_pc.mp4"></video>
+      <video id="scrollVideoMobile" class="scroll-video" muted playsinline preload="none" webkit-playsinline
+             data-src="hero_mo.mp4"></video>
       <div class="split-text-wrap">
         <div class="split-row" id="text1">
           <span class="split-left">AI</span>
@@ -1546,9 +1544,8 @@
   </div>
 
   <div class="after-video-wrap" data-aos>
-    <video autoplay muted loop playsinline webkit-playsinline>
-      <source src="after.mp4" type="video/mp4">
-    </video>
+    <video class="lazy-video" muted loop playsinline webkit-playsinline
+           preload="none" data-src="after_web.mp4"></video>
   </div>
 
   <div class="after-bottom-pad"></div>
@@ -1558,9 +1555,8 @@
 <!-- ════ 섹션 4: 장소 소개 ════ -->
 <section id="venueSection">
   <div class="venue-box" data-aos>
-    <video id="venueBg" autoplay muted loop playsinline webkit-playsinline>
-      <source src="venue.mp4" type="video/mp4">
-    </video>
+    <video id="venueBg" class="lazy-video" muted loop playsinline webkit-playsinline
+           preload="none" data-src="venue_web.mp4"></video>
     <div class="venue-overlay"></div>
     <div class="venue-content">
       <p class="venue-date">2026. 09. 02. (WED)</p>
@@ -1574,7 +1570,7 @@
 <!-- ════ 섹션 5: THE CONVERGENCE ════ -->
 <section id="convergenceSection">
   <div class="conv-box" data-aos>
-    <img class="conv-bg" src="conv_bg.png" alt="">
+    <img loading="lazy" decoding="async" class="conv-bg" src="conv_bg.webp" alt="">
     <div class="conv-overlay"></div>
     <div class="conv-content">
       <h2 class="conv-title">
@@ -1607,10 +1603,10 @@
       <div class="card-stack-wrap">
         <div class="card-stack-sticky" id="cardStackSticky">
           <div class="stack-card stack-card-1" id="card1">
-            <img src="lecture1.png" alt="AI가 바꾸는 자산의 법칙">
+            <img loading="lazy" decoding="async" src="lecture1.webp" alt="AI가 바꾸는 자산의 법칙">
           </div>
           <div class="stack-card stack-card-2" id="card2">
-            <img src="lecture2.png" alt="전문직 슈퍼 인프라 패키지">
+            <img loading="lazy" decoding="async" src="lecture2.webp" alt="전문직 슈퍼 인프라 패키지">
           </div>
         </div>
       </div>
@@ -1621,7 +1617,7 @@
 
 <!-- ════ 섹션 7: 감성터치 ════ -->
 <section id="emotionSection">
-  <img class="emotion-bg" src="emotion_bg.png" alt="">
+  <img loading="lazy" decoding="async" class="emotion-bg" src="emotion_bg.webp" alt="">
   <div class="emotion-overlay"></div>
   <div class="emotion-content" data-aos>
     <p class="emotion-main">
@@ -1643,16 +1639,16 @@
   <!-- MAIN STAGE -->
   <p class="stage-label main-grad" data-aos style="transition-delay:0.1s">MAIN STAGE</p>
   <div class="main-grid" data-aos style="transition-delay:0.15s">
-    <div class="speaker-card"><img src="main1.png" alt="메인 강사 1"></div>
-    <div class="speaker-card"><img src="main2.png" alt="메인 강사 2"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="main1.webp" alt="메인 강사 1"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="main2.webp" alt="메인 강사 2"></div>
   </div>
 
   <!-- SUB STAGE -->
   <p class="stage-label sub-grad" data-aos style="transition-delay:0.05s">SUB STAGE</p>
   <div class="sub-grid" data-aos style="transition-delay:0.1s">
-    <div class="speaker-card"><img src="sub1.png" alt="서브 강사 1"></div>
-    <div class="speaker-card"><img src="sub2.png" alt="서브 강사 2"></div>
-    <div class="speaker-card"><img src="sub3.png" alt="서브 강사 3"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="sub1.webp" alt="서브 강사 1"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="sub2.webp" alt="서브 강사 2"></div>
+    <div class="speaker-card"><img loading="lazy" decoding="async" src="sub3.webp" alt="서브 강사 3"></div>
   </div>
 
 </section>
@@ -1665,13 +1661,13 @@
   </h2>
 
   <div class="curr-card" data-aos style="transition-delay:0.1s">
-    <img src="curr1.png" alt="커리큘럼 1">
+    <img loading="lazy" decoding="async" src="curr1.webp" alt="커리큘럼 1">
   </div>
   <div class="curr-card" data-aos style="transition-delay:0.2s">
-    <img src="curr2.png" alt="커리큘럼 2">
+    <img loading="lazy" decoding="async" src="curr2.webp" alt="커리큘럼 2">
   </div>
   <div class="curr-card" data-aos style="transition-delay:0.3s">
-    <img src="curr3.png" alt="커리큘럼 3">
+    <img loading="lazy" decoding="async" src="curr3.webp" alt="커리큘럼 3">
   </div>
 
 </section>
@@ -1679,12 +1675,11 @@
 <!-- ════ 섹션 10: CTA ════ -->
 <section id="ctaSection">
   <div class="cta-box" data-aos>
-    <video class="cta-video" autoplay muted loop playsinline webkit-playsinline>
-      <source src="cta.mp4" type="video/mp4">
-    </video>
+    <video class="cta-video lazy-video" muted loop playsinline webkit-playsinline
+           preload="none" data-src="cta_web.mp4"></video>
     <div class="cta-overlay"></div>
     <div class="cta-content">
-      <img class="cta-logo" src="vcc_logo.png" alt="VCC">
+      <img loading="lazy" decoding="async" class="cta-logo" src="vcc_logo.png" alt="VCC">
       <a href="#" class="cta-btn">참가신청</a>
     </div>
   </div>
@@ -1692,7 +1687,7 @@
 
 <!-- ════ 섹션 11: 럭키드로우 ════ -->
 <section id="luckySection">
-  <img class="lucky-bg" src="lucky_bg.png" alt="">
+  <img loading="lazy" decoding="async" class="lucky-bg" src="lucky_bg.webp" alt="">
 
   <div class="lucky-inner">
 
@@ -1707,22 +1702,22 @@
 
     <div class="lucky-grid">
       <div class="lucky-item" data-aos style="transition-delay:0.05s">
-        <img src="lucky1.png" alt="LG Gram">
+        <img loading="lazy" decoding="async" src="lucky1.webp" alt="LG Gram">
       </div>
       <div class="lucky-item" data-aos style="transition-delay:0.12s">
-        <img src="lucky2.png" alt="iPad">
+        <img loading="lazy" decoding="async" src="lucky2.webp" alt="iPad">
       </div>
       <div class="lucky-item" data-aos style="transition-delay:0.19s">
-        <img src="lucky3.png" alt="iPhone">
+        <img loading="lazy" decoding="async" src="lucky3.webp" alt="iPhone">
       </div>
       <div class="lucky-item" data-aos style="transition-delay:0.26s">
-        <img src="lucky4.png" alt="Galaxy Series">
+        <img loading="lazy" decoding="async" src="lucky4.webp" alt="Galaxy Series">
       </div>
       <div class="lucky-item" data-aos style="transition-delay:0.33s">
-        <img src="lucky5.png" alt="Apple Watch">
+        <img loading="lazy" decoding="async" src="lucky5.webp" alt="Apple Watch">
       </div>
       <div class="lucky-item" data-aos style="transition-delay:0.40s">
-        <img src="lucky6.png" alt="Galaxy Watch">
+        <img loading="lazy" decoding="async" src="lucky6.webp" alt="Galaxy Watch">
       </div>
     </div>
 
@@ -1740,7 +1735,7 @@
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
         <p class="faq-q-text"><span class="faq-q-label">Q.</span> Grand Hyatt Seoul 주차가 가능할까요?</p>
-        <img class="faq-arrow" src="arrow.png" alt="▼">
+        <img loading="lazy" decoding="async" class="faq-arrow" src="arrow.png" alt="▼">
       </div>
       <div class="faq-a">
         <p class="faq-a-inner">A. VCC 참석자의 경우 무료 주차가 가능합니다.</p>
@@ -1750,7 +1745,7 @@
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
         <p class="faq-q-text"><span class="faq-q-label">Q.</span> 회계사나 세무사처럼 전문직만 참석이 가능한가요?</p>
-        <img class="faq-arrow" src="arrow.png" alt="▼">
+        <img loading="lazy" decoding="async" class="faq-arrow" src="arrow.png" alt="▼">
       </div>
       <div class="faq-a">
         <p class="faq-a-inner">A. 네 맞습니다. VCC는 개업 전문직을 대상으로 하는 행사입니다.</p>
@@ -1760,7 +1755,7 @@
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
         <p class="faq-q-text"><span class="faq-q-label">Q.</span> 주로 어떤 내용들로 진행되는지 궁금합니다.</p>
-        <img class="faq-arrow" src="arrow.png" alt="▼">
+        <img loading="lazy" decoding="async" class="faq-arrow" src="arrow.png" alt="▼">
       </div>
       <div class="faq-a">
         <p class="faq-a-inner">A. 개업 전문직들에게 새로운 비전과 돌파구를 제시해드립니다.</p>
@@ -1770,7 +1765,7 @@
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
         <p class="faq-q-text"><span class="faq-q-label">Q.</span> 지방에 거주하고 있는데 온라인으로 참석이 가능할까요?</p>
-        <img class="faq-arrow" src="arrow.png" alt="▼">
+        <img loading="lazy" decoding="async" class="faq-arrow" src="arrow.png" alt="▼">
       </div>
       <div class="faq-a">
         <p class="faq-a-inner">A. 아쉽지만 오프라인으로만 진행되는 점 양해 부탁드립니다.</p>
@@ -1792,7 +1787,7 @@
 
     <!-- 좌측: 지도 -->
     <div class="loc-box loc-map">
-      <img src="map.png" alt="그랜드 하얏트 서울 지도">
+      <img loading="lazy" decoding="async" src="map.webp" alt="그랜드 하얏트 서울 지도">
     </div>
 
     <!-- 우측: 정보 -->
@@ -1828,7 +1823,7 @@
 
 <!-- ════ 섹션 14: D-Day 타이머 ════ -->
 <section id="timerSection">
-  <img class="timer-bg" src="timer_bg.png" alt="">
+  <img loading="lazy" decoding="async" class="timer-bg" src="timer_bg.webp" alt="">
   <div class="timer-overlay"></div>
   <div class="timer-content" data-aos>
     <div id="countdown">00:00:00:00</div>
@@ -1840,10 +1835,10 @@
 
 <!-- ════ 섹션 15: 문의 채널 ════ -->
 <section id="contactSection">
-  <img class="contact-bg" src="contact_bg.png" alt="">
+  <img loading="lazy" decoding="async" class="contact-bg" src="contact_bg.webp" alt="">
   <div class="contact-overlay"></div>
   <div class="contact-content" data-aos>
-    <img class="contact-title-img" src="contact_title.png" alt="VCC 컨퍼런스 문의 채널">
+    <img loading="lazy" decoding="async" class="contact-title-img" src="contact_title.webp" alt="VCC 컨퍼런스 문의 채널">
     <a href="#" class="contact-btn">문의하기</a>
   </div>
 </section>
@@ -1852,7 +1847,7 @@
 <footer id="siteFooter">
 
   <div class="footer-left">
-    <img class="footer-logo" src="vcc_logo.png" alt="VCC">
+    <img loading="lazy" decoding="async" class="footer-logo" src="vcc_logo.png" alt="VCC">
     <div class="footer-info">
       <p>주소 서울시 강남구 인터콘티넨탈 B2 스파크플러스</p>
       <p>이메일 mail@richdivine.co.kr</p>
@@ -1877,8 +1872,15 @@
   const videoMobile  = document.getElementById('scrollVideoMobile');
   const mobileQuery  = window.matchMedia('(max-width: 768px)');
   let video = mobileQuery.matches ? videoMobile : videoDesktop;
-  var inactiveVideo = (video === videoMobile) ? videoDesktop : videoMobile;
-  inactiveVideo.preload = 'metadata'; /* 비활성 화면 비율 영상은 우선 메타데이터만 로드 */
+  /* 활성 영상 1개만 실제 로드 */
+  function activate(v) {
+    if (!v.src && v.dataset.src) {
+      v.preload = 'auto';
+      v.src = v.dataset.src;
+      v.load();
+    }
+  }
+  activate(video);
   const section = document.getElementById('videoSection');
   const bar     = document.getElementById('progressBar');
   const hint    = document.getElementById('scrollHint');
@@ -1896,15 +1898,19 @@
   let videoEnded = false;
   let scrollLocked = true;
 
+  /* 레이아웃 캐시 — resize/load에서만 재계산해 매 프레임 강제 리플로우 방지 */
+  var vpH = window.innerHeight;
+  var secTop = 0, scrubHeight = 0, cardTotal = 0, bodyScrollH = 0;
+
   document.body.style.overflow = 'hidden';
 
   /* ════════════════════════════════
      텍스트 타이밍
   ════════════════════════════════ */
   const timings = [
-    { el: text1, inStart: 15.0, outStart: 17.0 }, /* 2초 유지 */
-    { el: text2, inStart: 17.3, outStart: 19.3 }, /* 2초 유지 */
-    { el: text3, inStart: 19.6, outStart: 21.6 }, /* 2초 유지 */
+    { el: text1, inStart: 7.0,  outStart: 9.0  }, /* 2초 유지 */
+    { el: text2, inStart: 9.3,  outStart: 11.3 }, /* 2초 유지 */
+    { el: text3, inStart: 11.6, outStart: 13.6 }, /* 2초 유지 */
   ];
 
   function updateTexts(t) {
@@ -1980,7 +1986,7 @@
     var wasTime = lastTime;
     video.pause();
     video = nextVideo;
-    if (video.preload !== 'auto') { video.preload = 'auto'; video.load(); }
+    activate(video);
     isReady    = false;
     videoEnded = false;
     lastTime   = -1;
@@ -2008,19 +2014,19 @@
      영상 스크러빙
   ════════════════════════════════ */
   function scrub() {
-    var scrollY     = window.scrollY;
-    var secTop      = section.offsetTop;
-    var scrubHeight = section.offsetHeight - window.innerHeight;
+    var scrollY = window.scrollY;
 
     if (isReady && duration && scrubHeight > 0) {
       var progress   = Math.max(0, Math.min((scrollY - secTop) / scrubHeight, 1));
       var targetTime = duration * progress;
 
-      if (Math.abs(targetTime - lastTime) > 0.05) {
+      /* seek 중이면 currentTime/lastTime을 함께 건너뛰어 프레임 유실 방지 */
+      if (!video.seeking && Math.abs(targetTime - lastTime) > 0.05) {
         lastTime = targetTime;
-        if (!video.seeking) video.currentTime = targetTime;
-        updateTexts(targetTime);
+        video.currentTime = targetTime;
       }
+      updateTexts(targetTime); /* 텍스트는 seek 상태와 무관하게 갱신 */
+
       if (progress >= 1 && !videoEnded) {
         videoEnded = true;
         video.currentTime = duration;
@@ -2028,8 +2034,7 @@
       hint.style.opacity = Math.max(0, 1 - progress * 6);
     }
 
-    var totalH = document.body.scrollHeight - window.innerHeight;
-    bar.style.width = totalH > 0 ? (window.scrollY / totalH * 100) + '%' : '0%';
+    bar.style.width = bodyScrollH > 0 ? (scrollY / bodyScrollH * 100) + '%' : '0%';
   }
 
   /* ════════════════════════════════
@@ -2039,10 +2044,19 @@
   var card1      = document.getElementById('card1');
   var card2      = document.getElementById('card2');
 
+  /* 레이아웃 값 재계산 — 초기/resize/load에서만 호출 */
+  function recalcLayout() {
+    vpH = window.innerHeight;
+    secTop = section.offsetTop;
+    scrubHeight = section.offsetHeight - vpH;
+    cardTotal = cardScroll ? cardScroll.offsetHeight - vpH : 0;
+    bodyScrollH = document.body.scrollHeight - vpH;
+  }
+
   function updateCards() {
-    if (!cardScroll) return;
+    if (!cardScroll || cardTotal <= 0) return;
     var rect     = cardScroll.getBoundingClientRect();
-    var total    = cardScroll.offsetHeight - window.innerHeight;
+    var total    = cardTotal;
     var scrolled = -rect.top;
     // 전체 스크롤 구간 중 후반 50%에서만 카드 전환
     var raw      = scrolled / total;
@@ -2070,6 +2084,11 @@
     }
   }, { passive: true });
 
+  /* 레이아웃 캐시 초기화 및 재계산 이벤트 */
+  window.addEventListener('resize', function () { recalcLayout(); scrub(); updateCards(); });
+  window.addEventListener('load',   function () { recalcLayout(); scrub(); updateCards(); });
+
+  recalcLayout();
   scrub();
   updateCards();
 
@@ -2087,6 +2106,23 @@
   }, { threshold: 0.2, rootMargin: '0px 0px -40px 0px' });
 
   aosEls.forEach(function(el) { ioObserver.observe(el); });
+
+  /* ── 배경 루프 영상 지연 로드 ── */
+  var lazyVideoObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      var v = entry.target;
+      if (entry.isIntersecting) {
+        if (!v.src && v.dataset.src) { v.preload = 'auto'; v.src = v.dataset.src; }
+        var p = v.play();
+        if (p) p.catch(function () {});
+      } else {
+        v.pause();
+      }
+    });
+  }, { rootMargin: '200px 0px' });
+  document.querySelectorAll('.lazy-video').forEach(function (v) {
+    lazyVideoObserver.observe(v);
+  });
 
   /* ── FAQ 토글 ── */
   function toggleFaq(el) {
