@@ -2168,6 +2168,269 @@
 </script>
 
 
+<!-- ════════════════════════════════════════════════════════════
+     미리보기 편집 모듈  (팀 배포용 · 클라이언트 사이드 전용)
+     - 우측 상단 [미리보기 편집] 버튼으로 열림
+     - 로컬 영상/사진을 골라 즉석으로 화면에 반영 (URL.createObjectURL)
+     - 아무것도 저장/업로드/배포되지 않음. 새로고침하면 원본 복구.
+     - 라이브 사이트 동작에는 영향 없음 (열었을 때만 동작)
+════════════════════════════════════════════════════════════ -->
+<style id="mpv-style">
+  #mpvBtn{position:fixed;top:14px;right:14px;z-index:2147483000;
+    font-family:'Pretendard',system-ui,sans-serif;font-size:13px;font-weight:700;
+    color:#fff;background:rgba(20,20,28,.82);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.25);border-radius:999px;
+    padding:9px 15px;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.35);
+    display:flex;align-items:center;gap:6px;line-height:1;transition:background .15s;}
+  #mpvBtn:hover{background:rgba(35,35,48,.95);}
+  #mpvBtn .mpv-dot{width:7px;height:7px;border-radius:50%;background:#5b8cff;box-shadow:0 0 8px #5b8cff;}
+  #mpvPanel{position:fixed;top:0;right:0;height:100%;width:370px;max-width:92vw;
+    z-index:2147483001;background:#12121a;color:#eaeaf0;
+    font-family:'Pretendard',system-ui,sans-serif;
+    transform:translateX(102%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow:-8px 0 40px rgba(0,0,0,.5);display:flex;flex-direction:column;}
+  #mpvPanel.mpv-open{transform:translateX(0);}
+  .mpv-head{padding:16px 16px 12px;border-bottom:1px solid rgba(255,255,255,.08);flex:0 0 auto;}
+  .mpv-head-top{display:flex;align-items:center;justify-content:space-between;}
+  .mpv-title{font-size:15px;font-weight:800;letter-spacing:-.01em;}
+  .mpv-x{background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;line-height:1;padding:2px 6px;}
+  .mpv-x:hover{color:#fff;}
+  .mpv-note{margin-top:10px;font-size:11.5px;line-height:1.5;color:#c9c9d6;
+    background:rgba(91,140,255,.12);border:1px solid rgba(91,140,255,.28);
+    border-radius:8px;padding:8px 10px;}
+  .mpv-note b{color:#9fb8ff;}
+  .mpv-reset-all{margin-top:10px;width:100%;font-family:inherit;font-size:12px;font-weight:600;
+    color:#ffb4b4;background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.3);
+    border-radius:8px;padding:8px;cursor:pointer;}
+  .mpv-reset-all:hover{background:rgba(255,80,80,.2);}
+  .mpv-list{flex:1 1 auto;overflow-y:auto;padding:10px 12px 24px;}
+  .mpv-group{margin-top:10px;font-size:11px;font-weight:800;letter-spacing:.06em;
+    color:#8a8aa0;text-transform:uppercase;padding:6px 2px;}
+  .mpv-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+    border:1px solid transparent;transition:background .12s,border-color .12s;cursor:pointer;}
+  .mpv-row:hover{background:rgba(255,255,255,.04);}
+  .mpv-row.mpv-drag{border-color:#5b8cff;background:rgba(91,140,255,.14);}
+  .mpv-row.mpv-changed{border-color:rgba(91,140,255,.35);}
+  .mpv-thumb{flex:0 0 auto;width:44px;height:44px;border-radius:8px;overflow:hidden;
+    background:#26263a center/cover no-repeat;display:flex;align-items:center;justify-content:center;
+    font-size:20px;border:1px solid rgba(255,255,255,.08);}
+  .mpv-meta{flex:1 1 auto;min-width:0;}
+  .mpv-label{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mpv-file{font-size:11px;color:#9a9ab0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .mpv-row.mpv-changed .mpv-file{color:#9fb8ff;}
+  .mpv-act{flex:0 0 auto;display:flex;gap:5px;}
+  .mpv-pick,.mpv-undo{font-family:inherit;font-size:11px;font-weight:600;border-radius:7px;
+    padding:6px 9px;cursor:pointer;border:1px solid rgba(255,255,255,.18);}
+  .mpv-pick{color:#fff;background:rgba(91,140,255,.85);border-color:transparent;}
+  .mpv-pick:hover{background:#5b8cff;}
+  .mpv-undo{color:#ccc;background:transparent;display:none;}
+  .mpv-undo:hover{color:#fff;border-color:rgba(255,255,255,.4);}
+  .mpv-row.mpv-changed .mpv-undo{display:inline-block;}
+  @media (max-width:480px){#mpvPanel{width:100vw;max-width:100vw;}#mpvBtn{font-size:12px;padding:8px 12px;}}
+</style>
+
+<button id="mpvBtn" type="button" aria-label="미리보기 편집 열기"><span class="mpv-dot"></span>미리보기 편집</button>
+<aside id="mpvPanel" aria-hidden="true">
+  <div class="mpv-head">
+    <div class="mpv-head-top">
+      <div class="mpv-title">미리보기 편집</div>
+      <button class="mpv-x" id="mpvClose" type="button" aria-label="닫기">&times;</button>
+    </div>
+    <div class="mpv-note">
+      각 항목에 <b>영상·사진 파일을 끌어다 놓거나</b> [파일] 버튼으로 골라 바로 확인하세요.<br>
+      ※ <b>미리보기 전용</b>입니다 — 저장·업로드·배포되지 않으며, <b>새로고침하면 원래대로</b> 돌아갑니다.
+    </div>
+    <button class="mpv-reset-all" id="mpvResetAll" type="button">↺ 전체 원본으로 되돌리기</button>
+  </div>
+  <div class="mpv-list" id="mpvList"></div>
+</aside>
+<input type="file" id="mpvFileInput" style="display:none">
+
+<script>
+(function(){
+  var LABELS = {
+    hero_pc:'히어로 영상 · PC (가로)', hero_mo:'히어로 영상 · 모바일 (세로)',
+    after_web:'After 섹션 배경영상', venue_web:'장소 섹션 배경영상', cta_web:'참가신청 배경영상',
+    bg:'메인 배경', vcc_logo:'VCC 로고', arrow:'화살표 아이콘',
+    conv_bg:'컨버전스 배경', emotion_bg:'감성터치 배경', lucky_bg:'럭키드로우 배경',
+    timer_bg:'D-Day 타이머 배경', contact_bg:'문의 배경', contact_title:'문의 타이틀',
+    main1:'메인 강사 1', main2:'메인 강사 2', sub1:'서브 강사 1', sub2:'서브 강사 2', sub3:'서브 강사 3',
+    lecture1:'강의 사진 1', lecture2:'강의 사진 2',
+    curr1:'커리큘럼 1', curr2:'커리큘럼 2', curr3:'커리큘럼 3',
+    lucky1:'럭키드로우 1', lucky2:'럭키드로우 2', lucky3:'럭키드로우 3',
+    lucky4:'럭키드로우 4', lucky5:'럭키드로우 5', lucky6:'럭키드로우 6', map:'지도'
+  };
+  var ORDER = ['hero_pc.mp4','hero_mo.mp4','after_web.mp4','venue_web.mp4','cta_web.mp4',
+    'bg.webp','vcc_logo.png','main1.webp','main2.webp','sub1.webp','sub2.webp','sub3.webp',
+    'lecture1.webp','lecture2.webp','curr1.webp','curr2.webp','curr3.webp',
+    'conv_bg.webp','emotion_bg.webp','timer_bg.webp','contact_bg.webp','contact_title.webp',
+    'lucky_bg.webp','lucky1.webp','lucky2.webp','lucky3.webp','lucky4.webp','lucky5.webp','lucky6.webp',
+    'map.webp','arrow.png'];
+
+  var VID_RE = /\.(mp4|mov|m4v|webm|avi|mkv)$/i;
+  function base(u){ if(!u) return ''; u=u.split('?')[0].split('#')[0]; return u.slice(u.lastIndexOf('/')+1); }
+  function labelFor(name){ var k=name.replace(/\.[^.]+$/,''); return LABELS[k]||name; }
+
+  var slots = {}; // name -> slot
+  function ensure(name,type){
+    if(!slots[name]) slots[name]={name:name,type:type,videos:[],vidOrig:[],imgs:[],imgOrig:[],rules:[],inlines:[],changed:false,curName:''};
+    return slots[name];
+  }
+
+  /* ---- 대상 자동 수집 ---- */
+  // 영상
+  Array.prototype.forEach.call(document.querySelectorAll('video'), function(v){
+    var src=v.getAttribute('data-src')||v.getAttribute('src'); if(!src) return;
+    var name=base(src); if(!VID_RE.test(name)) return;
+    var s=ensure(name,'video'); s.videos.push(v); s.vidOrig.push(name);
+  });
+  // 이미지 (<img>)
+  Array.prototype.forEach.call(document.querySelectorAll('img'), function(im){
+    var src=im.getAttribute('src')||''; if(/^(blob:|data:)/.test(src)) return;
+    var name=base(src); if(!name||VID_RE.test(name)) return;
+    var s=ensure(name,'img'); s.imgs.push(im); s.imgOrig.push(im.getAttribute('src'));
+  });
+  // 배경 이미지 (CSS 규칙)
+  function scanRules(rules){
+    if(!rules) return;
+    for(var i=0;i<rules.length;i++){ var r=rules[i];
+      if(r.style){
+        var bg=r.style.backgroundImage||''; var sh=r.style.background||'';
+        var src=bg.indexOf('url(')>=0?bg:(sh.indexOf('url(')>=0?sh:'');
+        if(src){
+          var m=src.match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/);
+          if(m){ var name=base(m[1]);
+            if(name && !VID_RE.test(name)){ ensure(name,'img').rules.push({rule:r,orig:r.style.backgroundImage}); }
+          }
+        }
+      }
+      /* 중첩 규칙(@media/@supports/CSS Nesting)만 재귀 — 최신 브라우저는 일반 규칙도 빈 cssRules를 가지므로 length 확인 */
+      if(r.cssRules && r.cssRules.length){ scanRules(r.cssRules); }
+    }
+  }
+  for(var si=0;si<document.styleSheets.length;si++){
+    try{ scanRules(document.styleSheets[si].cssRules); }catch(e){/* 외부(CDN) 스타일시트는 건너뜀 */}
+  }
+  // 배경 이미지 (인라인 style)
+  Array.prototype.forEach.call(document.querySelectorAll('[style]'), function(el){
+    var bg=el.style.backgroundImage||''; if(bg.indexOf('url(')<0) return;
+    var m=bg.match(/url\(\s*['"]?([^'")]+)['"]?\s*\)/); if(!m) return;
+    var name=base(m[1]); if(!name||VID_RE.test(name)) return;
+    var s=ensure(name,'img'); s.inlines.push({el:el,orig:el.style.backgroundImage});
+  });
+
+  /* ---- 적용 / 되돌리기 ---- */
+  function safePlay(v){ try{ var p=v.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
+  function setVideo(v,url){
+    try{ v.pause(); }catch(e){}
+    v.setAttribute('data-src',url); v.src=url; try{ v.load(); }catch(e){}
+    if(v.classList.contains('scroll-video')){
+      try{ if(typeof video!=='undefined' && video===v){ isReady=false; videoEnded=false; lastTime=-1; } }catch(e){}
+    } else { safePlay(v); }
+  }
+  function afterMedia(){
+    try{ if(typeof recalcLayout==='function'){ setTimeout(function(){ recalcLayout(); if(typeof scrub==='function') scrub(); },200); } }catch(e){}
+  }
+  function apply(name,file){
+    var s=slots[name]; if(!s) return;
+    var url=URL.createObjectURL(file);
+    if(s._url){ try{ URL.revokeObjectURL(s._url); }catch(e){} }
+    s._url=url;
+    s.videos.forEach(function(v){ setVideo(v,url); });
+    s.imgs.forEach(function(im){ im.removeAttribute('srcset'); im.src=url; });
+    s.rules.forEach(function(o){ o.rule.style.backgroundImage='url("'+url+'")'; });
+    s.inlines.forEach(function(o){ o.el.style.backgroundImage='url("'+url+'")'; });
+    s.changed=true; s.curName=file.name;
+    afterMedia(); renderRow(name);
+  }
+  function reset(name){
+    var s=slots[name]; if(!s||!s.changed) return;
+    s.videos.forEach(function(v,i){ setVideo(v,s.vidOrig[i]); });
+    s.imgs.forEach(function(im,i){ im.src=s.imgOrig[i]; });
+    s.rules.forEach(function(o){ o.rule.style.backgroundImage=o.orig; });
+    s.inlines.forEach(function(o){ o.el.style.backgroundImage=o.orig; });
+    if(s._url){ setTimeout(function(){ try{ URL.revokeObjectURL(s._url); }catch(e){} s._url=null; },800); }
+    s.changed=false; s.curName='';
+    afterMedia(); renderRow(name);
+  }
+  function resetAll(){ Object.keys(slots).forEach(function(n){ if(slots[n].changed) reset(n); }); }
+
+  /* ---- UI ---- */
+  var listEl=document.getElementById('mpvList');
+  var fileInput=document.getElementById('mpvFileInput');
+  var pendingKey=null;
+  fileInput.addEventListener('change',function(){
+    if(pendingKey && fileInput.files && fileInput.files[0]) apply(pendingKey,fileInput.files[0]);
+    fileInput.value=''; pendingKey=null;
+  });
+  function openPicker(name){
+    var s=slots[name]; pendingKey=name;
+    fileInput.setAttribute('accept', s.type==='video'?'video/*':'image/*');
+    fileInput.click();
+  }
+  function thumbFor(s){
+    if(s.type==='video') return '🎬';
+    var url = s.curName ? (s._url) : s.name;
+    return '<span style="display:block;width:100%;height:100%;background:#26263a center/cover no-repeat;background-image:url(\''+url+'\')"></span>';
+  }
+  function renderRow(name){
+    var s=slots[name]; var row=listEl.querySelector('.mpv-row[data-key="'+name+'"]'); if(!row) return;
+    row.classList.toggle('mpv-changed',s.changed);
+    row.querySelector('.mpv-thumb').innerHTML=thumbFor(s);
+    row.querySelector('.mpv-file').textContent = s.changed ? ('▶ '+s.curName) : ('원본: '+s.name);
+  }
+  function buildRow(name){
+    var s=slots[name];
+    var row=document.createElement('div');
+    row.className='mpv-row'; row.setAttribute('data-key',name);
+    row.innerHTML='<div class="mpv-thumb"></div>'
+      +'<div class="mpv-meta"><div class="mpv-label"></div><div class="mpv-file"></div></div>'
+      +'<div class="mpv-act"><button class="mpv-pick" type="button">파일</button>'
+      +'<button class="mpv-undo" type="button">되돌리기</button></div>';
+    row.querySelector('.mpv-label').textContent=labelFor(name);
+    row.querySelector('.mpv-pick').addEventListener('click',function(e){ e.stopPropagation(); openPicker(name); });
+    row.querySelector('.mpv-undo').addEventListener('click',function(e){ e.stopPropagation(); reset(name); });
+    row.addEventListener('click',function(){ openPicker(name); });
+    // 드래그&드롭
+    row.addEventListener('dragover',function(e){ e.preventDefault(); row.classList.add('mpv-drag'); });
+    row.addEventListener('dragleave',function(){ row.classList.remove('mpv-drag'); });
+    row.addEventListener('drop',function(e){
+      e.preventDefault(); row.classList.remove('mpv-drag');
+      var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(!f) return;
+      var isVid=VID_RE.test(f.name)||/^video\//.test(f.type);
+      if(s.type==='video' && !isVid){ alert('이 칸에는 영상 파일을 넣어주세요.'); return; }
+      if(s.type==='img' && isVid){ alert('이 칸에는 사진(이미지) 파일을 넣어주세요.'); return; }
+      apply(name,f);
+    });
+    listEl.appendChild(row);
+    renderRow(name);
+  }
+  function build(){
+    var names=Object.keys(slots);
+    names.sort(function(a,b){
+      var ia=ORDER.indexOf(a), ib=ORDER.indexOf(b);
+      if(ia<0) ia=999; if(ib<0) ib=999;
+      if(ia!==ib) return ia-ib;
+      return a.localeCompare(b);
+    });
+    var vids=names.filter(function(n){ return slots[n].type==='video'; });
+    var imgs=names.filter(function(n){ return slots[n].type==='img'; });
+    if(vids.length){ var g=document.createElement('div'); g.className='mpv-group'; g.textContent='🎬 영상'; listEl.appendChild(g); vids.forEach(buildRow); }
+    if(imgs.length){ var g2=document.createElement('div'); g2.className='mpv-group'; g2.textContent='🖼 사진'; listEl.appendChild(g2); imgs.forEach(buildRow); }
+  }
+  build();
+
+  /* ---- 열기/닫기 ---- */
+  var panel=document.getElementById('mpvPanel'), btn=document.getElementById('mpvBtn');
+  var built=false;
+  function openPanel(){ panel.classList.add('mpv-open'); panel.setAttribute('aria-hidden','false'); }
+  function closePanel(){ panel.classList.remove('mpv-open'); panel.setAttribute('aria-hidden','true'); }
+  btn.addEventListener('click',function(){ panel.classList.contains('mpv-open')?closePanel():openPanel(); });
+  document.getElementById('mpvClose').addEventListener('click',closePanel);
+  document.getElementById('mpvResetAll').addEventListener('click',resetAll);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePanel(); });
+})();
+</script>
 
 </body>
 </html>
