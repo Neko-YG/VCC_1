@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VCC Product Panels — Gift Box Burst (Mobile Ver.)</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #030308; }
+  canvas { display: block; }
+  /* LUCKY DRAW title — fades in when the whole reveal effect finishes */
+  #luckyTitle {
+    position: fixed; top: calc(68px + env(safe-area-inset-top)); left: 50%;
+    transform: translateX(-50%) translateY(14px);
+    z-index: 10; text-align: center; pointer-events: none; width: 92vw;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    opacity: 0; transition: opacity 1s ease, transform 1s ease;
+  }
+  #luckyTitle.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .lucky-heading {
+    font-size: 28px; font-weight: 800; letter-spacing: 0.1em; color: #ffffff;
+    text-shadow: 0 0 20px rgba(90,120,255,0.55);
+  }
+  .lucky-heading .accent {
+    background: linear-gradient(100deg, #6a8fff 10%, #a06bff 90%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .lucky-sub {
+    margin-top: 12px; font-size: 12px; line-height: 1.7;
+    color: rgba(255,255,255,0.78); letter-spacing: 0.01em; word-break: keep-all;
+  }
+  /* bottom-center swipe hint: sliding dot + pulsing chevrons */
+  #swipeHint {
+    position: fixed; bottom: calc(22px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    z-index: 10; pointer-events: none; text-align: center;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    color: rgba(255,255,255,0.65); transition: opacity 0.4s;
+  }
+  #swipeHint.hidden { opacity: 0; }
+  .swipe-track { position: relative; width: 140px; height: 26px; margin: 0 auto 8px; }
+  .swipe-dot {
+    position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+    border-radius: 50%; background: rgba(255,255,255,0.85);
+    box-shadow: 0 0 12px 4px rgba(160,190,255,0.55);
+    animation: swipeSlide 2.2s ease-in-out infinite;
+  }
+  @keyframes swipeSlide {
+    0%   { transform: translate(-50%,-50%) translateX(-46px); }
+    50%  { transform: translate(-50%,-50%) translateX(46px); }
+    100% { transform: translate(-50%,-50%) translateX(-46px); }
+  }
+  .chev {
+    position: absolute; top: 50%; transform: translateY(-54%);
+    font-size: 20px; line-height: 1; color: rgba(255,255,255,0.5);
+    animation: chevPulse 2.2s ease-in-out infinite;
+  }
+  .chev.left { left: 0; }
+  .chev.right { right: 0; animation-delay: 1.1s; }
+  @keyframes chevPulse { 0%,100% { opacity: 0.9; } 50% { opacity: 0.25; } }
+  .swipe-text { font-size: 12px; letter-spacing: 0.05em; }
+  #replay {
+    position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 14px; z-index: 10;
+    font-family: -apple-system, 'Segoe UI', sans-serif; color: rgba(255,255,255,0.75);
+    font-size: 13px; letter-spacing: 0.03em; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 22px; padding: 10px 18px;
+    cursor: pointer; backdrop-filter: blur(8px);
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  #replay:hover { background: rgba(255,255,255,0.16); }
+</style>
+</head>
+<body>
+<div id="replay">&#8635; 다시보기</div>
+<!-- ================================================== -->
+<!-- 럭키드로우 타이틀 문구 — 여기서 텍스트를 수정하세요 -->
+<!-- ================================================== -->
+<div id="luckyTitle">
+  <div class="lucky-heading"><span class="accent">LUCKY</span> DRAW</div>
+  <div class="lucky-sub">개업 전문직 컨설팅 컨퍼런스에 참석하시는 분들에게는<br>추첨을 통해 약 1500만원 상당의 최신 IT 선물을 드립니다.</div>
+</div>
+<div id="swipeHint">
+  <div class="swipe-track">
+    <span class="chev left">&#8249;</span>
+    <div class="swipe-dot"></div>
+    <span class="chev right">&#8250;</span>
+  </div>
+  <div class="swipe-text">좌우로 드래그해 둘러보세요</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ============================================================
+// 카드 이미지 경로 — images/ 폴더의 파일명, 여기서 수정하세요
+// (홈페이지에 올릴 때는 IMG_BASE를 서버 이미지 경로로 변경)
+// ============================================================
+const IMG_BASE = '';
+const IMAGE_URLS = [
+  'lucky1.webp',  // 01 LG Gram
+  'lucky2.webp',  // 02 iPad
+  'lucky3.webp',  // 03 iPhone
+  'lucky4.webp',  // 04 Galaxy Series
+  'lucky5.webp',  // 05 Apple Watch
+  'lucky6.webp',  // 06 Galaxy Watch
+].map(n => IMG_BASE + n);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x030308, 0.026);
+
+// portrait screens get a wider fov and a camera pulled further back so the
+// reveal card fits inside the narrow width
+function isPortrait() { return window.innerWidth / window.innerHeight < 0.8; }
+const IS_PORTRAIT = isPortrait();
+const camera = new THREE.PerspectiveCamera(IS_PORTRAIT ? 56 : 42, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.8, IS_PORTRAIT ? 9.0 : 7.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.body.appendChild(renderer.domElement);
+
+// environment map — glass/iridescent materials need reflections to read as glass
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+// ---- Lighting ----
+scene.add(new THREE.AmbientLight(0x4a4a6a, 1.15));
+const rim1 = new THREE.PointLight(0x6a8fff, 6, 20);
+rim1.position.set(-4, 3, 3);
+scene.add(rim1);
+const rim2 = new THREE.PointLight(0xb388ff, 5, 20);
+rim2.position.set(4, 2, -3);
+scene.add(rim2);
+const keyLight = new THREE.PointLight(0xfff2d8, 2.4, 12);
+keyLight.position.set(0, 2, 5);
+scene.add(keyLight);
+// dedicated cool light on the holographic glass box so it sparkles before the burst
+const boxLight = new THREE.PointLight(0xcfe0ff, 4.5, 6);
+boxLight.position.set(0.5, 1.2, 2.2);
+scene.add(boxLight);
+const boxFillLight = new THREE.PointLight(0xffffff, 2.0, 6);
+boxFillLight.position.set(-1.5, -0.5, 2.5);
+scene.add(boxFillLight);
+// dedicated flash light that spikes at the moment the box pops open, then decays
+const burstFlash = new THREE.PointLight(0xeef2ff, 0, 9);
+burstFlash.position.set(0, 0.3, 0.5);
+scene.add(burstFlash);
+const BASE_INTENSITY = { rim1: rim1.intensity, rim2: rim2.intensity, key: keyLight.intensity, boxL: boxLight.intensity };
+
+// ============ AMBIENT SPACE BACKGROUND ============
+// soft round dot sprite so particles read as grains of light, not squares
+function makeDotTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0,   'rgba(255,255,255,1)');
+  grad.addColorStop(0.35,'rgba(255,255,255,0.85)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.25)');
+  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+const dotTex = makeDotTexture();
+
+function makeStars(count, spread, size, color, opacity) {
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const r = spread * (0.4 + Math.random()*0.6);
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos((Math.random()*2)-1);
+    positions[i*3+0] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i*3+2] = r * Math.cos(phi);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({ color, size, map: dotTex, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
+  return new THREE.Points(geo, mat);
+}
+const starsFar = makeStars(700, 28, 0.03, 0xaac4ff, 0.6);
+scene.add(starsFar);
+
+// (nebula glow removed)
+
+// ============ AMBIENT GLITTER (previous simple version) ============
+const GLITTER_PALETTE = [
+  new THREE.Color(0x9ff0ff), // holo cyan
+  new THREE.Color(0xffffff), // white
+  new THREE.Color(0xc9b6ff), // violet
+  new THREE.Color(0xffa8d8), // pink
+];
+const starsNear = makeStars(200, 14, 0.06, 0xffffff, 0.9);
+const glitter = makeStars(90, 9, 0.09, 0xd9b8ff, 0.85);
+scene.add(starsNear, glitter);
+
+// ============ GIFT BOX — holographic glass (pink→violet→blue) ============
+const boxGroup = new THREE.Group();
+scene.add(boxGroup);
+
+function makeGradientTexture(stops) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createLinearGradient(0, 128, 128, 0);
+  for (const [off, col] of stops) grad.addColorStop(off, col);
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const holoBodyTex   = makeGradientTexture([[0,'#ff6ec0'],[0.45,'#9f6bff'],[1,'#4f7dff']]);
+const holoRibbonTex = makeGradientTexture([[0,'#7ef0ff'],[0.5,'#5f8dff'],[1,'#c49bff']]);
+
+const boxSize = 1.0;
+const glassSettings = {
+  metalness: 0, roughness: 0.1, transmission: 0.85, thickness: 0.55,
+  ior: 1.45, clearcoat: 1, clearcoatRoughness: 0.06,
+  iridescence: 0.85, iridescenceIOR: 1.32,
+  envMapIntensity: 1.5, transparent: true, opacity: 1,
+};
+
+const boxBodyGeo = new THREE.BoxGeometry(boxSize, boxSize*0.72, boxSize);
+const boxBodyMat = new THREE.MeshPhysicalMaterial({
+  map: holoBodyTex, emissive: 0xffffff, emissiveMap: holoBodyTex, emissiveIntensity: 0.32,
+  ...glassSettings,
+});
+const boxBody = new THREE.Mesh(boxBodyGeo, boxBodyMat);
+boxGroup.add(boxBody);
+
+// glass lid — slightly wider slab capping the body (reference-style)
+const lidGeo = new THREE.BoxGeometry(boxSize*1.1, 0.18, boxSize*1.1);
+const lidMat = new THREE.MeshPhysicalMaterial({
+  map: holoBodyTex, emissive: 0xffffff, emissiveMap: holoBodyTex, emissiveIntensity: 0.38,
+  ...glassSettings, thickness: 0.3,
+});
+const boxLid = new THREE.Mesh(lidGeo, lidMat);
+boxLid.position.y = boxSize*0.36 - 0.03;
+boxGroup.add(boxLid);
+
+// crisp bright edge highlights on body + lid
+const boxEdgeMat = new THREE.LineBasicMaterial({ color: 0xe6efff, transparent: true, opacity: 0.55 });
+const boxEdgeLines = new THREE.LineSegments(new THREE.EdgesGeometry(boxBodyGeo), boxEdgeMat);
+boxGroup.add(boxEdgeLines);
+const lidEdgeLines = new THREE.LineSegments(new THREE.EdgesGeometry(lidGeo), boxEdgeMat);
+boxLid.add(lidEdgeLines); // child of the lid so it flies off with it on burst
+
+// ribbon (two crossing straps) — cyan-blue holographic glass
+const ribbonMat = new THREE.MeshPhysicalMaterial({
+  map: holoRibbonTex, emissive: 0xffffff, emissiveMap: holoRibbonTex, emissiveIntensity: 0.4,
+  ...glassSettings, thickness: 0.25, roughness: 0.07,
+});
+const ribbonThickness = 0.11;
+
+const ribbonVert = new THREE.Mesh(new THREE.BoxGeometry(ribbonThickness, boxSize*0.72*1.06, boxSize*1.14), ribbonMat);
+boxGroup.add(ribbonVert);
+const ribbonHoriz = new THREE.Mesh(new THREE.BoxGeometry(boxSize*1.14, boxSize*0.72*1.06, ribbonThickness), ribbonMat);
+boxGroup.add(ribbonHoriz);
+
+// bow on top: two flattened tori + center knot, same glass ribbon material
+const bowGroup = new THREE.Group();
+const loopGeo = new THREE.TorusGeometry(0.21, 0.058, 14, 28);
+const loopMat = ribbonMat;
+const loopL = new THREE.Mesh(loopGeo, loopMat);
+loopL.rotation.z = Math.PI/2.6;
+loopL.position.set(-0.17, boxSize*0.36 + 0.18, 0);
+bowGroup.add(loopL);
+const loopR = new THREE.Mesh(loopGeo, loopMat);
+loopR.rotation.z = -Math.PI/2.6;
+loopR.position.set(0.17, boxSize*0.36 + 0.18, 0);
+bowGroup.add(loopR);
+const knot = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), loopMat);
+knot.position.set(0, boxSize*0.36 + 0.13, 0);
+bowGroup.add(knot);
+boxGroup.add(bowGroup);
+
+// ribbon tails hanging slightly down the front face — translucent, no transmission
+const tailGeo = new THREE.PlaneGeometry(0.09, 0.32);
+const tailMat = new THREE.MeshPhysicalMaterial({
+  map: holoRibbonTex, transparent: true, opacity: 0.8, roughness: 0.15,
+  clearcoat: 1, clearcoatRoughness: 0.1, iridescence: 0.7, iridescenceIOR: 1.3,
+  side: THREE.DoubleSide,
+});
+const tailL = new THREE.Mesh(tailGeo, tailMat);
+tailL.position.set(-0.06, boxSize*0.36 - 0.08, boxSize/2 + 0.001);
+bowGroup.add(tailL);
+const tailR = new THREE.Mesh(tailGeo, tailMat);
+tailR.position.set(0.06, boxSize*0.36 - 0.1, boxSize/2 + 0.001);
+tailR.rotation.z = 0.15;
+bowGroup.add(tailR);
+
+// materials that fade out together when the box pops (o = base opacity)
+const fadeMats = [
+  { mat: boxBodyMat, o: 1 }, { mat: lidMat, o: 1 }, { mat: ribbonMat, o: 1 },
+  { mat: tailMat, o: 0.8 }, { mat: boxEdgeMat, o: 0.55 },
+];
+
+// ---- debris state (for fly-apart on burst) — lid pops straight up ----
+const ribbonPieces = [
+  { mesh: ribbonVert, dir: new THREE.Vector3(1, 0.3, 0.2).normalize(), spin: 6 },
+  { mesh: ribbonHoriz, dir: new THREE.Vector3(-0.8, 0.4, -0.3).normalize(), spin: -5 },
+  { mesh: bowGroup, dir: new THREE.Vector3(0, 1, 0.15).normalize(), spin: 4 },
+  { mesh: boxLid, dir: new THREE.Vector3(0.15, 1, -0.25).normalize(), spin: 7 },
+];
+ribbonPieces.forEach(rp => { rp.basePos = rp.mesh.position.clone(); });
+
+// ============ PRODUCT PANELS ============
+function makePanelTexture(url) {
+  const loader = new THREE.TextureLoader();
+  const tex = loader.load(url);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// diagonal white streak texture for the holo-card shine sweep during reveal
+function makeShineTexture() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, 512, 256);
+  g.save();
+  g.translate(256, 128);
+  g.rotate(-0.45);
+  const grad = g.createLinearGradient(-70, 0, 70, 0);
+  grad.addColorStop(0,    'rgba(255,255,255,0)');
+  grad.addColorStop(0.42, 'rgba(255,255,255,0.75)');
+  grad.addColorStop(0.5,  'rgba(255,255,255,1)');
+  grad.addColorStop(0.58, 'rgba(255,255,255,0.75)');
+  grad.addColorStop(1,    'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(-90, -400, 180, 800);
+  // thin secondary streak trailing the main one
+  const grad2 = g.createLinearGradient(90, 0, 130, 0);
+  grad2.addColorStop(0,   'rgba(255,255,255,0)');
+  grad2.addColorStop(0.5, 'rgba(255,255,255,0.5)');
+  grad2.addColorStop(1,   'rgba(255,255,255,0)');
+  g.fillStyle = grad2;
+  g.fillRect(90, -400, 40, 800);
+  g.restore();
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+const shineTexBase = makeShineTexture();
+
+const panels = [];
+const N = IMAGE_URLS.length;
+
+function finalPosFor(i) {
+  const angle = (i / N) * Math.PI * 2 + (i % 2 === 0 ? 0.15 : -0.1);
+  // tighter orbit on portrait so more cards stay inside the narrow view
+  const radius = (2.3 + (i % 3) * 0.4) * (IS_PORTRAIT ? 0.85 : 1);
+  const height = -0.6 + ((i * 53) % 140) / 100 * 1.6;
+  return new THREE.Vector3(Math.cos(angle) * radius, height, Math.sin(angle) * radius);
+}
+
+for (let i = 0; i < N; i++) {
+  const tex = makePanelTexture(IMAGE_URLS[i]);
+  const aspect = 419/429;
+  const panelH = 1.5;
+  const panelW = panelH * aspect;
+  const geo = new THREE.PlaneGeometry(panelW, panelH);
+  // physical material: the image stays readable via emissive, while the
+  // clearcoat layer picks up the moving rim lights for a subtle living sheen
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: tex, color: 0x8a8a8a, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.75,
+    roughness: 0.45, metalness: 0.05, clearcoat: 0.56, clearcoatRoughness: 0.22,
+    envMapIntensity: 0.8, transparent: true, opacity: 0,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(0,0,0);
+  mesh.scale.setScalar(1);
+  mesh.visible = false;
+  scene.add(mesh);
+
+  // holo shine sweep overlay — child plane just in front of the card face
+  const shineTex = shineTexBase.clone();
+  shineTex.needsUpdate = true;
+  const shineMat = new THREE.MeshBasicMaterial({
+    map: shineTex, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const shineMesh = new THREE.Mesh(geo, shineMat);
+  shineMesh.position.z = 0.012;
+  mesh.add(shineMesh);
+
+  const fp = finalPosFor(i);
+  // start each panel from a slightly different point inside the box volume
+  // (instead of every panel/particle exploding from the exact same origin)
+  const startPos = new THREE.Vector3(
+    (Math.random()-0.5) * boxSize * 0.5,
+    (Math.random()-0.5) * boxSize*0.72 * 0.5,
+    (Math.random()-0.5) * boxSize * 0.5
+  );
+  panels.push({
+    mesh, shineMat, shineTex, finalPos: fp, baseY: fp.y, startPos, startPos0: startPos.clone(),
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+// ============ BURST GLITTER (physics particles that fly with the panels) ============
+const BURST_COUNT = 170;
+const burstPos = new Float32Array(BURST_COUNT*3);
+const burstOrigin = new Float32Array(BURST_COUNT*3);
+const burstDelay = new Float32Array(BURST_COUNT);
+const burstVel = [];
+const burstVel0 = [];
+const burstColor = new Float32Array(BURST_COUNT*3);
+const burstSize = new Float32Array(BURST_COUNT);
+
+for (let i = 0; i < BURST_COUNT; i++) {
+  // spawn spread across the box volume, not a single point, and stagger
+  // each particle's launch slightly so the burst reads as an eruption
+  // rather than a synchronized firework shell
+  const ox = (Math.random()-0.5) * boxSize * 0.7;
+  const oy = (Math.random()-0.5) * boxSize*0.72 * 0.7;
+  const oz = (Math.random()-0.5) * boxSize * 0.7;
+  burstOrigin[i*3+0]=ox; burstOrigin[i*3+1]=oy; burstOrigin[i*3+2]=oz;
+  burstPos[i*3+0] = ox; burstPos[i*3+1] = oy; burstPos[i*3+2] = oz;
+  burstDelay[i] = Math.random() * 0.22;
+  const dir = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5+0.35, Math.random()-0.5).normalize();
+  const speed = 1.5 + Math.random()*3.5;
+  const v0 = dir.multiplyScalar(speed);
+  burstVel.push(v0.clone());
+  burstVel0.push(v0.clone());
+  const c = GLITTER_PALETTE[Math.floor(Math.random()*GLITTER_PALETTE.length)];
+  burstColor[i*3+0]=c.r; burstColor[i*3+1]=c.g; burstColor[i*3+2]=c.b;
+  burstSize[i] = 0.03 + Math.random()*0.05;
+}
+const burstGeo = new THREE.BufferGeometry();
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPos, 3));
+burstGeo.setAttribute('color', new THREE.BufferAttribute(burstColor, 3));
+const burstMat = new THREE.PointsMaterial({
+  size: 0.05, map: dotTex, vertexColors: true, transparent: true, opacity: 1,
+  blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+});
+const burstPoints = new THREE.Points(burstGeo, burstMat);
+scene.add(burstPoints);
+
+// ============ POP GLOW SPHERE (ball of light that swells out of the box) ============
+const glowMat = new THREE.MeshBasicMaterial({
+  color: 0xdfe6ff, transparent: true, opacity: 0,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+});
+const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), glowMat);
+glowSphere.visible = false;
+scene.add(glowSphere);
+// second, softer outer shell for a layered bloom look
+const glowMat2 = new THREE.MeshBasicMaterial({
+  color: 0xf2f5ff, transparent: true, opacity: 0,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+});
+const glowSphere2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), glowMat2);
+glowSphere2.visible = false;
+scene.add(glowSphere2);
+
+// ============ CARD REVEAL GLOW — halo sprite + dedicated flash light ============
+function makeRadialGlowTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0,    'rgba(255,255,255,1)');
+  grad.addColorStop(0.3,  'rgba(255,255,255,0.5)');
+  grad.addColorStop(0.65, 'rgba(255,255,255,0.14)');
+  grad.addColorStop(1,    'rgba(255,255,255,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+const haloMat = new THREE.SpriteMaterial({
+  map: makeRadialGlowTexture(), color: 0xbcd2ff, transparent: true, opacity: 0,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+});
+const halo = new THREE.Sprite(haloMat);
+scene.add(halo);
+// small point light that spikes as each card lands in front of the camera
+const cardFlash = new THREE.PointLight(0xdfe8ff, 0, 7);
+scene.add(cardFlash);
+
+// ============ LAPTOP FINALE — expanding gold particle ring ============
+const RING_COUNT = 70;
+const ringPos = new Float32Array(RING_COUNT*3);
+const ringVel = [];
+const ringGeo = new THREE.BufferGeometry();
+ringGeo.setAttribute('position', new THREE.BufferAttribute(ringPos, 3));
+const ringMat = new THREE.PointsMaterial({
+  color: 0xffdf9e, size: 0.07, map: dotTex, transparent: true, opacity: 0,
+  blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+});
+const ringPoints = new THREE.Points(ringGeo, ringMat);
+ringPoints.visible = false;
+scene.add(ringPoints);
+for (let i = 0; i < RING_COUNT; i++) ringVel.push(new THREE.Vector3());
+let ringStartTime = -1;
+
+function triggerRing(center) {
+  // expand outward in a camera-facing disc — reads as a halo around the item
+  const camRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+  const camUp = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+  for (let i = 0; i < RING_COUNT; i++) {
+    const a = (i / RING_COUNT) * Math.PI * 2 + Math.random()*0.1;
+    const dir = new THREE.Vector3()
+      .addScaledVector(camRight, Math.cos(a))
+      .addScaledVector(camUp, Math.sin(a));
+    const speed = 1.6 + Math.random()*0.9;
+    ringVel[i].copy(dir).multiplyScalar(speed);
+    ringPos[i*3+0] = center.x + dir.x*0.3;
+    ringPos[i*3+1] = center.y + dir.y*0.3;
+    ringPos[i*3+2] = center.z + dir.z*0.3;
+  }
+  ringGeo.attributes.position.needsUpdate = true;
+  ringMat.opacity = 1;
+  ringPoints.visible = true;
+  ringStartTime = performance.now()/1000;
+}
+
+// ---- Controls ----
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+controls.enableZoom = false;
+controls.minDistance = 3;
+controls.maxDistance = 14;
+controls.target.set(0, 0.5, 0);
+// vertical orbit locked — this runs as a page section, so up/down gestures
+// must scroll the page to the next section instead of tilting the camera
+controls.update();
+const lockedPolar = controls.getPolarAngle();
+controls.minPolarAngle = lockedPolar;
+controls.maxPolarAngle = lockedPolar;
+// OrbitControls sets touch-action:none; allow vertical swipes to pass through
+// to the page (horizontal swipes still rotate). Wheel isn't captured since
+// zoom is disabled, so desktop scroll also reaches the page.
+renderer.domElement.style.touchAction = 'pan-y';
+
+// hide the swipe hint while the user is actually dragging, bring it back after
+const swipeHint = document.getElementById('swipeHint');
+let hintTimer;
+renderer.domElement.addEventListener('pointerdown', () => {
+  swipeHint.classList.add('hidden');
+  clearTimeout(hintTimer);
+});
+window.addEventListener('pointerup', () => {
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => swipeHint.classList.remove('hidden'), 2000);
+});
+
+// ---- Bloom ----
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.6, 0.45);
+composer.addPass(bloom);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  // re-evaluate portrait/landscape on rotation and re-fit the framing
+  const portrait = isPortrait();
+  baseFov = portrait ? 56 : 42;
+  camera.fov = baseFov;
+  REVEAL_DIST = portrait ? 4.3 : 3.1;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---- Easing ----
+function easeOutBack(x) { const c1=2.4,c3=c1+1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); }
+function easeOutCubic(x) { return 1 - Math.pow(1-x,3); }
+function easeInOutCubic(x) { return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2,3)/2; }
+function easeOutQuad(x) { return 1 - (1-x)*(1-x); }
+function easeInQuad(x) { return x*x; }
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+
+// ================= TIMELINE =================
+// idle -> box bounces (2 small hops + one big leap) -> pops open at the apex
+// of the leap with a swelling ball of light -> cards are dealt out one by one,
+// each pausing in front of the camera, accelerating toward the end -> the
+// laptop (most expensive prize) comes out last, slower, with its own flash
+// and an expanding gold ring as the finale.
+
+const IDLE_DUR = 0.55;
+// bounce segments: [duration, peak height]; the last one is the big leap the
+// box pops open at the top of
+const BOUNCES = [
+  { dur: 0.26, h: 0.16 },
+  { dur: 0.30, h: 0.34 },
+  { dur: 0.24, h: 0.75, leap: true }, // rise only — pop happens at the apex
+];
+const BOUNCE_TOTAL = BOUNCES.reduce((s,b)=>s+b.dur, 0);
+const POP_T = IDLE_DUR + BOUNCE_TOTAL;      // moment the box pops open
+const POP_APEX_Y = BOUNCES[2].h;            // height at which it pops
+const POP_DUR = 0.5;                        // box shell ejecting/fading
+const GLOW_DUR = 0.55;                      // light ball swell + fade
+const FLASH_DUR = 0.4;
+const CAM_PUNCH_DUR = 0.45;
+const DEAL_START = POP_T + 0.3;             // first card leaves the box
+
+// ---- dealing order & pacing ----
+// panel indices: 0 LG Gram(laptop), 1 iPad, 2 iPhone, 3 Galaxy, 4 Apple Watch, 5 Galaxy Watch
+// order: 갤럭시워치 > 애플워치 > 갤럭시폰 > 아이폰 > 아이패드 > 그램(피날레)
+const DEAL_ORDER = [5, 4, 3, 2, 1, 0];
+const LAPTOP_IDX = 0;
+// per-card [flyDur, holdDur] — accelerates through the middle, then the
+// laptop deliberately slows back down for the finale (all ~15% faster)
+const DEAL_PACE = [
+  { fly: 0.37, hold: 0.57 },
+  { fly: 0.31, hold: 0.42 },
+  { fly: 0.26, hold: 0.31 },
+  { fly: 0.23, hold: 0.24 },
+  { fly: 0.21, hold: 0.21 },
+  { fly: 0.48, hold: 1.00 }, // laptop: slow, dramatic reveal
+];
+const SETTLE_DUR = 0.5;
+// precompute each card's start time: next card launches as soon as the
+// previous one finishes its hold (settle overlaps the next fly)
+const cardStart = [];
+{
+  let tAcc = DEAL_START;
+  for (let k = 0; k < DEAL_ORDER.length; k++) {
+    cardStart.push(tAcc);
+    tAcc += DEAL_PACE[k].fly + DEAL_PACE[k].hold;
+  }
+}
+// moment the whole effect is done: last card has flown, held, and settled
+const lastK = DEAL_ORDER.length - 1;
+const FINALE_END = cardStart[lastK] + DEAL_PACE[lastK].fly + DEAL_PACE[lastK].hold + SETTLE_DUR;
+const luckyTitle = document.getElementById('luckyTitle');
+
+let baseFov = camera.fov;
+const baseBloomStrength = bloom.strength;
+const boxBaseScale = new THREE.Vector3(1,1,1);
+// portrait: card pauses further away so its full width fits the narrow screen
+let REVEAL_DIST = IS_PORTRAIT ? 4.3 : 3.1;
+
+let startTime = performance.now()/1000;
+let lastFrameTime = startTime;
+let popTriggered = false;
+let laptopRevealed = false;
+
+// per-card runtime state
+const cardState = panels.map(() => ({
+  settleFrom: new THREE.Vector3(), settleCaptured: false,
+}));
+
+const _fwd = new THREE.Vector3();
+function getRevealPos(target) {
+  // a point directly in front of the camera, tracked live so the card stays
+  // centered even while the camera slowly auto-rotates
+  camera.getWorldDirection(_fwd);
+  return target.copy(camera.position).addScaledVector(_fwd, REVEAL_DIST).add(new THREE.Vector3(0, -0.05, 0));
+}
+
+function resetAnimation() {
+  startTime = performance.now()/1000;
+  lastFrameTime = startTime;
+  popTriggered = false;
+  laptopRevealed = false;
+  ringStartTime = -1;
+
+  boxGroup.visible = true;
+  boxGroup.position.set(0,0,0);
+  boxGroup.scale.copy(boxBaseScale);
+  fadeMats.forEach(f => { f.mat.opacity = f.o; });
+  ribbonPieces.forEach(rp => { rp.mesh.position.copy(rp.basePos); rp.mesh.rotation.set(0,0,0); });
+
+  panels.forEach((p, i) => {
+    p.startPos.copy(p.startPos0);
+    p.mesh.position.copy(p.startPos); p.mesh.scale.setScalar(1);
+    p.mesh.visible = false; p.mesh.material.opacity = 0;
+    p.mesh.quaternion.identity();
+    p.shineMat.opacity = 0;
+    cardState[i].settleCaptured = false;
+  });
+  haloMat.opacity = 0;
+  cardFlash.intensity = 0;
+  luckyTitle.classList.remove('show');
+
+  for (let i = 0; i < BURST_COUNT; i++) {
+    burstPos[i*3+0] = burstOrigin[i*3+0];
+    burstPos[i*3+1] = burstOrigin[i*3+1];
+    burstPos[i*3+2] = burstOrigin[i*3+2];
+    burstVel[i].copy(burstVel0[i]);
+  }
+  burstGeo.attributes.position.needsUpdate = true;
+  burstMat.opacity = 1;
+
+  glowSphere.visible = false; glowMat.opacity = 0; glowSphere.scale.setScalar(1);
+  glowSphere2.visible = false; glowMat2.opacity = 0; glowSphere2.scale.setScalar(1);
+  ringPoints.visible = false; ringMat.opacity = 0;
+
+  burstFlash.intensity = 0;
+  camera.fov = baseFov;
+  camera.updateProjectionMatrix();
+  bloom.strength = baseBloomStrength;
+  rim1.intensity = BASE_INTENSITY.rim1; rim2.intensity = BASE_INTENSITY.rim2;
+  keyLight.intensity = BASE_INTENSITY.key; boxLight.intensity = BASE_INTENSITY.boxL;
+}
+document.getElementById('replay').addEventListener('click', resetAnimation);
+
+// bounce height/squash at a given time within the bounce phase
+function bounceState(bt) {
+  let acc = 0;
+  for (const b of BOUNCES) {
+    if (bt < acc + b.dur) {
+      const lp = (bt - acc) / b.dur;
+      if (b.leap) {
+        // final leap: rise only, decelerating toward the apex where it pops
+        const y = easeOutQuad(lp) * b.h;
+        return { y, squash: -0.06 * (1-lp) }; // stretch tall as it launches
+      }
+      const y = Math.sin(lp * Math.PI) * b.h;
+      // squash on landing (start & end of each hop), stretch mid-air
+      const edge = Math.min(lp, 1-lp) / 0.18;
+      const squash = edge < 1 ? (1-edge) * 0.16 : -0.04 * Math.sin(lp*Math.PI);
+      return { y, squash };
+    }
+    acc += b.dur;
+  }
+  return { y: POP_APEX_Y, squash: 0 };
+}
+
+const clock = new THREE.Clock();
+const _reveal = new THREE.Vector3();
+const _flutterQ = new THREE.Quaternion();
+const _axisX = new THREE.Vector3(1, 0, 0.18).normalize();
+const _tiltE = new THREE.Euler();
+const _tiltQ = new THREE.Quaternion();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now()/1000;
+  const elapsed = now - startTime;
+  const dt = Math.min(now - lastFrameTime, 0.05);
+  lastFrameTime = now;
+  const t = clock.getElapsedTime();
+
+  // ---- box: idle spin, then bouncing, then pop ----
+  boxGroup.rotation.y = elapsed * 0.6;
+  boxGroup.rotation.x = Math.sin(elapsed*0.4) * 0.15;
+
+  if (elapsed <= IDLE_DUR) {
+    boxGroup.position.y = 0;
+    boxGroup.scale.copy(boxBaseScale);
+  } else if (elapsed <= POP_T) {
+    const bs = bounceState(elapsed - IDLE_DUR);
+    boxGroup.position.y = bs.y;
+    boxGroup.scale.set(1 + bs.squash*0.7, 1 - bs.squash, 1 + bs.squash*0.7);
+    // interior light leaks brighter with each hop — something wants out
+    const charge = clamp01((elapsed - IDLE_DUR) / BOUNCE_TOTAL);
+    boxLight.intensity = BASE_INTENSITY.boxL * (1 + charge * 1.2);
+  }
+
+  // ---- pop: shell ejects at the leap apex, light ball swells ----
+  if (elapsed > POP_T) {
+    if (!popTriggered) {
+      popTriggered = true;
+      burstFlash.position.set(0, POP_APEX_Y, 0.3);
+      burstFlash.intensity = 10;
+      glowSphere.visible = true; glowSphere2.visible = true;
+      glowSphere.position.set(0, POP_APEX_Y, 0);
+      glowSphere2.position.set(0, POP_APEX_Y, 0);
+      // shift glitter/panel origins up to the pop height
+      for (let i = 0; i < BURST_COUNT; i++) burstPos[i*3+1] += POP_APEX_Y;
+      panels.forEach(p => { p.startPos.y += POP_APEX_Y; });
+      rim1.intensity = BASE_INTENSITY.rim1 * 2.2;
+      rim2.intensity = BASE_INTENSITY.rim2 * 2.2;
+      keyLight.intensity = BASE_INTENSITY.key * 1.8;
+    }
+
+    const pp = clamp01((elapsed - POP_T) / POP_DUR);
+    const eased = easeOutQuad(pp);
+    fadeMats.forEach(f => { f.mat.opacity = f.o * (1 - eased); });
+    boxGroup.position.y = POP_APEX_Y + eased * 0.9;
+    boxGroup.position.z = eased * 0.3;
+    const popScale = Math.max(0.03, 1.06 - eased * 1.05);
+    boxGroup.scale.set(popScale, popScale, popScale);
+    ribbonPieces.forEach(rp => {
+      rp.mesh.position.copy(rp.basePos).addScaledVector(rp.dir, eased * 1.6);
+      rp.mesh.rotation.x += rp.spin * dt * eased;
+      rp.mesh.rotation.y += rp.spin * 0.7 * dt * eased;
+    });
+    if (pp >= 1) boxGroup.visible = false;
+
+    // light ball: rapid swell, soft fade
+    const gp = clamp01((elapsed - POP_T) / GLOW_DUR);
+    const swell = easeOutCubic(gp);
+    glowSphere.scale.setScalar(0.3 + swell * 2.6);
+    glowMat.opacity = 0.85 * (1 - easeInQuad(gp));
+    glowSphere2.scale.setScalar(0.3 + swell * 4.0);
+    glowMat2.opacity = 0.35 * (1 - easeInQuad(gp));
+    if (gp >= 1) { glowSphere.visible = false; glowSphere2.visible = false; }
+
+    // flash decay
+    const fp = clamp01((elapsed - POP_T) / FLASH_DUR);
+    burstFlash.intensity = 10 * Math.pow(1 - fp, 2.2);
+    rim1.intensity = BASE_INTENSITY.rim1 * (1 + 1.2 * (1 - fp));
+    rim2.intensity = BASE_INTENSITY.rim2 * (1 + 1.2 * (1 - fp));
+    keyLight.intensity = BASE_INTENSITY.key * (1 + 0.8 * (1 - fp));
+
+    // camera punch
+    const cp = clamp01((elapsed - POP_T) / CAM_PUNCH_DUR);
+    camera.fov = baseFov + Math.sin(cp * Math.PI) * 3.0;
+    camera.updateProjectionMatrix();
+    bloom.strength = baseBloomStrength + Math.sin(cp * Math.PI) * 0.45;
+  }
+
+  // ---- card dealing: one at a time, accelerating, laptop finale last ----
+  getRevealPos(_reveal);
+  let holdingCard = null, holdingHp = 0, holdingIsLaptop = false;
+  for (let k = 0; k < DEAL_ORDER.length; k++) {
+    const idx = DEAL_ORDER[k];
+    const p = panels[idx];
+    const st = cardState[idx];
+    const pace = DEAL_PACE[k];
+    const lt = elapsed - cardStart[k];
+    const isLaptop = (idx === LAPTOP_IDX);
+
+    if (lt <= 0) { p.mesh.visible = false; p.mesh.material.opacity = 0; p.shineMat.opacity = 0; continue; }
+    p.mesh.visible = true;
+
+    if (lt < pace.fly) {
+      // -- fly out of the box toward the camera, arcing, gently fluttering --
+      const fp = clamp01(lt / pace.fly);
+      const eased = easeOutCubic(fp);
+      p.mesh.material.opacity = clamp01(fp / 0.3);
+      p.mesh.position.lerpVectors(p.startPos, _reveal, eased);
+      p.mesh.position.y += Math.sin(fp * Math.PI) * 0.35;
+      // face the camera the whole way, with a decaying paper-flutter around
+      // the horizontal axis — like a card tossed through the air, not a
+      // tumbling shard
+      const flutter = Math.sin(fp * Math.PI * 2 + p.phase) * 0.9 * (1 - eased);
+      _flutterQ.setFromAxisAngle(_axisX, flutter);
+      p.mesh.quaternion.copy(camera.quaternion).multiply(_flutterQ);
+      // grow in with a slight overshoot instead of arriving at full size
+      p.mesh.scale.setScalar(0.55 + 0.45 * easeOutBack(fp));
+      p.shineMat.opacity = 0;
+      st.settleCaptured = false;
+    } else if (lt < pace.fly + pace.hold) {
+      // -- hold in front of the camera: the reveal moment --
+      const hp = clamp01((lt - pace.fly) / pace.hold);
+      p.mesh.material.opacity = 1;
+      p.mesh.position.copy(_reveal);
+      p.mesh.position.y += Math.sin(t*1.6 + p.phase) * 0.02;
+      // micro-tilt: the card breathes around the billboard orientation so it
+      // never reads as a dead-flat sticker
+      _tiltE.set(
+        Math.sin(t*1.7 + p.phase) * 0.035,
+        Math.sin(t*1.3 + p.phase*2) * 0.05,
+        Math.sin(t*0.9 + p.phase) * 0.018
+      );
+      _tiltQ.setFromEuler(_tiltE);
+      p.mesh.quaternion.copy(camera.quaternion).multiply(_tiltQ);
+      // holo shine sweeps across the face right after the card lands
+      const sweepDur = isLaptop ? 0.65 : 0.5;
+      const sw = clamp01(hp / sweepDur);
+      p.shineTex.offset.x = -(0.9 - 1.8 * easeInOutCubic(sw));
+      p.shineMat.opacity = Math.sin(sw * Math.PI) * (isLaptop ? 0.5 : 0.38);
+      const breathe = 1 + Math.sin(t*2.2 + p.phase) * 0.008;
+      if (isLaptop) {
+        // finale: flash + gold ring + a scale punch as it lands in view
+        if (!laptopRevealed) {
+          laptopRevealed = true;
+          triggerRing(p.mesh.position);
+          burstFlash.position.copy(p.mesh.position);
+          burstFlash.intensity = 8;
+        }
+        const punch = hp < 0.35 ? Math.sin((hp/0.35) * Math.PI) * 0.16 : 0;
+        p.mesh.scale.setScalar((1.12 + punch) * breathe);
+        bloom.strength = baseBloomStrength + Math.max(0, (0.4 - hp)) * 0.9;
+      } else {
+        p.mesh.scale.setScalar(breathe);
+      }
+      holdingCard = p; holdingHp = hp; holdingIsLaptop = isLaptop;
+      st.settleCaptured = false;
+    } else {
+      // -- settle out of the spotlight into the orbit formation --
+      const sp = clamp01((lt - pace.fly - pace.hold) / SETTLE_DUR);
+      if (!st.settleCaptured) { st.settleFrom.copy(p.mesh.position); st.settleCaptured = true; }
+      p.mesh.material.opacity = 1;
+      p.shineMat.opacity = Math.max(0, p.shineMat.opacity - dt * 4);
+      if (sp < 1) {
+        p.mesh.position.lerpVectors(st.settleFrom, p.finalPos, easeInOutCubic(sp));
+        p.mesh.quaternion.copy(camera.quaternion);
+        const s0 = isLaptop ? 1.12 : 1;
+        p.mesh.scale.setScalar(s0 + (1 - s0) * sp);
+      } else {
+        // final ambient float (unchanged behavior)
+        p.mesh.quaternion.copy(camera.quaternion);
+        p.mesh.scale.setScalar(1);
+        p.mesh.position.y = p.baseY + Math.sin(t*0.6 + p.phase) * 0.08;
+        p.mesh.position.x = p.finalPos.x + Math.sin(t*0.35 + p.phase) * 0.04;
+        p.mesh.position.z = p.finalPos.z;
+      }
+    }
+  }
+
+  // ---- reveal halo + card flash follow whichever card is being held ----
+  if (holdingCard) {
+    halo.position.copy(holdingCard.mesh.position).addScaledVector(_fwd, 0.4);
+    const hs = holdingIsLaptop ? 2.6 : 2.3;
+    halo.scale.set(hs, hs, 1);
+    haloMat.color.setHex(holdingIsLaptop ? 0xffd9a8 : 0xbcd2ff);
+    // quick rise, slow decay, with a gentle shimmer while held
+    const env = Math.min(1, holdingHp / 0.12) * (1 - 0.45 * holdingHp);
+    haloMat.opacity = (holdingIsLaptop ? 0.5 : 0.42) * env * (0.92 + 0.08 * Math.sin(t * 3.1));
+    cardFlash.position.copy(holdingCard.mesh.position).addScaledVector(_fwd, -0.9);
+    const spike = Math.pow(1 - clamp01(holdingHp / 0.3), 2);
+    cardFlash.intensity = (holdingIsLaptop ? 3.6 : 1.8) * spike + 0.56 * (1 - 0.5 * holdingHp);
+  } else {
+    haloMat.opacity = Math.max(0, haloMat.opacity - dt * 3);
+    cardFlash.intensity = Math.max(0, cardFlash.intensity - dt * 10);
+  }
+
+  // ---- laptop gold ring update ----
+  if (ringStartTime > 0) {
+    const rt = now - ringStartTime;
+    const RING_DUR = 0.9;
+    if (rt < RING_DUR) {
+      for (let i = 0; i < RING_COUNT; i++) {
+        ringPos[i*3+0] += ringVel[i].x * dt;
+        ringPos[i*3+1] += ringVel[i].y * dt;
+        ringPos[i*3+2] += ringVel[i].z * dt;
+        ringVel[i].multiplyScalar(0.96);
+      }
+      ringGeo.attributes.position.needsUpdate = true;
+      ringMat.opacity = 1 - easeInQuad(rt / RING_DUR);
+    } else {
+      ringPoints.visible = false;
+      ringStartTime = -1;
+    }
+  }
+
+  // ---- burst glitter physics (staggered, spawned across box volume) ----
+  if (elapsed > POP_T) {
+    const posAttr = burstGeo.attributes.position;
+    for (let i = 0; i < BURST_COUNT; i++) {
+      const le = elapsed - POP_T - burstDelay[i];
+      if (le <= 0) continue;
+      const gdt = Math.min(dt, le);
+      burstVel[i].y -= 1.1 * gdt;
+      burstVel[i].multiplyScalar(0.988);
+      posAttr.array[i*3+0] += burstVel[i].x * gdt;
+      posAttr.array[i*3+1] += burstVel[i].y * gdt;
+      posAttr.array[i*3+2] += burstVel[i].z * gdt;
+    }
+    posAttr.needsUpdate = true;
+    const fadeStart = POP_T + 3.0;
+    if (elapsed > fadeStart) {
+      burstMat.opacity = clamp01(1 - (elapsed - fadeStart) / 2.5);
+    }
+  }
+
+  // ---- LUCKY DRAW title: appear once the full effect has finished ----
+  if (elapsed > FINALE_END + 0.2) luckyTitle.classList.add('show');
+
+  controls.update();
+  composer.render();
+}
+animate();
+</script>
+</body>
+</html>

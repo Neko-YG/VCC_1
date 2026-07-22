@@ -970,11 +970,13 @@
       position: relative;
       width: 100%;
       overflow: hidden;
-      padding: clamp(60px, 10vw, 100px) var(--pad-x);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: clamp(16px, 3vw, 28px);
+      background: #030308;
+      height: min(90vh, 880px);
+      min-height: 560px;
+    }
+    .lucky-frame {
+      width: 100%; height: 100%;
+      border: 0; display: block;
     }
 
     /* 배경 이미지 */
@@ -1924,45 +1926,12 @@
   </div>
 </section>
 
-<!-- ════ 섹션 11: 럭키드로우 ════ -->
+<!-- ════ 섹션 11: 럭키드로우 (인터랙티브 experience — iframe) ════ -->
+<!-- 실제 파일: VCC 럭키드로우 기능_모바일.html (Three.js, 경품=lucky1~6.webp) -->
 <section id="luckySection">
-  <img loading="lazy" decoding="async" class="lucky-bg" src="lucky_bg.webp" alt="">
-
-  <div class="lucky-inner">
-
-    <h2 class="lucky-title" data-aos>
-      <span class="t-lucky">LUCKY</span> DRAW
-    </h2>
-
-    <p class="lucky-desc" data-aos>
-      개업 전문직 컨설팅 컨퍼런스에 참석하시는 분들에게는<br>
-      추첨을 통해 약 1500만원 상당의 최신 IT 선물을 드립니다.
-    </p>
-
-    <div class="lucky-grid">
-      <div class="lucky-item" data-aos style="transition-delay:0.05s">
-        <img loading="lazy" decoding="async" src="lucky1.webp" alt="LG Gram">
-      </div>
-      <div class="lucky-item" data-aos style="transition-delay:0.12s">
-        <img loading="lazy" decoding="async" src="lucky2.webp" alt="iPad">
-      </div>
-      <div class="lucky-item" data-aos style="transition-delay:0.19s">
-        <img loading="lazy" decoding="async" src="lucky3.webp" alt="iPhone">
-      </div>
-      <div class="lucky-item" data-aos style="transition-delay:0.26s">
-        <img loading="lazy" decoding="async" src="lucky4.webp" alt="Galaxy Series">
-      </div>
-      <div class="lucky-item" data-aos style="transition-delay:0.33s">
-        <img loading="lazy" decoding="async" src="lucky5.webp" alt="Apple Watch">
-      </div>
-      <div class="lucky-item" data-aos style="transition-delay:0.40s">
-        <img loading="lazy" decoding="async" src="lucky6.webp" alt="Galaxy Watch">
-      </div>
-    </div>
-
-    <p class="lucky-hint" data-aos>‹ 좌우로 드래그해 둘러보세요 ›</p>
-
-  </div>
+  <iframe class="lucky-frame" src="VCC 럭키드로우 기능_모바일.html"
+          title="VCC 럭키드로우" loading="lazy"
+          scrolling="no" allow="autoplay"></iframe>
 </section>
 
 <!-- ════ 섹션 12: 로케이션 ════ -->
