@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VCC 2026 — The Convergence</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --ink:#fff; --dim:rgba(255,255,255,.62); --dim2:rgba(255,255,255,.42);
+    --line:rgba(255,255,255,.14);
+    --grad:linear-gradient(90deg,#8993FF 0%,#51DFFF 100%);
+    --dur:.8s;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:#000;color:var(--ink);overflow-x:hidden;
+    font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  img,video{display:block;max-width:100%}
+  .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  section{position:relative}
+  .wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 clamp(20px,5vw,48px)}
+  .sec-pad{padding:clamp(64px,10vw,120px) 0}
+  .sec-title{font-size:clamp(24px,4.6vw,42px);font-weight:800;text-align:center;letter-spacing:-.02em;line-height:1.25}
+  .sec-sub{margin-top:10px;text-align:center;color:var(--dim);font-size:clamp(13px,2vw,16px)}
+
+  /* reveal */
+  [data-aos]{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease}
+  [data-aos].show{opacity:1;transform:none}
+
+  /* progress + nav */
+  #bar{position:fixed;top:0;left:0;height:2px;width:0;z-index:999;background:linear-gradient(90deg,#7B2FFF,#3B82F6,#F5C842)}
+  #nav{position:fixed;top:clamp(12px,2.5vw,20px);left:clamp(14px,3vw,26px);z-index:1000}
+  #nav img{height:clamp(20px,3vw,30px);opacity:.92}
+  .float-cta{position:fixed;right:clamp(12px,2.5vw,22px);top:50%;transform:translateY(-50%);
+    z-index:1000;display:flex;flex-direction:column;gap:10px}
+  .float-cta a{width:clamp(50px,7vw,62px);height:clamp(50px,7vw,62px);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;
+    font-size:clamp(10px,1.4vw,12px);font-weight:700;line-height:1.25;letter-spacing:-.02em;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);transition:transform .2s}
+  .float-cta a:hover{transform:scale(1.06)}
+  .cta-apply{background:linear-gradient(135deg,#6EC8FF,#3B82F6);color:#04203f}
+  .cta-ask{background:rgba(30,34,48,.92);color:#fff;border:1px solid var(--line)}
+  @media(max-width:768px){.float-cta{top:auto;bottom:18px;transform:none;flex-direction:row}}
+
+  /* ══ 1. HERO ══ */
+  #hero{height:500vh}
+  #heroSticky{position:sticky;top:0;height:100vh;height:100dvh;overflow:hidden;background:#000}
+  .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:translateZ(0)}
+  #heroMo{display:none}
+  @media(max-width:768px){#heroPc{display:none}#heroMo{display:block}}
+  .hero-copy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;pointer-events:none}
+  .hero-row{position:absolute;width:100%;display:flex;justify-content:space-between;align-items:center;
+    padding:0 clamp(28px,8%,80px);opacity:0;transition:opacity .7s ease}
+  .hero-row.on{opacity:1}
+  .hero-row span{font-size:clamp(24px,6vw,54px);font-weight:800;color:#141253;
+    text-shadow:0 0 30px rgba(255,255,255,.85);white-space:nowrap}
+  #hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);z-index:6;
+    display:flex;flex-direction:column;align-items:center;gap:8px;animation:bob 2s ease-in-out infinite}
+  #hint span{font-size:10px;letter-spacing:.25em;color:var(--dim2);text-transform:uppercase}
+  #hint i{width:1px;height:34px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.5))}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+
+  /* ══ 2. INTRO 3 CARDS (휠 인터랙션) ══ */
+  #intro{height:100vh;height:100dvh;overflow:hidden;
+    background:radial-gradient(120% 90% at 85% 100%,rgba(124,88,237,.55) 0,rgba(124,88,237,0) 60%),
+               radial-gradient(100% 80% at 10% 10%,rgba(20,14,60,.9) 0,rgba(20,14,60,0) 70%),
+               linear-gradient(135deg,#171233 0%,#241a56 45%,#4a3aa5 100%)}
+  .cards{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    gap:clamp(16px,2vw,38px);padding:0 4vw;
+    transition:opacity var(--dur) cubic-bezier(.22,.61,.36,1),transform var(--dur) cubic-bezier(.22,.61,.36,1),filter var(--dur) cubic-bezier(.22,.61,.36,1)}
+  .card{width:min(calc((min(1300px,92vw) - clamp(16px,2vw,38px)*2)/3),calc((100vh - 140px)*851/1211));
+    aspect-ratio:851/1211;border-radius:clamp(14px,1.8vw,26px);overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.45);opacity:0;transform:translateY(90px) scale(.94);
+    transition:opacity var(--dur) cubic-bezier(.22,.61,.36,1),transform var(--dur) cubic-bezier(.22,.61,.36,1),filter var(--dur) cubic-bezier(.22,.61,.36,1);
+    will-change:opacity,transform}
+  .card img{width:100%;height:100%;object-fit:cover}
+  @media(max-width:768px){
+    .cards{padding:0}
+    .card{position:absolute;left:50%;top:50%;width:min(68vw,calc((100dvh - 240px)*851/1211));transform:translate(-50%,-50%)}
+  }
+  .msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:0 6vw;opacity:0;transform:translateY(60px);pointer-events:none;
+    transition:opacity var(--dur) cubic-bezier(.22,.61,.36,1),transform var(--dur) cubic-bezier(.22,.61,.36,1)}
+  .msg h2{font-size:clamp(1.5rem,3.4vw,2.9rem);font-weight:800;letter-spacing:-.03em;color:#8fd0ff;margin-bottom:clamp(24px,5vh,52px)}
+  .msg p{font-size:clamp(.92rem,1.3vw,1.12rem);line-height:1.8;color:rgba(255,255,255,.92);margin-bottom:clamp(16px,3vh,28px)}
+  .msg .credit{margin-top:clamp(18px,4vh,36px);font-size:clamp(.82rem,1vw,.94rem);color:var(--dim)}
+
+  /* ══ 3. AFTER ══ */
+  .video-box{width:100%;max-width:920px;margin:0 auto;aspect-ratio:16/9;border-radius:16px;overflow:hidden}
+  .video-box video{width:100%;height:100%;object-fit:cover}
+
+  /* ══ 4. VENUE ══ */
+  .venue-box{position:relative;width:100%;max-width:600px;margin:0 auto;aspect-ratio:3/4;border-radius:24px;overflow:hidden}
+  .venue-box video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .ov{position:absolute;inset:0;background:rgba(0,0,0,.32)}
+  .venue-in{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:clamp(6px,1.5vw,12px);padding:clamp(24px,5%,44px)}
+  .venue-date{font-size:clamp(22px,5vw,40px);font-weight:800;letter-spacing:-.02em;text-shadow:0 2px 16px rgba(0,0,0,.45)}
+  .venue-name{font-size:clamp(11px,2.2vw,16px);font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.92)}
+  .btn-w{margin-top:8px;display:inline-block;padding:clamp(9px,1.2vw,13px) clamp(24px,3.5vw,40px);
+    background:rgba(255,255,255,.94);color:#111;font-size:clamp(12px,1.4vw,15px);font-weight:600;
+    border-radius:100px;text-decoration:none;transition:.2s}
+  .btn-w:hover{background:#fff;transform:translateY(-2px)}
+
+  /* ══ 5. CONVERGENCE ══ */
+  #conv{min-height:70vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #conv img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .conv-in{position:relative;z-index:2;text-align:center;padding:clamp(60px,10vw,110px) clamp(24px,6vw,60px)}
+  .conv-t{font-size:clamp(22px,5.2vw,42px);font-weight:800;letter-spacing:-.02em}
+  .conv-q{margin-top:14px;font-size:clamp(12px,2.1vw,16px);color:rgba(255,255,255,.9)}
+  .conv-d{margin-top:18px;font-size:clamp(12px,2vw,15px);color:rgba(255,255,255,.75);line-height:1.7}
+
+  /* ══ 6. 제4회 VCC 법칙 카드 ══ */
+  .law{border-radius:22px;padding:clamp(24px,3.4vw,44px);margin-bottom:clamp(16px,2.4vw,28px);
+    background:linear-gradient(120deg,#101a3d 0%,#16266b 55%,#1d2f86 100%);border:1px solid rgba(120,160,255,.18)}
+  .law h3{font-size:clamp(19px,3.2vw,30px);font-weight:800;color:#7fd4ff;letter-spacing:-.02em}
+  .law>p{margin-top:10px;color:rgba(255,255,255,.78);font-size:clamp(12.5px,1.9vw,15px);line-height:1.7}
+  .law-grid{margin-top:clamp(20px,3vw,32px);display:grid;gap:clamp(14px,2.2vw,26px);
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .law-grid h4{font-size:clamp(13px,1.8vw,15px);font-weight:700;margin-bottom:6px}
+  .law-grid p{font-size:clamp(11px,1.5vw,12.5px);color:rgba(255,255,255,.55);line-height:1.6}
+  .law-num{display:inline-flex;width:20px;height:20px;border-radius:5px;align-items:center;justify-content:center;
+    background:rgba(127,212,255,.18);color:#7fd4ff;font-size:11px;font-weight:700;margin-bottom:8px}
+
+  /* ══ 7. PROFESSIONAL (감성터치) ══ */
+  #pro{min-height:80vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #pro img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5);z-index:0}
+  .pro-in{position:relative;z-index:2;text-align:center;padding:clamp(60px,12vw,120px) clamp(24px,6vw,60px)}
+
+  /* ══ 8. SPEAKERS ══ */
+  .stage-label{text-align:center;font-size:clamp(12px,2.2vw,16px);font-weight:700;letter-spacing:.14em;margin:clamp(28px,4vw,44px) 0 clamp(16px,2.5vw,24px)}
+  .spk-main{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(12px,2.4vw,24px)}
+  .spk-sub{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(10px,1.8vw,18px)}
+  @media(max-width:860px){.spk-sub{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:520px){.spk-main{grid-template-columns:1fr}.spk-sub{grid-template-columns:repeat(2,1fr)}}
+  .spk-card{position:relative;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#4f8bff 0%,#6ea8ff 45%,#9ec4ff 100%);
+    display:flex;align-items:flex-end;min-height:clamp(190px,26vw,240px);padding:clamp(16px,2.2vw,24px)}
+  .spk-card .info{position:relative;z-index:2;max-width:58%}
+  .spk-card .nm{font-size:clamp(15px,2.2vw,20px);font-weight:800;color:#0b1c3d}
+  .spk-card .ttl{margin-top:3px;font-size:clamp(11px,1.5vw,13px);font-weight:600;color:rgba(11,28,61,.72)}
+  .spk-card img{position:absolute;right:0;bottom:0;height:100%;width:auto;object-fit:contain;object-position:bottom right;z-index:1}
+  .spk-s{text-align:center}
+  .spk-s .ph{border-radius:14px;overflow:hidden;background:linear-gradient(160deg,#2b3f6b,#16213c);aspect-ratio:3/4;
+    display:flex;align-items:flex-end;justify-content:center}
+  .spk-s .ph img{height:100%;width:auto;object-fit:contain}
+  .spk-s .nm{margin-top:10px;font-size:clamp(12px,1.7vw,14px);font-weight:700}
+  .spk-s .ttl{margin-top:2px;font-size:clamp(10px,1.4vw,11.5px);color:var(--dim2);line-height:1.4}
+
+  /* ══ 9. SPONSOR ══ */
+  #sponsor{background:linear-gradient(135deg,#4a1d9e 0%,#6d28d9 50%,#4a1d9e 100%)}
+  .sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;margin-top:clamp(24px,4vw,40px)}
+  .sp-cell{background:#3f1a8a;display:flex;align-items:center;justify-content:center;padding:clamp(14px,2.4vw,26px);min-height:88px}
+  .sp-cell img{max-height:44px;width:auto;object-fit:contain;filter:brightness(0) invert(1);opacity:.92}
+
+  /* ══ 10. PROGRAM ══ */
+  .pg{position:relative;padding-left:clamp(20px,4vw,42px);margin-top:clamp(24px,4vw,40px)}
+  .pg::before{content:'';position:absolute;left:clamp(4px,.8vw,8px);top:8px;bottom:8px;width:1px;background:var(--line)}
+  .pg-part{margin:clamp(20px,3vw,32px) 0 10px;font-size:clamp(13px,2vw,16px);font-weight:800;color:#7fd4ff}
+  .pg-item{position:relative;background:rgba(255,255,255,.055);border:1px solid var(--line);border-radius:12px;
+    padding:clamp(12px,1.8vw,18px) clamp(14px,2.2vw,22px);margin-bottom:10px}
+  .pg-item::before{content:'';position:absolute;left:calc(-1*clamp(20px,4vw,42px) + clamp(1px,.3vw,4px));top:50%;
+    width:9px;height:9px;border-radius:50%;background:#8aa0c8;transform:translateY(-50%)}
+  .pg-item.hl{background:linear-gradient(90deg,#2de0e0,#4fd3ff);border-color:transparent}
+  .pg-item.hl .t,.pg-item.hl .s,.pg-item.hl .w{color:#053040}
+  .pg-item .t{font-size:clamp(10.5px,1.4vw,12px);color:var(--dim2)}
+  .pg-item .s{margin-top:3px;font-size:clamp(13px,1.9vw,16px);font-weight:700}
+  .pg-item .w{margin-top:2px;font-size:clamp(10.5px,1.4vw,12px);color:var(--dim2)}
+
+  /* ══ 11. WAVE ══ */
+  #wave{min-height:46vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:radial-gradient(120% 120% at 50% 40%,#2f7bff 0%,#1b4bd8 45%,#0a1f6e 100%);overflow:hidden}
+  #wave img{width:clamp(120px,18vw,200px)}
+  .wave-pill{padding:8px 20px;border-radius:100px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);
+    font-size:clamp(12px,1.7vw,14px);font-weight:600;backdrop-filter:blur(6px)}
+
+  /* ══ 12. LUCKY ══ */
+  #lucky{overflow:hidden}
+  #lucky img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:0}
+  .lucky-in{position:relative;z-index:1}
+  .lucky-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,2vw,16px);max-width:680px;margin:clamp(24px,4vw,36px) auto 0}
+  .lucky-grid div{border-radius:14px;overflow:hidden}
+
+  /* ══ 13. LOCATION ══ */
+  .toggle{display:flex;justify-content:center;margin:clamp(20px,3vw,30px) 0}
+  .toggle-in{display:flex;background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:100px;padding:4px}
+  .toggle button{border:none;background:transparent;color:var(--dim);font-family:inherit;
+    font-size:clamp(12px,1.7vw,14px);font-weight:600;padding:9px 22px;border-radius:100px;cursor:pointer;transition:.2s}
+  .toggle button.on{background:#fff;color:#111}
+  .loc-wrap{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,2.4vw,20px);max-width:860px;margin:0 auto}
+  @media(max-width:640px){.loc-wrap{grid-template-columns:1fr}}
+  .loc-map{border-radius:16px;overflow:hidden;background:#0d0d1a;min-height:220px}
+  .loc-map img{width:100%;height:100%;object-fit:cover}
+  .loc-info{background:#f5f5f5;color:#111;border-radius:16px;padding:clamp(18px,3.4vw,32px);display:flex;flex-direction:column;gap:clamp(12px,2.2vw,20px)}
+  .loc-info .lb{font-size:clamp(10px,1.5vw,12px);font-weight:600;color:#888;letter-spacing:.06em;text-transform:uppercase}
+  .loc-info .nm{font-size:clamp(18px,3.4vw,28px);font-weight:800;line-height:1.2}
+  .loc-info .sb{font-size:clamp(11px,1.7vw,14px);color:#555}
+  .loc-hr{height:1px;background:rgba(0,0,0,.12)}
+  .loc-info .bt{font-size:clamp(12px,1.9vw,15px);font-weight:700}
+  .loc-info .bd{font-size:clamp(11px,1.6vw,13px);color:#666;line-height:1.6}
+
+  /* ══ 14. FAQ ══ */
+  .faq{max-width:760px;margin:clamp(24px,4vw,36px) auto 0}
+  .faq-i{border-top:1px solid var(--line)}
+  .faq-i:last-child{border-bottom:1px solid var(--line)}
+  .faq-q{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:clamp(15px,2.6vw,21px) 0;cursor:pointer}
+  .faq-q p{font-size:clamp(13px,2.1vw,16px);font-weight:600;text-align:left;flex:1}
+  .faq-q img{width:clamp(15px,2.6vw,20px);opacity:.65;transition:transform .35s}
+  .faq-i.open .faq-q img{transform:rotate(180deg)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .faq-i.open .faq-a{max-height:220px}
+  .faq-a p{font-size:clamp(12px,1.9vw,14.5px);color:var(--dim);line-height:1.7;padding-bottom:clamp(14px,2.4vw,20px)}
+
+  /* ══ 15. TIMER ══ */
+  #timer{min-height:clamp(300px,50vw,440px);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #timer img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .tm-in{position:relative;z-index:2;text-align:center;padding:clamp(40px,8vw,80px) clamp(24px,6vw,60px);display:flex;flex-direction:column;align-items:center;gap:clamp(9px,1.8vw,16px)}
+  #cd{font-size:clamp(34px,9.6vw,76px);font-weight:800;letter-spacing:.04em;font-variant-numeric:tabular-nums;line-height:1}
+  .tm-dd{font-size:clamp(13px,2.1vw,16px);font-weight:700;color:rgba(255,255,255,.92)}
+  .tm-ds{font-size:clamp(12px,1.9vw,15px);color:var(--dim)}
+
+  /* ══ 16. CONTACT ══ */
+  #contact{min-height:clamp(240px,45vw,400px);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #contact img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .ct-in{position:relative;z-index:2;text-align:center;padding:clamp(40px,8vw,72px) clamp(24px,6vw,60px);display:flex;flex-direction:column;align-items:center;gap:clamp(18px,3.4vw,30px)}
+  .ct-in img.tt{width:min(88%,520px)}
+  .btn-c{display:inline-block;padding:clamp(10px,1.6vw,14px) clamp(28px,5vw,48px);background:#44F4F4;color:#182177;
+    font-size:clamp(13px,2vw,16px);font-weight:700;border-radius:100px;text-decoration:none;box-shadow:0 4px 20px rgba(68,244,244,.3);transition:.2s}
+  .btn-c:hover{background:#6ff7f7;transform:translateY(-2px)}
+
+  /* ══ 17. PAST ══ */
+  .past-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,2.2vw,20px);max-width:820px;margin:clamp(24px,4vw,36px) auto 0}
+  @media(max-width:560px){.past-grid{grid-template-columns:1fr}}
+  .past-grid a{text-decoration:none;color:inherit}
+  .past-grid .th{border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:#111}
+  .past-grid .th img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
+  .past-grid a:hover .th img{transform:scale(1.05)}
+  .past-grid .cap{margin-top:10px;text-align:center;font-size:clamp(12px,1.8vw,15px);font-weight:600}
+
+  /* ══ FOOTER ══ */
+  footer{background:#212121;padding:clamp(28px,4vw,44px) 0}
+  .ft{display:flex;align-items:flex-start;justify-content:space-between;gap:clamp(16px,3vw,32px);flex-wrap:wrap}
+  .ft-l{display:flex;gap:clamp(14px,2.5vw,28px);align-items:flex-start}
+  .ft-l img{width:clamp(48px,8vw,72px);opacity:.9;margin-top:2px}
+  .ft-l p{font-size:clamp(10.5px,1.5vw,13px);color:rgba(255,255,255,.5);line-height:1.75}
+  .ft-b{display:flex;gap:10px;flex-shrink:0}
+  .ft-b a{padding:9px 17px;background:#464646;color:rgba(255,255,255,.85);font-size:clamp(11px,1.5vw,13.5px);
+    font-weight:600;border-radius:100px;text-decoration:none;white-space:nowrap;transition:.2s}
+  .ft-b a:hover{background:#5a5a5a;color:#fff}
+
+  /* 미정 표기 */
+  .tbd{color:#F5C842;font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="bar"></div>
+<a id="nav" href="#top"><img src="vcc_logo.png" alt="VCC"></a>
+<div class="float-cta">
+  <a class="cta-apply" href="#apply">신청<br>하기</a>
+  <a class="cta-ask" href="#contact">문의<br>하기</a>
+</div>
+
+<!-- ══ 1. HERO ══ -->
+<section id="hero"><div id="heroSticky">
+  <video id="heroPc" class="hero-video" muted playsinline webkit-playsinline preload="none" data-src="hero_pc.mp4"></video>
+  <video id="heroMo" class="hero-video" muted playsinline webkit-playsinline preload="none" data-src="hero_mo.mp4"></video>
+  <div class="hero-copy">
+    <div class="hero-row" id="h1"><span>AI</span><span>산업</span></div>
+    <div class="hero-row" id="h2"><span>주식투자</span><span>변화</span></div>
+    <div class="hero-row" id="h3"><span>마케팅</span><span>트렌드</span></div>
+  </div>
+  <div id="hint"><span>Scroll</span><i></i></div>
+</div></section>
+
+<!-- ══ 2. INTRO 3 CARDS ══ -->
+<section id="intro">
+  <div class="cards" id="cards">
+    <div class="card"><img src="v2/card_ai.webp" alt="AI" loading="lazy" decoding="async"></div>
+    <div class="card"><img src="v2/card_mk.webp" alt="Marketing" loading="lazy" decoding="async"></div>
+    <div class="card"><img src="v2/card_fi.webp" alt="Finance" loading="lazy" decoding="async"></div>
+  </div>
+  <div class="msg" id="msg">
+    <h2>세 가지의 전문성이 하나의 미래를 만든다.</h2>
+    <p>AI 대변혁이 시장을 뒤흔들고 있습니다.<br><strong>부는 한 곳으로 응축되고,</strong><br>그 기회의 창은 빠르게 닫히고 있습니다.</p>
+    <p><strong>VCC</strong>는 그 변화의 한가운데에서<br>매년 가장 먼저 답을 제시해온 컨퍼런스입니다.</p>
+    <p><strong>AI · 마케팅 · 금융 —</strong><br>세 가지 무기를 장착한 전문가만이<br>이 시대의 주도권을 가져갑니다.</p>
+    <p class="credit">총괄 기획 김태우 CSO</p>
+  </div>
+</section>
+
+<!-- ══ 3. AFTER VCC ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos><span class="grad">After</span> VCC</h2>
+  <p class="sec-sub" data-aos>시작이 있었고, 확장이 있었고, 이제는 융합합니다.</p>
+  <div class="video-box" data-aos style="margin-top:clamp(28px,4.5vw,48px)">
+    <video class="lazy-video" muted loop playsinline webkit-playsinline preload="none"
+           data-src="after_web.mp4" data-src-mo="after_web_mo.mp4"></video>
+  </div>
+</div></section>
+
+<!-- ══ 4. VENUE ══ -->
+<section style="padding:0 0 clamp(48px,8vw,90px)"><div class="wrap">
+  <div class="venue-box" data-aos>
+    <video class="lazy-video" muted loop playsinline webkit-playsinline preload="none"
+           data-src="venue_web.mp4" data-src-mo="venue_web_mo.mp4"></video>
+    <div class="ov"></div>
+    <div class="venue-in">
+      <p class="venue-date">2026. 09. 02. (WED)</p>
+      <p class="venue-name">Grand Hyatt Seoul</p>
+      <a class="btn-w" href="#apply">참가신청</a>
+    </div>
+  </div>
+</div></section>
+
+<!-- ══ 5. THE CONVERGENCE ══ -->
+<section id="conv">
+  <img class="bg" src="conv_bg.webp" alt="" loading="lazy" decoding="async">
+  <div class="ov"></div>
+  <div class="conv-in wrap" data-aos>
+    <h2 class="conv-t">THE <span class="grad">CONVERGENCE</span></h2>
+    <p class="conv-q">" AI로 무장한 전문직이 금융을 이해하고 마케팅으로 확장한다. "</p>
+    <p class="conv-d">*Convergence — 여러 기술이나 정보, 기능이 하나로<br>합쳐지거나 융합되어 새로운 가치를 창출하는 현상</p>
+  </div>
+</section>
+
+<!-- ══ 6. 제4회 VCC ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos>제4회 <span class="grad">VCC</span></h2>
+  <p class="sec-sub" data-aos>전문직 맞춤 AI, 마케팅, 금융의 컨버전스</p>
+  <div style="margin-top:clamp(30px,5vw,54px)">
+    <div class="law" data-aos>
+      <h3>AI가 바꾸는 자산의 법칙</h3>
+      <p>가장 중요한 세 가지 투자 트렌드는 대격변의 시기를 맞이 하였습니다<br>먼저 아는 전문가만이 선점합니다.</p>
+      <div class="law-grid">
+        <div><h4>AI 가치관과 시장 방향성</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><h4>자산관리 기획과 노하우</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><h4>ETF 변화와 투자 시장의 흐름</h4><p class="tbd">세부 문구 미정</p></div>
+      </div>
+    </div>
+    <div class="law" data-aos>
+      <h3>고객을 움직이는 마케팅의 법칙</h3>
+      <p>전문직의 가치를 효과적으로 알리고<br>고객의 선택과 상담으로 연결하는 마케팅 전략을 공개합니다.</p>
+      <div class="law-grid">
+        <div><h4>AI 가치관과 시장 방향성</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><h4>자산관리 기획과 노하우</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><h4>ETF 변화와 투자 시장의 흐름</h4><p class="tbd">세부 문구 미정</p></div>
+      </div>
+    </div>
+    <div class="law" data-aos>
+      <h3>변화하는 시장을 읽는 금융의 법칙</h3>
+      <p>빠르게 변화하는 금융 환경 속에서<br>자산을 지키고 성장시키는 핵심 전략을 제시합니다.</p>
+      <div class="law-grid">
+        <div><span class="law-num">1</span><h4>AI 가치관과 시장 방향성</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><span class="law-num">2</span><h4>자산관리 기획과 노하우</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><span class="law-num">3</span><h4>ETF 변화와 투자 시장의 흐름</h4><p class="tbd">세부 문구 미정</p></div>
+        <div><span class="law-num">4</span><h4>ETF 변화와 투자 시장의 흐름</h4><p class="tbd">세부 문구 미정</p></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ══ 7. VCC for Professional ══ -->
+<section id="pro">
+  <img class="bg" src="emotion_bg.webp" alt="" loading="lazy" decoding="async">
+  <div class="pro-in wrap" data-aos>
+    <h2 class="sec-title">VCC for Professional</h2>
+    <p class="sec-sub">오직 전문직분들만을 위한 컨퍼런스</p>
+    <p class="sec-sub" style="margin-top:16px">끊임없이 탐구하고 고뇌하여<br>미래를 개척할 인사이트를 전달합니다</p>
+  </div>
+</section>
+
+<!-- ══ 8. SPEAKERS ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos>전 분야의 믿을 수 있는 <span class="grad">국가대표 스피커</span></h2>
+
+  <p class="stage-label grad" data-aos>MAIN STAGE</p>
+  <div class="spk-main" data-aos>
+    <div class="spk-card">
+      <div class="info"><p class="nm">김미경 대표</p><p class="ttl">리치디바인 CSO</p></div>
+      <img src="v2/spk_kimmk.webp" alt="김미경" loading="lazy" decoding="async">
+    </div>
+    <div class="spk-card">
+      <div class="info"><p class="nm">강정수 센터장</p><p class="ttl">포디움 대표 세무사</p></div>
+      <img src="v2/spk_kangjs.webp" alt="강정수" loading="lazy" decoding="async">
+    </div>
+  </div>
+
+  <p class="stage-label grad" data-aos>SUB STAGE</p>
+  <div class="spk-sub" data-aos>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_imhs.webp" alt="임현서" loading="lazy" decoding="async"></div>
+      <p class="nm">임현서 변호사</p><p class="ttl">법무법인 리바이어던 대표</p></div>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_kimtw.webp" alt="김태우" loading="lazy" decoding="async"></div>
+      <p class="nm">김태우 세무사</p><p class="ttl">리치디바인파트너스 CSO</p></div>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_kimhy.webp" alt="김희연" loading="lazy" decoding="async"></div>
+      <p class="nm">김희연 회계사</p><p class="ttl">회계법인 디자인택스 대표</p></div>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_leejh.webp" alt="이종헌" loading="lazy" decoding="async"></div>
+      <p class="nm">이종헌 회계사</p><p class="ttl">회계법인 리파인드 대표</p></div>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_kooew.webp" alt="구은우" loading="lazy" decoding="async"></div>
+      <p class="nm">구은우 세무사</p><p class="ttl tbd">소속 확인 필요</p></div>
+    <div class="spk-s"><div class="ph"><img src="v2/spk_sonmj.webp" alt="손민정" loading="lazy" decoding="async"></div>
+      <p class="nm">손민정</p><p class="ttl tbd">직함 확인 필요</p></div>
+  </div>
+</div></section>
+
+<!-- ══ 9. SPONSOR ══ -->
+<section id="sponsor" class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos>대한민국 전문직들을 위한 VCC <span style="color:#7fd4ff">Sponsor</span></h2>
+  <div class="sp-grid" id="spGrid" data-aos></div>
+</div></section>
+
+<!-- ══ 10. PROGRAM ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos><img src="vcc_logo.png" alt="VCC" style="height:.9em;display:inline;vertical-align:-.05em"> <span class="grad">Program</span></h2>
+  <p class="sec-sub tbd" data-aos>강의 제목·연사 배정은 확정 후 반영 예정입니다</p>
+  <div class="pg" data-aos>
+    <div class="pg-item"><p class="t">13:30 - 13:35</p><p class="s">Opening</p></div>
+    <p class="pg-part">2부</p>
+    <div class="pg-item"><p class="t">13:35 - 13:50</p><p class="s tbd">강의 제목 미정</p><p class="w">김희연 회계사</p></div>
+    <div class="pg-item"><p class="t">13:50 - 14:50</p><p class="s tbd">강의 제목 미정</p><p class="w">임현서 변호사</p></div>
+    <div class="pg-item"><p class="t">14:50 - 15:00</p><p class="s">Break Time</p></div>
+    <p class="pg-part">3부</p>
+    <div class="pg-item"><p class="t">15:00 - 15:15</p><p class="s tbd">강의 제목 미정</p><p class="w">구은우 세무사</p></div>
+    <div class="pg-item"><p class="t">15:15 - 16:15</p><p class="s tbd">강의 제목 미정</p><p class="w">강정수 센터장</p></div>
+    <div class="pg-item"><p class="t">16:15 - 16:25</p><p class="s">Break Time</p></div>
+    <div class="pg-item"><p class="t">16:25 - 16:40</p><p class="s tbd">강의 제목 미정</p><p class="w tbd">연사 미정</p></div>
+    <div class="pg-item"><p class="t">16:40 - 17:40</p><p class="s tbd">강의 제목 미정</p><p class="w tbd">연사 미정</p></div>
+    <div class="pg-item"><p class="t">17:40 - 17:50</p><p class="s">Break Time</p></div>
+    <div class="pg-item hl"><p class="t">17:50 - 18:50</p><p class="s tbd">강의 제목 미정</p><p class="w tbd">연사 미정</p></div>
+    <div class="pg-item"><p class="t">18:50 - 20:00</p><p class="s tbd">내용 미정</p></div>
+  </div>
+</div></section>
+
+<!-- ══ 11. INTO VCC WAVE ══ -->
+<section id="wave">
+  <img src="vcc_logo.png" alt="VCC" loading="lazy" decoding="async">
+  <div class="wave-pill">Into <span style="color:#9fe7ff">VCC</span> Wave</div>
+</section>
+
+<!-- ══ 12. LUCKY DRAW ══ -->
+<section id="lucky" class="sec-pad">
+  <img class="bg" src="lucky_bg.webp" alt="" loading="lazy" decoding="async">
+  <div class="lucky-in wrap">
+    <h2 class="sec-title" data-aos><span class="grad">LUCKY</span> DRAW</h2>
+    <p class="sec-sub" data-aos>개업 전문직 컨설팅 컨퍼런스에 참석하시는 분들에게는<br>추첨을 통해 약 1500만원 상당의 최신 IT 선물을 드립니다.</p>
+    <div class="lucky-grid" data-aos>
+      <div><img src="lucky1.webp" alt="LG Gram" loading="lazy" decoding="async"></div>
+      <div><img src="lucky2.webp" alt="iPad" loading="lazy" decoding="async"></div>
+      <div><img src="lucky3.webp" alt="iPhone" loading="lazy" decoding="async"></div>
+      <div><img src="lucky4.webp" alt="Galaxy Series" loading="lazy" decoding="async"></div>
+      <div><img src="lucky5.webp" alt="Apple Watch" loading="lazy" decoding="async"></div>
+      <div><img src="lucky6.webp" alt="Galaxy Watch" loading="lazy" decoding="async"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 13. LOCATION ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" data-aos>그 날, <span class="grad">그랜드 하얏트 서울</span>에서</h2>
+  <p class="sec-sub" data-aos>VCC 2026이 준비한 가장 특별한 자리</p>
+  <div class="toggle" data-aos>
+    <div class="toggle-in">
+      <button class="on" data-map="v2/map_transit.webp">대중교통 시</button>
+      <button data-map="v2/map_car.webp">자차 시</button>
+    </div>
+  </div>
+  <div class="loc-wrap" data-aos>
+    <div class="loc-map"><img id="locMap" src="v2/map_transit.webp" alt="그랜드 하얏트 서울 길안내" loading="lazy" decoding="async"></div>
+    <div class="loc-info">
+      <div><p class="lb">Location</p><p class="nm">Grand Hyatt Seoul</p><p class="sb">그랜드 하얏트 서울 ㅣ 1층 그랜드 볼룸</p></div>
+      <div class="loc-hr"></div>
+      <div><p class="bt">VCC 26 ㅣ The Convergence</p><p class="bd">1F ㅣ Grand Ballroom</p></div>
+      <div class="loc-hr"></div>
+      <div><p class="bt">그랜드 하얏트 서울</p><p class="bd">서울특별시 용산구 소월로 322<br>(지번) 서울 용산구 한남동 747-7</p></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ══ 14. FAQ ══ -->
+<section class="sec-pad" style="padding-top:0"><div class="wrap">
+  <h2 class="sec-title" data-aos>VCC <span class="grad">FAQ</span></h2>
+  <p class="sec-sub" data-aos>많이 궁금해 하시는 질문을 모았습니다.</p>
+  <div class="faq" data-aos>
+    <div class="faq-i"><div class="faq-q"><p><span class="grad">Q.</span> Grand Hyatt Seoul 주차가 가능할까요?</p><img src="arrow.png" alt=""></div>
+      <div class="faq-a"><p>A. VCC 참석자의 경우 무료 주차가 가능합니다.</p></div></div>
+    <div class="faq-i"><div class="faq-q"><p><span class="grad">Q.</span> 회계사나 세무사처럼 전문직만 참석이 가능한가요?</p><img src="arrow.png" alt=""></div>
+      <div class="faq-a"><p>A. 네 맞습니다. VCC는 개업 전문직을 대상으로 하는 행사입니다.</p></div></div>
+    <div class="faq-i"><div class="faq-q"><p><span class="grad">Q.</span> 주로 어떤 내용들로 진행되는지 궁금합니다.</p><img src="arrow.png" alt=""></div>
+      <div class="faq-a"><p>A. 개업 전문직들에게 새로운 비전과 돌파구를 제시해드립니다.</p></div></div>
+    <div class="faq-i"><div class="faq-q"><p><span class="grad">Q.</span> 지방에 거주하고 있는데 온라인으로 참석이 가능할까요?</p><img src="arrow.png" alt=""></div>
+      <div class="faq-a"><p>A. 아쉽지만 오프라인으로만 진행되는 점 양해 부탁드립니다.</p></div></div>
+  </div>
+</div></section>
+
+<!-- ══ 15. TIMER ══ -->
+<section id="timer" data-anchor="apply">
+  <img class="bg" src="timer_bg.webp" alt="" loading="lazy" decoding="async">
+  <div class="ov"></div>
+  <div class="tm-in" data-aos>
+    <div id="cd">00:00:00:00</div>
+    <p class="tm-dd">참가신청 D-1</p>
+    <p class="tm-ds">VCC 참가 신청이 08월 29일~30일 오후 1시에 진행됩니다.</p>
+    <a class="btn-w" id="apply" href="#apply">참가신청</a>
+  </div>
+</section>
+
+<!-- ══ 16. CONTACT ══ -->
+<section id="contact">
+  <img class="bg" src="contact_bg.webp" alt="" loading="lazy" decoding="async">
+  <div class="ov"></div>
+  <div class="ct-in" data-aos>
+    <img class="tt" src="contact_title.webp" alt="VCC 컨퍼런스 문의 채널" loading="lazy" decoding="async">
+    <a class="btn-c" href="#contact">문의하기</a>
+  </div>
+</section>
+
+<!-- ══ 17. PAST VCC ══ -->
+<section class="sec-pad"><div class="wrap">
+  <h2 class="sec-title" style="text-align:left" data-aos>지난 <img src="vcc_logo.png" alt="VCC" style="height:.85em;display:inline;vertical-align:-.02em"> 다시보기</h2>
+  <div class="past-grid" data-aos>
+    <a href="https://richdivine-vcc.com/" target="_blank" rel="noopener">
+      <div class="th"><img src="v2/past2025.webp" alt="2025 VCC" loading="lazy" decoding="async"></div><p class="cap">2025 VCC</p></a>
+    <a href="https://richdivine-vcc.com/vcc2024/" target="_blank" rel="noopener">
+      <div class="th"><img src="v2/past2024.webp" alt="2024 VCC" loading="lazy" decoding="async"></div><p class="cap">2024 VCC</p></a>
+    <a href="https://richdivine-vcc.com/vcc2023/" target="_blank" rel="noopener">
+      <div class="th"><img src="v2/past2023.webp" alt="2023 VCC" loading="lazy" decoding="async"></div><p class="cap">2023 VCC</p></a>
+  </div>
+</div></section>
+
+<!-- ══ FOOTER ══ -->
+<footer><div class="wrap ft">
+  <div class="ft-l">
+    <img src="vcc_logo.png" alt="VCC">
+    <div>
+      <p>주소 서울시 강남구 인터콘티넨탈 B2 스파크플러스</p>
+      <p>이메일 mail@richdivine.co.kr</p>
+      <p>전화 02-552-9758</p>
+      <p>팩스 02-6499-9759</p>
+    </div>
+  </div>
+  <div class="ft-b">
+    <a href="https://richdivine-vcc.com/" target="_blank" rel="noopener">25 VCC</a>
+    <a href="https://richdivine-vcc.com/vcc2024/" target="_blank" rel="noopener">24 VCC</a>
+    <a href="https://richdivine-vcc.com/vcc2023/" target="_blank" rel="noopener">23 VCC</a>
+  </div>
+</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var mq = window.matchMedia('(max-width: 768px)');
+
+  /* ── 스폰서 로고 20개 주입 ── */
+  var sp = document.getElementById('spGrid'), h = '';
+  for (var i = 1; i <= 20; i++) {
+    var n = (i < 10 ? '0' : '') + i;
+    h += '<div class="sp-cell"><img src="v2/logo/sp' + n + '.webp" alt="" loading="lazy" decoding="async"></div>';
+  }
+  sp.innerHTML = h;
+
+  /* ── HERO: 활성 영상 1개만 로드 + 스크러빙 ── */
+  var vPc = document.getElementById('heroPc'), vMo = document.getElementById('heroMo');
+  var video = mq.matches ? vMo : vPc;
+  function activate(v){ if(!v.src && v.dataset.src){ v.preload='auto'; v.src=v.dataset.src; v.load(); } }
+  activate(video);
+
+  var hero = document.getElementById('hero'), hint = document.getElementById('hint'), bar = document.getElementById('bar');
+  var rows = [document.getElementById('h1'), document.getElementById('h2'), document.getElementById('h3')];
+  var dur = 0, ready = false, last = -1, ticking = false;
+  var vpH = innerHeight, hTop = 0, hScrub = 0, bodyH = 0;
+
+  function recalc(){
+    vpH = innerHeight;
+    hTop = hero.offsetTop;
+    hScrub = hero.offsetHeight - vpH;
+    bodyH = document.body.scrollHeight - vpH;
+  }
+
+  /* 텍스트 타이밍: 영상 길이에 비례 배치 (13.6s 하드코딩 제거) */
+  function texts(t){
+    if(!dur) return;
+    var seg = dur / 6;                 /* 후반 3구간에 순차 노출 */
+    for(var i=0;i<3;i++){
+      var s = seg * (3 + i), e = s + seg * 0.9;
+      rows[i].classList.toggle('on', t >= s && t < e);
+    }
+  }
+  function onReady(v){
+    if(v !== video || ready) return;
+    ready = true; dur = v.duration || 0; scrub();
+  }
+  function bind(v){
+    v.addEventListener('loadedmetadata', function(){ if(v===video) dur=v.duration||0; if(v.readyState>=2) onReady(v); });
+    v.addEventListener('canplaythrough', function(){ onReady(v); });
+  }
+  bind(vPc); bind(vMo);
+
+  function scrub(){
+    var y = scrollY;
+    if(ready && dur && hScrub > 0){
+      var p = Math.max(0, Math.min((y - hTop) / hScrub, 1));
+      var t = dur * p;
+      if(!video.seeking && Math.abs(t - last) > 0.05){ last = t; video.currentTime = t; }
+      texts(t);
+      hint.style.opacity = Math.max(0, 1 - p * 6);
+    }
+    bar.style.width = bodyH > 0 ? (y / bodyH * 100) + '%' : '0%';
+  }
+
+  function switchVideo(next){
+    if(next === video) return;
+    var was = last;
+    video.pause(); video = next; activate(video);
+    ready = false; last = -1; dur = video.duration || 0;
+    function sync(){ if(video.duration) video.currentTime = Math.min(was>=0?was:0, video.duration); onReady(video); }
+    if(video.readyState >= 2) sync(); else video.addEventListener('loadedmetadata', sync, {once:true});
+  }
+  mq.addEventListener('change', function(e){ switchVideo(e.matches ? vMo : vPc); recalc(); });
+
+  addEventListener('scroll', function(){
+    if(!ticking){ requestAnimationFrame(function(){ scrub(); ticking=false; }); ticking=true; }
+  }, {passive:true});
+  addEventListener('resize', function(){ recalc(); scrub(); });
+  addEventListener('load', function(){ recalc(); scrub(); });
+  recalc(); scrub();
+
+  /* ── INTRO: 휠 카운트 기반 3카드 → 텍스트 ── */
+  var CFG = { perCard:2, transition:3, holdAfter:2, firstHold:2, tick:50, cool:200 };
+  var intro = document.getElementById('intro'), cardsW = document.getElementById('cards');
+  var cards = [].slice.call(document.querySelectorAll('.card')), msg = document.getElementById('msg');
+  var step = 0, acc = 0, lastTick = 0, aligning = false;
+  var clamp = function(v,a,b){ return Math.min(b, Math.max(a,v)); };
+  var offset = function(){ return mq.matches ? CFG.firstHold : 0; };
+  var TOTAL = function(){ return CFG.perCard*3 + CFG.transition + CFG.holdAfter + offset(); };
+
+  function render(){
+    var t = clamp((step - (CFG.perCard*3 + offset())) / CFG.transition, 0, 1);
+    if(mq.matches){
+      var idx = Math.min(2, Math.floor(Math.max(0, step - CFG.firstHold) / CFG.perCard));
+      cards.forEach(function(c,i){
+        var off = i - idx, front = off === 0;
+        c.style.opacity = 1;
+        c.style.transform = 'translate(-50%,-50%) translateX(' + (off*36) + '%) scale(' + (front?1:.86) + ')';
+        c.style.zIndex = front ? 3 : 1;
+        c.style.filter = front ? 'none' : 'brightness(.55)';
+      });
+    } else {
+      cards.forEach(function(c,i){
+        var p = clamp((step - i*CFG.perCard) / CFG.perCard, 0, 1);
+        c.style.opacity = p;
+        c.style.transform = 'translateY(' + ((1-p)*90) + 'px) scale(' + (0.94 + 0.06*p) + ')';
+        c.style.zIndex = ''; c.style.filter = '';
+      });
+    }
+    var sIn = mq.matches ? clamp(step,0,1) : 1;
+    cardsW.style.opacity = (1-t) * sIn;
+    cardsW.style.transform = 'translateY(' + (-t*70 + (1-sIn)*60) + 'px) scale(' + (1 - t*0.06) + ')';
+    cardsW.style.filter = 'blur(' + (t*10) + 'px)';
+    msg.style.opacity = t;
+    msg.style.transform = 'translateY(' + ((1-t)*60) + 'px)';
+  }
+  function engaged(){
+    var r = intro.getBoundingClientRect(), mid = innerHeight/2;
+    return r.top < mid && r.bottom > mid;
+  }
+  function align(){
+    var top = intro.getBoundingClientRect().top + scrollY;
+    if(Math.abs(scrollY - top) < 2) return;
+    aligning = true; scrollTo({top:top, behavior:'smooth'});
+    setTimeout(function(){ aligning = false; }, 500);
+  }
+  function consume(d){
+    acc += d;
+    var now = performance.now();
+    if(Math.abs(acc) >= CFG.tick && now - lastTick >= CFG.cool){
+      step = clamp(step + (acc>0?1:-1), 0, TOTAL());
+      acc = 0; lastTick = now; render();
+    }
+  }
+  addEventListener('wheel', function(e){
+    if(!engaged()){ acc = 0; return; }
+    var down = e.deltaY > 0;
+    if(down ? step >= TOTAL() : step <= 0) return;
+    e.preventDefault();
+    if(!aligning) align();
+    consume(e.deltaY);
+  }, {passive:false});
+  var tY = null;
+  addEventListener('touchstart', function(e){ tY = e.touches[0].clientY; }, {passive:true});
+  addEventListener('touchmove', function(e){
+    if(tY === null || !engaged()) return;
+    var d = tY - e.touches[0].clientY;
+    if(d > 0 ? step >= TOTAL() : step <= 0) return;
+    e.preventDefault();
+    if(!aligning) align();
+    consume(d * 1.5); tY = e.touches[0].clientY;
+  }, {passive:false});
+  addEventListener('touchend', function(){ tY = null; });
+  mq.addEventListener('change', render);
+  render();
+
+  /* ── 등장 애니메이션 ── */
+  var io = new IntersectionObserver(function(en){
+    en.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); } });
+  }, {threshold:.15, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('[data-aos]').forEach(function(el){ io.observe(el); });
+
+  /* ── 배경 영상 지연 로드 (모바일 전용본 분기) ── */
+  var lv = new IntersectionObserver(function(en){
+    en.forEach(function(e){
+      var v = e.target;
+      if(e.isIntersecting){
+        if(!v.src && v.dataset.src){
+          v.preload = 'auto';
+          v.src = (mq.matches && v.dataset.srcMo) ? v.dataset.srcMo : v.dataset.src;
+        }
+        var p = v.play(); if(p) p.catch(function(){});
+      } else { v.pause(); }
+    });
+  }, {rootMargin:'200px 0px'});
+  document.querySelectorAll('.lazy-video').forEach(function(v){ lv.observe(v); });
+
+  /* ── 길안내 토글 ── */
+  var locMap = document.getElementById('locMap');
+  document.querySelectorAll('.toggle button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.toggle button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      locMap.src = b.dataset.map;
+    });
+  });
+
+  /* ── FAQ ── */
+  document.querySelectorAll('.faq-q').forEach(function(q){
+    q.addEventListener('click', function(){
+      var item = q.parentElement, open = item.classList.contains('open');
+      document.querySelectorAll('.faq-i').forEach(function(i){ i.classList.remove('open'); });
+      if(!open) item.classList.add('open');
+    });
+  });
+
+  /* ── D-Day ── */
+  var target = new Date('2026-08-30T13:00:00+09:00').getTime(), cd = document.getElementById('cd');
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  (function tick(){
+    var diff = target - Date.now();
+    if(diff <= 0){ cd.textContent = '00:00:00:00'; return; }
+    var d = Math.floor(diff/864e5), hh = Math.floor(diff%864e5/36e5), m = Math.floor(diff%36e5/6e4), s = Math.floor(diff%6e4/1e3);
+    cd.textContent = pad(d)+':'+pad(hh)+':'+pad(m)+':'+pad(s);
+    setTimeout(tick, 1000);
+  })();
+})();
+</script>
+</body>
+</html>
