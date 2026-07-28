@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
        값이 작을수록 조금만 굴려도 영상이 빨리 진행됩니다.
        (기존 600vh/300vh 는 한 화면당 영상이 2.5초밖에 안 흘러 답답했음) */
     const BREAKPOINTS = [
-        { minWidth: 1024, videoSrc: "static33/sec01_vid1.mp4", frameHeight: "350vh" },
-        { minWidth: 0,    videoSrc: "static33/sec01_vid2.mp4", frameHeight: "220vh" }
+        { minWidth: 1024, videoSrc: "static33/sec01_vid1.mp4", frameHeight: "450vh" },
+        { minWidth: 0,    videoSrc: "static33/sec01_vid2.mp4", frameHeight: "280vh" }
     ];
 
     const sec01Frame = document.querySelector(".sec01_frame");
