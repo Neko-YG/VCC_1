@@ -11,10 +11,15 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================================================================
        SECTION 1: 비디오 스크러빙 & 텍스트 (Vanilla JS + rAF + Seek Lock 방지)
     ========================================================================= */
+    /* ★ 스크롤 감도 조절 — frameHeight 숫자만 바꾸면 됩니다.
+       값이 작을수록 조금만 굴려도 영상이 빨리 진행됩니다.
+       (기존 600vh/300vh 는 한 화면당 영상이 2.5초밖에 안 흘러 답답했음)
+       SEEK_EASE : 0.1~0.5. 낮을수록 부드럽고 느리게, 높을수록 즉각 반응. */
     const BREAKPOINTS = [
-        { minWidth: 1024, videoSrc: "static33/sec01_vid1.mp4", frameHeight: "600vh" },
-        { minWidth: 0,    videoSrc: "static33/sec01_vid2.mp4", frameHeight: "300vh" }
+        { minWidth: 1024, videoSrc: "static33/sec01_vid1.mp4", frameHeight: "350vh" },
+        { minWidth: 0,    videoSrc: "static33/sec01_vid2.mp4", frameHeight: "220vh" }
     ];
+    const SEEK_EASE = 0.22;
 
     const sec01Frame = document.querySelector(".sec01_frame");
     const sec01Video = document.getElementById("sec01_video");
@@ -43,41 +48,49 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 모바일 렌더링 폭주를 막는 rAF 스크롤 루프
+    // 스크롤 → 목표 시점만 기록. 실제 seek 은 아래 렌더 루프가 부드럽게 따라감.
+    let seekTarget = 0;   // 스크롤이 가리키는 목표 시간
+    let seekShown  = 0;   // 현재 화면에 반영된 시간
+    let loopId = null;
+
     function onScrollSec01() {
-        if (isRafTicking) return;
-        isRafTicking = true;
+        const rect = sec01Frame.getBoundingClientRect();
+        const frameH = sec01Frame.offsetHeight - window.innerHeight;
+        if (frameH <= 0) return;
 
-        requestAnimationFrame(() => {
-            const rect = sec01Frame.getBoundingClientRect();
-            const frameH = sec01Frame.offsetHeight - window.innerHeight;
+        const progress = Math.min(Math.max(-rect.top / frameH, 0), 1);
+        seekTarget = (sec01Video.duration || 0) * progress;
 
-            if (frameH > 0) {
-                // 스크롤 진행률 (0.0 ~ 1.0)
-                const progress = Math.min(Math.max(-rect.top / frameH, 0), 1);
+        // 텍스트 투명도 — seek 상태와 무관하게 항상 갱신
+        let textOpacity = 1;
+        if (progress > 0.15) textOpacity = 1 - ((progress - 0.15) / 0.25);
+        textOpacity = Math.max(0, Math.min(1, textOpacity));
+        sec01Texts.style.opacity = textOpacity;
+        sec01Texts.style.transform = `translateY(${ (1 - textOpacity) * -30 }px)`;
 
-                // 1. 비디오 시간 업데이트 (디코더 락 방지)
-                if (sec01Video.duration && !sec01Video.seeking) {
-                    const targetTime = sec01Video.duration * progress;
-                    if (Math.abs(targetTime - lastVideoTime) > 0.04) { // 임계값 적용
-                        lastVideoTime = targetTime;
-                        sec01Video.currentTime = targetTime;
-                    }
-                }
+        if (loopId === null) loopId = requestAnimationFrame(renderSec01);
+    }
 
-                // 2. 텍스트 투명도 (GSAP 대신 rAF 내에서 직접 매끄럽게 처리)
-                // 스크롤 20% 지점까지는 1, 45% 지점까지 서서히 투명해짐
-                let textOpacity = 1;
-                if (progress > 0.15) {
-                    textOpacity = 1 - ((progress - 0.15) / 0.25);
-                }
-                textOpacity = Math.max(0, Math.min(1, textOpacity));
-                sec01Texts.style.opacity = textOpacity;
-                sec01Texts.style.transform = `translateY(${ (1 - textOpacity) * -30 }px)`;
+    // 목표 시점을 향해 감쇠 이동. seek 중이면 '건너뛰지 않고' 다음 프레임에 재시도.
+    function renderSec01() {
+        const diff = seekTarget - seekShown;
+
+        if (Math.abs(diff) < 0.012) {          // 충분히 도달 → 루프 정지
+            seekShown = seekTarget;
+            if (!sec01Video.seeking && sec01Video.duration) {
+                sec01Video.currentTime = seekShown;
             }
+            loopId = null;
+            return;
+        }
 
-            isRafTicking = false;
-        });
+        seekShown += diff * SEEK_EASE;         // 부드럽게 접근
+
+        if (!sec01Video.seeking && sec01Video.duration) {
+            sec01Video.currentTime = seekShown;
+            lastVideoTime = seekShown;
+        }
+        loopId = requestAnimationFrame(renderSec01);   // seek 중이어도 계속 시도
     }
 
     initSec01Media();
