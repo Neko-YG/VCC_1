@@ -2,6 +2,106 @@
 
 
 
+/* =========================================================================================================
+   [초기 로딩 최적화] 뷰포트 밖 배경영상 지연 로드
+   ---------------------------------------------------------------------------------------------------------
+   기존: 모든 배경영상이 autoplay 라 브라우저가 재생 준비를 위해 파일 전체를 즉시 받음
+         -> 첫 진입에 화면에 보이지도 않는 영상 약 18MB 가 함께 다운로드됨.
+   변경: 히어로(sec01_video)를 제외한 영상은 화면에 들어오기 전까지 play() 를 보류하고
+         preload='none' 로 묶어둔다. 뷰포트에 접근하면 그때 받아서 재생.
+   ※ 기존 반응형 전환 코드(sec03/04/11 등)는 그대로 두고, play() 시점만 가로챈다.
+   ========================================================================================================= */
+(function () {
+    var HERO = 'sec01_video';
+    var realPlay = HTMLMediaElement.prototype.play;
+    var visible = new WeakSet();
+
+    HTMLMediaElement.prototype.play = function () {
+        if (this.tagName === 'VIDEO' && this.id !== HERO && !visible.has(this)) {
+            this.preload = 'none';
+            return Promise.resolve();           // 화면 밖 -> 재생/다운로드 보류
+        }
+        return realPlay.apply(this, arguments);
+    };
+
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            var v = e.target;
+            if (e.isIntersecting) {
+                visible.add(v);
+                // data-src 로 묶어둔 영상(sec06)은 이 시점에 비로소 src 부여
+                if (!v.getAttribute('src') && v.dataset.src) {
+                    v.preload = 'auto';
+                    v.src = v.dataset.src;
+                } else if (v.preload !== 'auto') {
+                    v.preload = 'auto';
+                    v.load();
+                }
+                realPlay.call(v).catch(function () {});
+            } else {
+                visible.delete(v);
+                if (!v.paused) v.pause();
+            }
+        });
+    }, { rootMargin: '300px 0px' });
+
+    function reveal(v) {
+        if (!v.getAttribute('src') && v.dataset.src) {
+            v.preload = 'auto';
+            v.src = v.dataset.src;
+        } else if (v.preload !== 'auto') {
+            v.preload = 'auto';
+            v.load();
+        }
+        visible.add(v);
+        realPlay.call(v).catch(function () {});
+    }
+
+    /* IntersectionObserver 가 어떤 이유로 콜백을 주지 않아도 영상이 영영 안 뜨는 일이 없도록
+       스크롤 기반 보조 검사(rAF 스로틀)를 함께 둔다. */
+    var gated = [];
+    var lastSweep = 0;
+    var timer = null;
+    function sweep() {
+        timer = null;
+        lastSweep = Date.now();
+        var h = window.innerHeight;
+        for (var i = gated.length - 1; i >= 0; i--) {
+            var v = gated[i];
+            var r = v.getBoundingClientRect();
+            if (r.width === 0 && r.height === 0) continue;   // display:none (PC/MO 중복 세트) 는 건너뜀
+            if (r.top < h + 300 && r.bottom > -300) {
+                reveal(v);
+                gated.splice(i, 1);          // 한 번 열리면 목록에서 제외
+            }
+        }
+    }
+    // rAF 대신 시간 기반 스로틀 (백그라운드 탭에서 rAF 가 멈춰도 동작)
+    function onScrollSweep() {
+        if (!gated.length) return;
+        var wait = 120 - (Date.now() - lastSweep);
+        if (wait <= 0) { sweep(); }
+        else if (timer === null) { timer = setTimeout(sweep, wait); }
+    }
+    window.addEventListener('scroll', onScrollSweep, { passive: true });
+    window.addEventListener('resize', onScrollSweep);
+
+    function scan() {
+        document.querySelectorAll('video').forEach(function (v) {
+            if (v.id === HERO || v.__lazyGated) return;
+            v.__lazyGated = true;
+            v.removeAttribute('autoplay');
+            v.preload = 'none';
+            gated.push(v);
+            io.observe(v);
+        });
+        onScrollSweep();   // 첫 화면에 이미 보이는 영상은 즉시 처리
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan);
+    else scan();
+    window.addEventListener('load', scan);
+})();
+
 // =========================================================================================================
 // sec01 관련
 
