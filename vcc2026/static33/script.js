@@ -13,13 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================================================================= */
     /* ★ 스크롤 감도 조절 — frameHeight 숫자만 바꾸면 됩니다.
        값이 작을수록 조금만 굴려도 영상이 빨리 진행됩니다.
-       (기존 600vh/300vh 는 한 화면당 영상이 2.5초밖에 안 흘러 답답했음)
-       SEEK_EASE : 0.1~0.5. 낮을수록 부드럽고 느리게, 높을수록 즉각 반응. */
+       (기존 600vh/300vh 는 한 화면당 영상이 2.5초밖에 안 흘러 답답했음) */
     const BREAKPOINTS = [
         { minWidth: 1024, videoSrc: "static33/sec01_vid1.mp4", frameHeight: "350vh" },
         { minWidth: 0,    videoSrc: "static33/sec01_vid2.mp4", frameHeight: "220vh" }
     ];
-    const SEEK_EASE = 0.22;
 
     const sec01Frame = document.querySelector(".sec01_frame");
     const sec01Video = document.getElementById("sec01_video");
@@ -48,10 +46,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 스크롤 → 목표 시점만 기록. 실제 seek 은 아래 렌더 루프가 부드럽게 따라감.
-    let seekTarget = 0;   // 스크롤이 가리키는 목표 시간
-    let seekShown  = 0;   // 현재 화면에 반영된 시간
-    let loopId = null;
+    /* 스크롤 → 목표 시점 기록.
+       seek 은 rAF 로 '찔러보는' 대신 seeked 이벤트에 물려서 연쇄 발행한다.
+       (rAF 폴링 방식은 seek 완료 타이밍과 어긋나 갱신이 몰렸다 비었다 하며 끊겨 보임) */
+    let seekTarget = 0;      // 스크롤이 가리키는 목표 시간
+    let seekBusy   = false;  // seek 진행 중 여부
+    const canFast  = typeof sec01Video.fastSeek === 'function';  // all-intra 라 정밀도 손실 없음
+
+    function pumpSeek() {
+        if (seekBusy || !sec01Video.duration) return;
+        const t = seekTarget;
+        if (Math.abs(t - sec01Video.currentTime) < 0.008) return;   // 이미 도달
+        seekBusy = true;
+        if (canFast) { sec01Video.fastSeek(t); } else { sec01Video.currentTime = t; }
+        lastVideoTime = t;
+    }
+
+    // seek 이 끝나는 즉시 최신 목표로 다음 seek 발행 → 브라우저가 낼 수 있는 최대 속도로 연속 갱신
+    sec01Video.addEventListener('seeked', function () {
+        seekBusy = false;
+        pumpSeek();
+    });
+    sec01Video.addEventListener('error', function () { seekBusy = false; });
 
     function onScrollSec01() {
         const rect = sec01Frame.getBoundingClientRect();
@@ -68,29 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sec01Texts.style.opacity = textOpacity;
         sec01Texts.style.transform = `translateY(${ (1 - textOpacity) * -30 }px)`;
 
-        if (loopId === null) loopId = requestAnimationFrame(renderSec01);
-    }
-
-    // 목표 시점을 향해 감쇠 이동. seek 중이면 '건너뛰지 않고' 다음 프레임에 재시도.
-    function renderSec01() {
-        const diff = seekTarget - seekShown;
-
-        if (Math.abs(diff) < 0.012) {          // 충분히 도달 → 루프 정지
-            seekShown = seekTarget;
-            if (!sec01Video.seeking && sec01Video.duration) {
-                sec01Video.currentTime = seekShown;
-            }
-            loopId = null;
-            return;
-        }
-
-        seekShown += diff * SEEK_EASE;         // 부드럽게 접근
-
-        if (!sec01Video.seeking && sec01Video.duration) {
-            sec01Video.currentTime = seekShown;
-            lastVideoTime = seekShown;
-        }
-        loopId = requestAnimationFrame(renderSec01);   // seek 중이어도 계속 시도
+        pumpSeek();
     }
 
     initSec01Media();
