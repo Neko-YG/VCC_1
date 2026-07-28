@@ -2171,10 +2171,11 @@
   /* ════════════════════════════════
      텍스트 타이밍
   ════════════════════════════════ */
+  /* 영상 길이 14.83s 기준 (2.2초 유지 / 0.3초 간격) */
   const timings = [
-    { el: text1, inStart: 7.0,  outStart: 9.0  }, /* 2초 유지 */
-    { el: text2, inStart: 9.3,  outStart: 11.3 }, /* 2초 유지 */
-    { el: text3, inStart: 11.6, outStart: 13.6 }, /* 2초 유지 */
+    { el: text1, inStart: 7.6,  outStart: 9.8  },
+    { el: text2, inStart: 10.1, outStart: 12.3 },
+    { el: text3, inStart: 12.6, outStart: 14.8 },
   ];
 
   function updateTexts(t) {
