@@ -1,0 +1,194 @@
+
+
+
+
+.sec88{}
+
+.sec88_frame {
+    margin: 0;
+    padding: 0;
+    background: #030308;
+    height:150vh;
+}
+
+.sec88_wrap{
+    position:sticky;
+    top:0;
+    width:100%;
+    height:100vh;
+    overflow:hidden;
+}
+
+
+/* 컨테이너 div 설정 (원하는 크기로 조정 가능) */
+#sec88_lucky {
+    position: relative;
+    top:0;
+    left:0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #030308;
+}
+
+#sec88_lucky canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+
+
+#luckyTitle {
+    position: absolute;
+    top: 50px; /* 상단 여백 */
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+    width: 90%; /* 기본 폭 */
+    max-width: 600px;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    opacity: 0;
+    transition: opacity 1s ease, transform 1s ease;
+}
+#luckyTitle.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.lucky-heading {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: #ffffff;
+    text-shadow: 0 0 24px rgba(90, 120, 255, 0.55);
+}
+.lucky-heading .accent {
+    background: linear-gradient(100deg, #6a8fff 10%, #a06bff 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+.lucky-sub {
+    margin-top: 14px;
+    font-size: 15px; /* 데스크탑 설명 글자 크기 */
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    word-break: keep-all; /* 단어 단위 줄바꿈 (자연스러운 한글 표기) */
+}
+
+
+#swipeHint {
+    position: absolute;
+    bottom: 30px; /* 하단 여백 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    text-align: center;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    transition: opacity 0.4s;
+}
+#swipeHint.hidden {
+    opacity: 0;
+}
+
+.swipe-track {
+    position: relative;
+    width: 140px; /* 스와이프 바 트랙 너비 */
+    height: 26px;
+    margin: 0 auto 6px;
+}
+.swipe-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 12px 4px rgba(160, 190, 255, 0.55);
+    animation: swipeSlide 2.2s ease-in-out infinite;
+}
+@keyframes swipeSlide {
+    0%   { transform: translate(-50%,-50%) translateX(-46px); }
+    50%  { transform: translate(-50%,-50%) translateX(46px); }
+    100% { transform: translate(-50%,-50%) translateX(-46px); }
+}
+.chev {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-54%);
+    font-size: 20px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.5);
+    animation: chevPulse 2.2s ease-in-out infinite;
+}
+.chev.left { left: 0; }
+.chev.right { right: 0; animation-delay: 1.1s; }
+@keyframes chevPulse {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 0.25; }
+}
+.swipe-text {
+    font-size: 13px; /* 하단 안내 문구 크기 */
+    letter-spacing: 0.05em;
+}
+
+/* 태블릿 구간 (화면폭 1024px 이하) */
+@media (max-width: 1024px) {
+    #luckyTitle {
+        top: 40px; /* 위치 조정 */
+    }
+    .lucky-heading {
+        font-size: 32px; /* 제목 크기 지정 */
+    }
+    .lucky-sub {
+        font-size: 14px; /* 본문 크기 지정 */
+    }
+    .swipe-text {
+        font-size: 12px;
+    }
+}
+
+/* 모바일 구간 (화면폭 768px 이하) */
+@media (max-width: 768px) {
+    #luckyTitle {
+        top: 30px;
+        width: 92%;
+    }
+    .lucky-heading {
+        font-size: 26px; /* 모바일 전용 제목 크기 */
+    }
+    .lucky-sub {
+        font-size: 13px; /* 모바일 전용 설명 크기 */
+        line-height: 1.5;
+    }
+    #swipeHint {
+        bottom: 20px;
+    }
+    .swipe-track {
+        width: 120px; /* 모바일에선 트랙도 조절 가능 */
+    }
+    .swipe-text {
+        font-size: 11px;
+    }
+}
+
+/* 초소형 모바일 구간 (화면폭 480px 이하) */
+@media (max-width: 480px) {
+    #luckyTitle {
+        top: 20px;
+    }
+    .lucky-heading {
+        font-size: 22px; /* 아주 작은 화면용 크기 */
+    }
+    .lucky-sub {
+        font-size: 12px;
+    }
+}
+
