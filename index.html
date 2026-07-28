@@ -1800,7 +1800,7 @@
 
   <div class="after-video-wrap" data-aos>
     <video class="lazy-video" muted loop playsinline webkit-playsinline
-           preload="none" data-src="after_web.mp4"></video>
+           preload="none" data-src="after_web.mp4" data-src-mo="after_web_mo.mp4"></video>
   </div>
 
   <div class="after-bottom-pad"></div>
@@ -1811,7 +1811,7 @@
 <section id="venueSection">
   <div class="venue-box" data-aos>
     <video id="venueBg" class="lazy-video" muted loop playsinline webkit-playsinline
-           preload="none" data-src="venue_web.mp4"></video>
+           preload="none" data-src="venue_web.mp4" data-src-mo="venue_web_mo.mp4"></video>
     <div class="venue-overlay"></div>
     <div class="venue-content">
       <p class="venue-date">2026. 09. 02. (WED)</p>
@@ -1952,7 +1952,7 @@
 <section id="ctaSection">
   <div class="cta-box" data-aos>
     <video class="cta-video lazy-video" muted loop playsinline webkit-playsinline
-           preload="none" data-src="cta_web.mp4"></video>
+           preload="none" data-src="cta_web.mp4" data-src-mo="cta_web_mo.mp4"></video>
     <div class="cta-overlay"></div>
     <div class="cta-content">
       <img loading="lazy" decoding="async" class="cta-logo" src="vcc_logo.png" alt="VCC">
@@ -2403,7 +2403,12 @@
     entries.forEach(function (entry) {
       var v = entry.target;
       if (entry.isIntersecting) {
-        if (!v.src && v.dataset.src) { v.preload = 'auto'; v.src = v.dataset.src; }
+        if (!v.src && v.dataset.src) {
+          /* 모바일은 세로/저용량 전용본을 받는다 */
+          var pick = (mobileQuery.matches && v.dataset.srcMo) ? v.dataset.srcMo : v.dataset.src;
+          v.preload = 'auto';
+          v.src = pick;
+        }
         var p = v.play();
         if (p) p.catch(function () {});
       } else {
