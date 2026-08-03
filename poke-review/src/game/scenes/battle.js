@@ -8,7 +8,8 @@
  *  - 등장할 때 양쪽에서 미끄러져 들어오고, 맞으면 깜빡이며 화면이 흔들린다
  */
 import { drawMonster } from '../engine/monsterdraw.js';
-import { TYPES } from '../../data/kpi.js';
+import { TYPES, KPI_BY_ID } from '../../data/kpi.js';
+import { movesFrom } from '../../engine/scoring.js';
 import { BADGE_BY_ID } from '../../data/badges.js';
 import { mix, shade } from '../../core/color.js';
 
@@ -37,6 +38,9 @@ export class BattleScene {
     this.shake = 0;
     this.intro = INTRO;
     this.finished = false;
+    /** 이번 달 실적으로 만들어진 기술 4개 (4세대의 2×2 기술 그리드) */
+    this.moves = movesFrom(entry.kpiScores);
+    this.activeMove = -1;
   }
 
   enter() {
@@ -53,6 +57,11 @@ export class BattleScene {
     const line = this.log[this.i];
     if (typeof line.playerHp === 'number') this.targetPlayerHp = line.playerHp;
     if (typeof line.foeHp === 'number') this.targetFoeHp = line.foeHp;
+    if (line.kind === 'player') {
+      this.activeMove = this.moves.findIndex((mv) => line.text.includes(mv.name));
+    } else if (line.kind === 'foe') {
+      this.activeMove = -1;
+    }
     if (line.dmg > 0) {
       const side = line.kind === 'player' ? 'foe' : 'player';
       this.flash[side] = 0.5;
@@ -118,7 +127,7 @@ export class BattleScene {
 
     drawMonster(
       ctx,
-      { speciesId: `boss:${this.boss.id}`, type: this.boss.type, stage: 3 },
+      { speciesId: `boss:${this.boss.id}`, type: this.boss.type, stage: 3, expression: faceFor(this.foeHp) },
       { x: W - 76 + slideFoe, y: 30 + this.faint.foe * 26, size: 52, flash: this.flash.foe, alpha: 1 - this.faint.foe },
     );
     drawMonster(
@@ -128,6 +137,8 @@ export class BattleScene {
     );
 
     ctx.restore();
+
+    if (this.intro <= 0) this.moveGrid(ctx, 6, 44);
 
     // 체력 상자는 반대편에서 들어온다
     this.hpBox(ctx, 6 - slideFoe, 8, this.boss.name, this.boss.level, this.foeHp, null);
@@ -140,6 +151,42 @@ export class BattleScene {
       this.playerHp,
       this.entry.progress.ratio,
     );
+  }
+
+  /**
+   * 기술 4개를 2×2 로 (4세대 기술 선택 화면의 배치).
+   * 관전 화면이라 '무엇을 썼는지'를 보여주는 용도 — 쓰인 기술에 커서가 붙는다.
+   */
+  moveGrid(ctx, x, y) {
+    const cw = 58;
+    const ch = 24;
+    ctx.textBaseline = 'top';
+    this.moves.forEach((mv, i) => {
+      const cx = x + (i % 2) * (cw + 3);
+      const cy = y + Math.floor(i / 2) * (ch + 3);
+      const active = i === this.activeMove;
+      const type = TYPES[mv.type];
+      roundRect(ctx, cx, cy, cw, ch, 4, active ? '#fffbe8' : 'rgba(248,244,232,0.82)', active ? '#e8a020' : '#6a6058');
+      // 타입 띠 — 4세대 기술 칸의 타입 표시
+      ctx.fillStyle = type?.color || '#888';
+      ctx.fillRect(cx + 3, cy + ch - 5, cw - 6, 3);
+      ctx.fillStyle = '#3a3430';
+      ctx.font = 'bold 8px system-ui, sans-serif';
+      ctx.fillText(KPI_BY_ID[mv.kpiId]?.name || mv.name, cx + (active ? 10 : 5), cy + 3);
+      ctx.fillStyle = '#8a8078';
+      ctx.font = '7px system-ui, sans-serif';
+      ctx.fillText(`위력 ${mv.power}`, cx + 5, cy + 12);
+      ctx.font = 'bold 8px system-ui, sans-serif';
+      if (active) {
+        ctx.fillStyle = '#e8a020';
+        ctx.beginPath();
+        ctx.moveTo(cx + 4, cy + 4);
+        ctx.lineTo(cx + 8, cy + 7);
+        ctx.lineTo(cx + 4, cy + 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
   }
 
   /** 하늘 → 지평선 → 배틀 필드 */
@@ -220,6 +267,13 @@ export class BattleScene {
   }
 
   dispose() {}
+}
+
+/** 체력이 깎이면 표정이 어두워진다 */
+function faceFor(hpRatio) {
+  if (hpRatio <= 0.3) return 'hurt';
+  if (hpRatio >= 0.95) return 'happy';
+  return 'normal';
 }
 
 /** 모서리가 둥근 사각형 (테두리 선택) */

@@ -57,6 +57,15 @@ export const PAL = {
   roofLight: '#f07068',
   roofDark: '#983030',
   roofLine: '#6a1f1f',
+  centerRoof: '#f08830',
+  centerRoofLight: '#ffb060',
+  centerRoofDark: '#b85818',
+  martRoof: '#3888d8',
+  martRoofLight: '#68b0f0',
+  martRoofDark: '#205898',
+  gymRoof: '#8090a8',
+  gymRoofLight: '#b0c0d0',
+  gymRoofDark: '#586880',
   wall: '#f8ecd0',
   wallDark: '#d8c0a0',
   wallLine: '#a08868',
@@ -363,33 +372,66 @@ function drawSign(ctx, x, y) {
 
 /* ── 건물 ───────────────────────────────────────────── */
 
-function drawRoof(ctx, x, y, gx, gy, map) {
-  const m = mask(map, gx, gy, 'roof');
-  rect(ctx, x, y, TILE, TILE, PAL.roof);
-  // 기와 결
+const ROOF_STYLE = {
+  roof: { base: PAL.roof, light: PAL.roofLight, dark: PAL.roofDark, trim: null, symbol: null },
+  roofCenter: { base: PAL.centerRoof, light: PAL.centerRoofLight, dark: PAL.centerRoofDark, trim: '#f8f8f8', symbol: 'ball' },
+  roofMart: { base: PAL.martRoof, light: PAL.martRoofLight, dark: PAL.martRoofDark, trim: '#f8f8f8', symbol: null },
+  roofGym: { base: PAL.gymRoof, light: PAL.gymRoofLight, dark: PAL.gymRoofDark, trim: null, symbol: 'badge' },
+};
+
+/**
+ * 지붕. 종류마다 색과 장식이 다르다.
+ * 용마루(위)·처마(아래)·박공(좌우)을 이웃 여부로 그려야 건물처럼 보인다.
+ */
+function drawRoofKind(ctx, x, y, gx, gy, map, kind) {
+  const st = ROOF_STYLE[kind] || ROOF_STYLE.roof;
+  const m = mask(map, gx, gy, kind);
+  rect(ctx, x, y, TILE, TILE, st.base);
   for (let i = 0; i < TILE; i += 4) {
-    rect(ctx, x, y + i, TILE, 1, PAL.roofDark);
-    rect(ctx, x, y + i + 1, TILE, 1, mix(PAL.roof, PAL.roofLight, 0.5));
+    rect(ctx, x, y + i, TILE, 1, st.dark);
+    rect(ctx, x, y + i + 1, TILE, 1, mix(st.base, st.light, 0.5));
   }
   if (!m.n) {
-    // 용마루
-    rect(ctx, x, y, TILE, 2, PAL.roofLight);
-    rect(ctx, x, y + 2, TILE, 1, PAL.roofDark);
+    rect(ctx, x, y, TILE, 2, st.light);
+    rect(ctx, x, y + 2, TILE, 1, st.dark);
     rect(ctx, x, y, TILE, 1, PAL.outline);
   }
   if (!m.s) {
-    // 처마 — 벽보다 한 칸 튀어나오게
-    rect(ctx, x, y + TILE - 4, TILE, 3, PAL.roofDark);
+    rect(ctx, x, y + TILE - 4, TILE, 3, st.dark);
     rect(ctx, x, y + TILE - 1, TILE, 1, PAL.outline);
   }
   if (!m.w) {
     rect(ctx, x, y, 1, TILE, PAL.outline);
-    rect(ctx, x + 1, y, 1, TILE, PAL.roofDark);
+    rect(ctx, x + 1, y, 1, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + 2, y, 1, TILE, st.trim);
   }
   if (!m.e) {
     rect(ctx, x + TILE - 1, y, 1, TILE, PAL.outline);
-    rect(ctx, x + TILE - 2, y, 1, TILE, PAL.roofDark);
+    rect(ctx, x + TILE - 2, y, 1, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + TILE - 3, y, 1, TILE, st.trim);
   }
+  // 건물 심볼 — 지붕 가운데 한 칸에만
+  if (st.symbol && !m.n && m.s) {
+    const cx = x + TILE / 2;
+    const cy = y + TILE / 2 + 2;
+    if (st.symbol === 'ball' && gx % 6 === 2) {
+      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
+      ellipse(ctx, cx, cy, 4, 4, '#f8f8f8');
+      rect(ctx, x + 3, y + Math.round(TILE / 2), 11, 1, PAL.outline);
+      ellipse(ctx, cx, cy - 2.5, 3.6, 2.4, '#e04030');
+      ellipse(ctx, cx, cy, 1.6, 1.6, PAL.outline);
+      ellipse(ctx, cx, cy, 0.9, 0.9, '#f8f8f8');
+    }
+    if (st.symbol === 'badge' && gx % 9 === 4) {
+      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
+      ellipse(ctx, cx, cy, 4, 4, '#ffd166');
+      ellipse(ctx, cx, cy, 2, 2, '#f0f4f8');
+    }
+  }
+}
+
+function drawRoof(ctx, x, y, gx, gy, map) {
+  drawRoofKind(ctx, x, y, gx, gy, map, 'roof');
 }
 
 function drawWallBase(ctx, x, y, gx, gy, map) {
@@ -428,6 +470,18 @@ function drawDoor(ctx, x, y, gx, gy, map) {
   px(ctx, x + 10, y + 9, '#ffd166');
 }
 
+/** 센터 카운터 */
+function drawCounter(ctx, x, y, gx, gy, map) {
+  drawFloor(ctx, x, y, gx, gy);
+  rect(ctx, x, y + 2, TILE, 12, '#e8c890');
+  rect(ctx, x, y + 2, TILE, 2, '#f8e0b0');
+  rect(ctx, x, y + 12, TILE, 2, '#b08850');
+  rect(ctx, x, y + 14, TILE, 1, PAL.outline);
+  rect(ctx, x, y + 1, TILE, 1, PAL.outline);
+  if (!sameKind(map, gx - 1, gy, 'counter')) rect(ctx, x, y + 2, 1, 12, PAL.outline);
+  if (!sameKind(map, gx + 1, gy, 'counter')) rect(ctx, x + TILE - 1, y + 2, 1, 12, PAL.outline);
+}
+
 function drawPlant(ctx, x, y, gx, gy) {
   drawFloor(ctx, x, y, gx, gy);
   rect(ctx, x + 4, y + 10, 8, 6, PAL.outline);
@@ -459,8 +513,12 @@ const GROUND = {
   window: () => {},
   door: () => {},
   roof: () => {},
+  roofCenter: () => {},
+  roofMart: () => {},
+  roofGym: () => {},
   indoorwall: () => {},
   plant: () => {},
+  counter: () => {},
 };
 
 const OBJECT = {
@@ -470,6 +528,10 @@ const OBJECT = {
   window: drawWindow,
   door: drawDoor,
   roof: drawRoof,
+  roofCenter: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofCenter'),
+  roofMart: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofMart'),
+  roofGym: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofGym'),
+  counter: drawCounter,
   indoorwall: drawIndoorWall,
   plant: drawPlant,
   bush: (ctx, x, y, gx, gy) => drawBush(ctx, x, y, gx, gy),

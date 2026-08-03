@@ -10,11 +10,17 @@ import { Loop } from './engine/loop.js';
 import { TextBox } from './ui/textbox.js';
 import { Banner } from './ui/banner.js';
 import { MAPS } from './world/maps.js';
+import { PresenterMode, CONTROL_SCHEMES } from './engine/controls.js';
 import { FieldScene } from './scenes/field.js';
 import { BattleScene } from './scenes/battle.js';
 
 export const VIEW_W = 256; // DS 상단 화면과 같은 논리 해상도
 export const VIEW_H = 192;
+
+const HINTS = {
+  keyboard: '이동 방향키 · 대화/확인 Z·Space · 취소 X · 달리기 Shift · 화면을 클릭하면 그 자리로 걸어간다',
+  presenter: '레이저 포인터 리모컨: [다음/PageDown] 실행·대화 진행 · [이전/PageUp] 대상 바꾸기',
+};
 
 export class Game {
   /**
@@ -43,7 +49,11 @@ export class Game {
     this.textbox = new TextBox(this.overlay);
     this.banner = new Banner(this.overlay);
     this.input = new Input(window);
+    /** 레이저 포인터(프레젠터 리모컨) 조작 상태 */
+    this.presenter = new PresenterMode();
     this.bindPad();
+    // 포인터(마우스·터치·자이로 레이저 포인터) — 찍은 칸까지 걸어간다
+    this.input.bindPointer(this.canvas, (p) => this.scene?.onPointer?.(p));
 
     this.loop = new Loop((dt, time) => this.step(dt, time));
     this.scene = null;
@@ -199,22 +209,44 @@ export class Game {
       btn('A', 'confirm', 'gb__btn--a'),
     );
 
+    this.schemeLabel = h('span', { class: 'gb__scheme' }, '조작: 키보드 / 터치');
     const links = h(
       'div',
       { class: 'gb__links' },
+      h(
+        'button',
+        {
+          class: 'btn btn--sm',
+          type: 'button',
+          onClick: () => this.toggleScheme(),
+        },
+        '조작 방식 전환',
+      ),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/dex') }, '도감'),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/league') }, '리그'),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/admin') }, '실적 입력'),
     );
 
+    this.hintEl = h('p', { class: 'gb__hint' }, HINTS.keyboard);
     return h(
       'div',
       { class: 'gb__pad' },
       this.dpad,
-      h('p', { class: 'gb__hint' }, '이동 방향키 · 대화/확인 Z 또는 Space · 취소 X · 달리기 Shift'),
+      h('div', { class: 'gb__hintwrap' }, this.hintEl, this.schemeLabel),
       this.actions,
       links,
     );
+  }
+
+  /** 키보드 ↔ 레이저 포인터(프레젠터) 조작 전환 */
+  toggleScheme() {
+    this.presenter.enabled = !this.presenter.enabled;
+    if (this.presenter.enabled && this.scene?.targetsNear) {
+      this.presenter.setTargets(this.scene.targetsNear());
+    }
+    const scheme = CONTROL_SCHEMES[this.presenter.enabled ? 1 : 0];
+    this.schemeLabel.textContent = `조작: ${scheme.name}`;
+    this.hintEl.textContent = this.presenter.enabled ? HINTS.presenter : HINTS.keyboard;
   }
 
   bindPad() {

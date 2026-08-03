@@ -511,7 +511,9 @@ input, select, textarea {
   align-items: center;
   gap: 12px;
 }
+.gb__hintwrap { display: grid; gap: 4px; justify-items: center; }
 .gb__hint { margin: 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+.gb__scheme { font-size: 11px; color: var(--accent); font-weight: 700; }
 .gb__dpad {
   display: grid;
   grid-template-columns: repeat(3, 38px);
@@ -740,10 +742,11 @@ function rollIvs(seedStr, statIds) {
  * 파트너 몬스터의 "형상"을 만든다 (그리는 건 렌더러 몫).
  * 도감(SVG)과 배틀(캔버스)이 같은 모양을 쓰도록 여기서 한 번만 계산한다.
  *
- * 덩어리 하나로는 생물로 보이지 않는다. 몸통 위에 머리를 얹고 귀·팔·다리·꼬리를
- * 붙인 뒤, 배에 밝은 무늬를 넣고 실루엣 둘레에 외곽선을 두른다.
- * 종족 id 를 시드로 귀 모양·꼬리·체형이 정해지고, 진화 단계가 오르면 몸이
- * 커지면서 뿔·가시 같은 장식이 늘어난다.
+ * 설계 방향: 무섭지 않고 친근한 '작은 동물'.
+ *  - 머리가 몸보다 크다 (2등신). 이 비율이 귀여움의 8할이다
+ *  - 눈이 크고 하이라이트가 두 개, 볼에 홍조, 입은 작게
+ *  - 귀·꼬리·발로 종족을 구분한다 (고양이/토끼/강아지/곰...)
+ *  - 표정을 바꿀 수 있다: 평소 / 기쁨 / 아픔 — 배틀에서 체력에 따라 달라진다
  */
 
 
@@ -760,15 +763,19 @@ const TONE = {
   EYE_HI: 6,
   MOUTH: 7,
   OUTLINE: 8,
+  CHEEK: 9,
+  EYE_WHITE: 10,
 };
 
+const EXPRESSIONS = ['normal', 'happy', 'hurt'];
+
 /**
- * @param {{speciesId:string, stage:number, back?:boolean}} opts  back=true 면 뒷모습(내 쪽 몬스터)
+ * @param {{speciesId:string, stage:number, back?:boolean, expression?:'normal'|'happy'|'hurt'}} opts
  * @returns {{size:number, matrix:Uint8Array, cells:{x:number,y:number,tone:number}[]}}
  */
-function monsterShape({ speciesId = 'ember', stage = 1, back = false } = {}) {
+function monsterShape({ speciesId = 'ember', stage = 1, back = false, expression = 'normal' } = {}) {
   const G = MONSTER_GRID;
-  const rng = createRng(`${speciesId}:shape`);
+  const rng = createRng(`${speciesId}:animal`);
   const m = new Uint8Array(G * G);
   const idx = (x, y) => y * G + x;
   const put = (x, y, tone) => {
@@ -777,7 +784,6 @@ function monsterShape({ speciesId = 'ember', stage = 1, back = false } = {}) {
     if (xi < 0 || yi < 0 || xi >= G || yi >= G) return;
     m[idx(xi, yi)] = tone;
   };
-  /** 좌우 대칭으로 찍는다 */
   const mirror = (x, y, tone) => {
     put(x, y, tone);
     put(G - 1 - x, y, tone);
@@ -795,100 +801,146 @@ function monsterShape({ speciesId = 'ember', stage = 1, back = false } = {}) {
     }
   };
 
-  // 종족별 개성
-  const earType = rng.int(0, 2); // 0 뾰족귀 / 1 둥근귀 / 2 뿔
-  const tailType = rng.int(0, 2);
-  const chunky = rng.chance(0.5);
+  // 종족 개성 — 귀 모양이 캐릭터를 가장 크게 좌우한다
+  const earType = rng.int(0, 3); // 0 고양이 / 1 토끼 / 2 강아지(처진 귀) / 3 곰(동그란 귀)
+  const tailType = rng.int(0, 2); // 0 짧은 / 1 뭉툭 / 2 긴
+  const CX = 12;
 
-  const grow = (stage - 1) * 0.9;
-  const bodyRx = (chunky ? 6.4 : 5.6) + grow;
-  const bodyRy = (chunky ? 5.4 : 5.8) + grow * 0.8;
-  const bodyCy = 15.5 - grow * 0.5;
-  const headR = 4.4 + grow * 0.55;
-  const headCy = bodyCy - bodyRy - headR + 3.2;
+  // 2등신 비율: 진화해도 머리를 크게 유지한다
+  const grow = (stage - 1) * 0.7;
+  const headR = 6.4 + grow * 0.5;
+  const headCy = 9.2;
+  const bodyRx = 5.0 + grow;
+  const bodyRy = 4.2 + grow * 0.6;
+  const bodyCy = headCy + headR + bodyRy - 2.6;
 
-  // 꼬리 (몸 뒤쪽 = 오른쪽)
-  if (stage >= 2 || tailType > 0) {
-    const len = 3 + stage;
+  /* 꼬리 — 몸 오른쪽 뒤 */
+  {
+    const len = tailType === 2 ? 5 + stage : 3 + stage;
     for (let i = 0; i < len; i++) {
       const t = i / len;
-      const x = 12 + bodyRx - 1 + i * 1.1;
-      const y = bodyCy + 1 - Math.sin(t * 2.2) * (2 + stage);
-      disc(x, y, 1.6 - t * 0.6, 1.6 - t * 0.6, TONE.BASE);
+      const x = CX + bodyRx - 1 + i * 1.05;
+      const y = bodyCy + 0.5 - Math.sin(t * 2.0) * (2 + stage * 0.8);
+      disc(x, y, 1.7 - t * 0.5, 1.7 - t * 0.5, TONE.BASE);
     }
-    if (stage >= 3) disc(12 + bodyRx + len * 1.1, bodyCy - 4 - stage, 2.2, 2.2, TONE.LIGHT);
+    // 꼬리 끝 뭉치
+    if (tailType >= 1) {
+      const t = 1;
+      disc(CX + bodyRx - 1 + len * 1.05, bodyCy + 0.5 - Math.sin(t * 2.0) * (2 + stage * 0.8), 2.2, 2.2, TONE.LIGHT);
+    }
   }
 
-  // 다리
-  const legY = bodyCy + bodyRy - 1;
-  const legSpread = chunky ? 3.2 : 2.6;
+  /* 발 */
   for (const s of [-1, 1]) {
-    disc(12 + s * legSpread, legY + 2, 2.2, 2.4, TONE.BASE);
-    disc(12 + s * legSpread, legY + 3.2, 2.4, 1.4, TONE.DARK);
+    disc(CX + s * 3.0, bodyCy + bodyRy - 0.2, 2.4, 1.9, TONE.BASE);
+    disc(CX + s * 3.0, bodyCy + bodyRy + 0.4, 2.0, 1.2, TONE.LIGHT);
   }
 
-  // 팔
-  for (const s of [-1, 1]) {
-    disc(12 + s * (bodyRx + 0.4), bodyCy - 0.5, 1.9, 2.6, TONE.BASE);
-  }
-
-  // 몸통 + 배 무늬 + 등 하이라이트
-  disc(12, bodyCy, bodyRx, bodyRy, TONE.BASE);
+  /* 몸통 */
+  disc(CX, bodyCy, bodyRx, bodyRy, TONE.BASE);
   if (back) {
-    // 뒷모습: 배 무늬 대신 등 한가운데가 어둡다
-    disc(12, bodyCy + 0.6, bodyRx * 0.55, bodyRy * 0.6, TONE.DARK);
-    disc(12, bodyCy - bodyRy * 0.5, bodyRx * 0.55, bodyRy * 0.35, TONE.LIGHT);
+    disc(CX, bodyCy + 0.4, bodyRx * 0.5, bodyRy * 0.55, TONE.DARK);
   } else {
-    disc(12, bodyCy + 1.2, bodyRx * 0.62, bodyRy * 0.62, TONE.BELLY);
-    disc(12, bodyCy - bodyRy * 0.55, bodyRx * 0.5, bodyRy * 0.3, TONE.LIGHT);
+    disc(CX, bodyCy + 0.8, bodyRx * 0.6, bodyRy * 0.65, TONE.BELLY);
   }
 
-  // 머리
-  disc(12, headCy, headR + 0.6, headR, TONE.BASE);
-  disc(12, headCy - headR * 0.45, headR * 0.7, headR * 0.42, back ? TONE.DARK : TONE.LIGHT);
+  /* 앞발(팔) */
+  for (const s of [-1, 1]) {
+    disc(CX + s * (bodyRx + 0.2), bodyCy - 0.3, 1.7, 2.2, TONE.BASE);
+  }
 
-  // 귀 / 뿔
-  const earX = 12 - headR * 0.75;
-  const earH = 2 + stage;
+  /* 머리 */
+  disc(CX, headCy, headR, headR - 0.4, TONE.BASE);
+  disc(CX, headCy - headR * 0.5, headR * 0.62, headR * 0.34, back ? TONE.DARK : TONE.LIGHT);
+
+  /* 귀 */
+  const earOff = headR * 0.62;
   if (earType === 0) {
-    for (let i = 0; i < earH; i++) {
-      const w = Math.max(0, 2 - i * 0.5);
-      for (let k = 0; k <= w; k++) mirror(Math.round(earX - k), Math.round(headCy - headR - i + 0.5), TONE.BASE);
+    // 고양이 — 삼각 귀
+    for (let i = 0; i < 4 + stage; i++) {
+      const w = Math.max(0, 2.6 - i * 0.6);
+      for (let k = 0; k <= w; k++) {
+        mirror(Math.round(CX - earOff - k + 1), Math.round(headCy - headR - i + 2), TONE.BASE);
+      }
     }
+    for (let i = 0; i < 2 + stage; i++) mirror(Math.round(CX - earOff + 1), Math.round(headCy - headR - i + 2.5), TONE.BELLY);
   } else if (earType === 1) {
-    disc(earX - 0.5, headCy - headR + 0.5, 2 + stage * 0.3, 2.2 + stage * 0.3, TONE.BASE, { mirrorX: true });
-    disc(earX - 0.5, headCy - headR + 0.8, 1 + stage * 0.2, 1.2 + stage * 0.2, TONE.DARK, { mirrorX: true });
+    // 토끼 — 길고 둥근 귀
+    disc(CX - earOff, headCy - headR - 2.5 - stage * 0.6, 1.9, 4 + stage * 0.8, TONE.BASE, { mirrorX: true });
+    disc(CX - earOff, headCy - headR - 2.5 - stage * 0.6, 0.9, 2.6 + stage * 0.5, TONE.BELLY, { mirrorX: true });
+  } else if (earType === 2) {
+    // 강아지 — 옆으로 처진 귀
+    disc(CX - headR + 0.5, headCy - 1.5, 2.2, 3.4 + stage * 0.4, TONE.BASE, { mirrorX: true });
+    disc(CX - headR + 0.5, headCy - 1.5, 1.2, 2.2 + stage * 0.3, TONE.DARK, { mirrorX: true });
   } else {
-    for (let i = 0; i < earH + 1; i++) {
-      mirror(Math.round(earX + 0.5), Math.round(headCy - headR - i + 1), i < 2 ? TONE.BASE : TONE.LIGHT);
-    }
+    // 곰 — 동그란 귀
+    disc(CX - earOff - 0.4, headCy - headR + 0.6, 2.4 + stage * 0.2, 2.4 + stage * 0.2, TONE.BASE, { mirrorX: true });
+    disc(CX - earOff - 0.4, headCy - headR + 0.9, 1.2, 1.2, TONE.BELLY, { mirrorX: true });
   }
 
-  // 최종 진화는 등에 가시 한 쌍 더
-  if (stage >= 3) {
-    for (let i = 0; i < 3; i++) {
-      mirror(Math.round(12 - bodyRx * 0.55), Math.round(bodyCy - bodyRy - i + 1), TONE.LIGHT);
-    }
-  }
+  /* 최종 진화 표시 — 이마의 작은 보석 */
+  if (stage >= 3 && !back) disc(CX, headCy - headR * 0.62, 1.2, 1.2, TONE.LIGHT);
 
-  // 눈·입 (뒷모습에는 없다)
+  /* 얼굴 — 뒷모습에는 없다 */
   if (!back) {
-    const eyeY = Math.round(headCy - 0.2);
-    const eyeX = Math.round(12 - headR * 0.55);
-    for (const ex of [eyeX, G - 1 - eyeX]) {
-      put(ex, eyeY, TONE.EYE_HI);
-      put(ex, eyeY + 1, TONE.EYE);
+    const eyeY = headCy + 0.6;
+    const eyeX = CX - headR * 0.48;
+
+    if (expression === 'happy') {
+      // ^ ^ 감은 눈
+      for (const s of [-1, 1]) {
+        const ex = CX + s * headR * 0.48;
+        put(ex - 1, eyeY, TONE.EYE);
+        put(ex, eyeY - 1, TONE.EYE);
+        put(ex + 1, eyeY, TONE.EYE);
+      }
+    } else if (expression === 'hurt') {
+      // > < 찡그린 눈
+      for (const s of [-1, 1]) {
+        const ex = CX + s * headR * 0.48;
+        put(ex - 1, eyeY - 1, TONE.EYE);
+        put(ex, eyeY, TONE.EYE);
+        put(ex - 1, eyeY + 1, TONE.EYE);
+        put(ex + 1, eyeY - 1, TONE.EYE);
+        put(ex + 1, eyeY + 1, TONE.EYE);
+      }
+    } else {
+      // 큰 눈 + 하이라이트 두 개
+      for (const s of [-1, 1]) {
+        const ex = CX + s * headR * 0.48;
+        disc(ex, eyeY, 2.1, 2.6, TONE.EYE);
+        disc(ex - 0.6, eyeY - 0.9, 0.9, 0.9, TONE.EYE_HI);
+        put(ex + 1, eyeY + 1, TONE.EYE_WHITE);
+      }
     }
-    const mouthY = eyeY + 2;
-    put(11, mouthY, TONE.MOUTH);
-    put(12, mouthY, TONE.MOUTH);
-    if (stage >= 2) {
-      put(10, mouthY - 1, TONE.MOUTH);
-      put(13, mouthY - 1, TONE.MOUTH);
+
+    // 볼 홍조
+    for (const s of [-1, 1]) {
+      disc(CX + s * (headR * 0.85), eyeY + 2.2, 1.6, 1.1, TONE.CHEEK);
+    }
+
+    // 입
+    const mouthY = eyeY + 3.4;
+    if (expression === 'hurt') {
+      put(CX - 1, mouthY, TONE.MOUTH);
+      put(CX, mouthY + 1, TONE.MOUTH);
+      put(CX + 1, mouthY, TONE.MOUTH);
+    } else if (expression === 'happy') {
+      // 활짝 웃는 입
+      put(CX - 2, mouthY, TONE.MOUTH);
+      put(CX - 1, mouthY + 1, TONE.MOUTH);
+      put(CX, mouthY + 1, TONE.MOUTH);
+      put(CX + 1, mouthY + 1, TONE.MOUTH);
+      put(CX + 2, mouthY, TONE.MOUTH);
+    } else {
+      // 살짝 웃는 입 (w 모양)
+      put(CX - 1, mouthY, TONE.MOUTH);
+      put(CX, mouthY + 1, TONE.MOUTH);
+      put(CX + 1, mouthY, TONE.MOUTH);
     }
   }
 
-  // 외곽선 — 비어 있으면서 채워진 칸과 붙어 있는 자리
+  /* 외곽선 */
   const filled = (x, y) => x >= 0 && y >= 0 && x < G && y < G && m[idx(x, y)] !== TONE.EMPTY;
   const outline = [];
   for (let y = 0; y < G; y++) {
@@ -917,13 +969,15 @@ function monsterShape({ speciesId = 'ember', stage = 1, back = false } = {}) {
 function tonePalette(color, shade) {
   return {
     [TONE.BASE]: color,
-    [TONE.LIGHT]: shade(color, 45),
-    [TONE.DARK]: shade(color, -55),
-    [TONE.BELLY]: shade(color, 78),
-    [TONE.EYE]: '#241f2b',
+    [TONE.LIGHT]: shade(color, 50),
+    [TONE.DARK]: shade(color, -50),
+    [TONE.BELLY]: shade(color, 88),
+    [TONE.EYE]: '#2b2430',
     [TONE.EYE_HI]: '#ffffff',
-    [TONE.MOUTH]: shade(color, -80),
-    [TONE.OUTLINE]: '#221c26',
+    [TONE.EYE_WHITE]: '#e8e0f0',
+    [TONE.MOUTH]: shade(color, -70),
+    [TONE.OUTLINE]: '#241d28',
+    [TONE.CHEEK]: '#ff8fa8',
   };
 }
 
@@ -2240,8 +2294,8 @@ const fmt = {
  * @param {object} opts { speciesId, type, stage=1, size=96, animate=true }
  * @returns {SVGElement}
  */
-function spriteFor({ speciesId = 'ember', type = 'fire', stage = 1, size = 96, animate = true } = {}) {
-  const shape = monsterShape({ speciesId, stage });
+function spriteFor({ speciesId = 'ember', type = 'fire', stage = 1, size = 96, animate = true, expression = 'normal' } = {}) {
+  const shape = monsterShape({ speciesId, stage, expression });
   const color = TYPES[type]?.color || '#8ab4f8';
   const palette = tonePalette(color, shade);
   const G = shape.size;
@@ -2588,6 +2642,111 @@ function ellipse(ctx, cx, cy, rx, ry, color) {
   }
 }
 
+/* ── src/game/engine/controls.js ───────────────────────────────── */
+/**
+ * 조작 계층 — "무엇으로 조종하는가"를 게임 로직에서 떼어낸다.
+ *
+ * 게임(씬)은 항상 같은 6개 액션만 본다:
+ *   up / down / left / right / confirm / cancel
+ * 그 액션을 무엇이 만들어내는지는 여기서 정한다.
+ *
+ * ┌ 장치 ─────────────┬ 방식 ───────────────────────────────────────┐
+ * │ 키보드            │ 방향키·WASD·Z/Space/Enter                    │
+ * │ 화면 D패드(모바일)│ 버튼 pointerdown/up                          │
+ * │ 레이저 포인터     │ ① 프레젠터 리모컨: 키보드 이벤트로 들어온다  │
+ * │ (프레젠테이션용)  │    PageDown/PageUp/F5/Esc/'.' 등 2~4개 버튼  │
+ * │                   │ ② 자이로 포인터(에어마우스): 화면 좌표 클릭  │
+ * └───────────────────┴──────────────────────────────────────────────┘
+ *
+ * 레이저 포인터 리모컨은 버튼이 2~4개뿐이라 방향키로 걷게 만들 수 없다.
+ * 그래서 '대상 선택' 모델을 쓴다:
+ *   [다음] = 지금 선택된 대상으로 이동해서 말 걸기 / 대화 진행
+ *   [이전] = 다음 대상으로 선택 이동 (NPC → 문 → 표지판 순환)
+ * 화면에는 선택된 대상에 커서(▼)가 떠서, 발표 중 관객도 무엇을 고른 상태인지 안다.
+ *
+ * 포인터(에어마우스·터치·마우스)는 찍은 칸까지 BFS 경로로 걸어간다.
+ */
+
+/** 키 → 액션 (키보드 + 프레젠터 리모컨이 흔히 보내는 키를 함께 받는다) */
+const KEY_BINDINGS = {
+  // 방향
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  KeyW: 'up',
+  KeyS: 'down',
+  KeyA: 'left',
+  KeyD: 'right',
+  // 확인 / 취소
+  KeyZ: 'confirm',
+  Enter: 'confirm',
+  NumpadEnter: 'confirm',
+  Space: 'confirm',
+  KeyX: 'cancel',
+  Escape: 'cancel',
+  Backspace: 'cancel',
+  // 달리기
+  ShiftLeft: 'run',
+  ShiftRight: 'run',
+  // 프레젠터 리모컨 (슬라이드 넘김 버튼)
+  PageDown: 'presenterNext',
+  PageUp: 'presenterPrev',
+  Period: 'presenterNext', // '검은 화면' 버튼을 쓰는 모델
+  F5: 'presenterNext',
+  Home: 'presenterPrev',
+  End: 'presenterNext',
+};
+
+/** 프레젠터 모드에서 고를 수 있는 대상의 우선순위 */
+const TARGET_ORDER = ['npc', 'door', 'sign'];
+
+const CONTROL_SCHEMES = [
+  { id: 'keyboard', name: '키보드 / 터치', desc: '방향키로 걷고 Z·Space 로 말을 건다' },
+  {
+    id: 'presenter',
+    name: '레이저 포인터 (프레젠터)',
+    desc: '버튼 2개로 조작 — [다음] 실행 / [이전] 대상 바꾸기',
+  },
+];
+
+/**
+ * 프레젠터 모드 상태.
+ * 필드 씬이 후보 목록을 채워 주면, 여기서 선택 인덱스만 관리한다.
+ */
+class PresenterMode {
+  constructor() {
+    this.enabled = false;
+    this.index = 0;
+    this.targets = [];
+  }
+
+  /**
+   * @param {{kind:string, x:number, y:number, label:string}[]} targets
+   */
+  setTargets(targets) {
+    // 목록이 바뀌어도 가리키던 대상을 유지한다
+    const cur = this.current();
+    this.targets = targets;
+    if (!cur) {
+      this.index = 0;
+      return;
+    }
+    const same = targets.findIndex((t) => t.x === cur.x && t.y === cur.y && t.kind === cur.kind);
+    this.index = same >= 0 ? same : 0;
+  }
+
+  current() {
+    return this.targets[this.index] || null;
+  }
+
+  next() {
+    if (!this.targets.length) return null;
+    this.index = (this.index + 1) % this.targets.length;
+    return this.current();
+  }
+}
+
 /* ── src/game/world/tiles.js ───────────────────────────────── */
 /**
  * 타일 정의 — 맵의 문자 1개 = 타일 1칸.
@@ -2611,7 +2770,11 @@ const TILES = {
   '#': { name: '나무', kind: 'tree', solid: true },
   F: { name: '울타리', kind: 'fence', solid: true },
   W: { name: '벽', kind: 'wall', solid: true },
-  R: { name: '지붕', kind: 'roof', solid: true },
+  R: { name: '민가 지붕', kind: 'roof', solid: true },
+  C: { name: '센터 지붕', kind: 'roofCenter', solid: true },
+  M: { name: '마트 지붕', kind: 'roofMart', solid: true },
+  G: { name: '체육관 지붕', kind: 'roofGym', solid: true },
+  K: { name: '카운터', kind: 'counter', solid: true, tag: 'counter' },
   V: { name: '창문', kind: 'window', solid: true },
   D: { name: '문', kind: 'door', solid: false, tag: 'door' },
   b: { name: '덤불', kind: 'bush', solid: true },
@@ -2626,6 +2789,8 @@ const TILES = {
 const DEFAULT_TILE = TILES['.'];
 
 function tileAt(map, x, y) {
+  // NaN 이 들어오면 비교가 전부 false 라 그냥 통과해 버린다 — 먼저 막는다
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return null;
   if (y < 0 || y >= map.rows.length) return null;
   const row = map.rows[y];
   if (x < 0 || x >= row.length) return null;
@@ -2708,6 +2873,15 @@ const PAL = {
   roofLight: '#f07068',
   roofDark: '#983030',
   roofLine: '#6a1f1f',
+  centerRoof: '#f08830',
+  centerRoofLight: '#ffb060',
+  centerRoofDark: '#b85818',
+  martRoof: '#3888d8',
+  martRoofLight: '#68b0f0',
+  martRoofDark: '#205898',
+  gymRoof: '#8090a8',
+  gymRoofLight: '#b0c0d0',
+  gymRoofDark: '#586880',
   wall: '#f8ecd0',
   wallDark: '#d8c0a0',
   wallLine: '#a08868',
@@ -3014,33 +3188,66 @@ function drawSign(ctx, x, y) {
 
 /* ── 건물 ───────────────────────────────────────────── */
 
-function drawRoof(ctx, x, y, gx, gy, map) {
-  const m = mask(map, gx, gy, 'roof');
-  rect(ctx, x, y, TILE, TILE, PAL.roof);
-  // 기와 결
+const ROOF_STYLE = {
+  roof: { base: PAL.roof, light: PAL.roofLight, dark: PAL.roofDark, trim: null, symbol: null },
+  roofCenter: { base: PAL.centerRoof, light: PAL.centerRoofLight, dark: PAL.centerRoofDark, trim: '#f8f8f8', symbol: 'ball' },
+  roofMart: { base: PAL.martRoof, light: PAL.martRoofLight, dark: PAL.martRoofDark, trim: '#f8f8f8', symbol: null },
+  roofGym: { base: PAL.gymRoof, light: PAL.gymRoofLight, dark: PAL.gymRoofDark, trim: null, symbol: 'badge' },
+};
+
+/**
+ * 지붕. 종류마다 색과 장식이 다르다.
+ * 용마루(위)·처마(아래)·박공(좌우)을 이웃 여부로 그려야 건물처럼 보인다.
+ */
+function drawRoofKind(ctx, x, y, gx, gy, map, kind) {
+  const st = ROOF_STYLE[kind] || ROOF_STYLE.roof;
+  const m = mask(map, gx, gy, kind);
+  rect(ctx, x, y, TILE, TILE, st.base);
   for (let i = 0; i < TILE; i += 4) {
-    rect(ctx, x, y + i, TILE, 1, PAL.roofDark);
-    rect(ctx, x, y + i + 1, TILE, 1, mix(PAL.roof, PAL.roofLight, 0.5));
+    rect(ctx, x, y + i, TILE, 1, st.dark);
+    rect(ctx, x, y + i + 1, TILE, 1, mix(st.base, st.light, 0.5));
   }
   if (!m.n) {
-    // 용마루
-    rect(ctx, x, y, TILE, 2, PAL.roofLight);
-    rect(ctx, x, y + 2, TILE, 1, PAL.roofDark);
+    rect(ctx, x, y, TILE, 2, st.light);
+    rect(ctx, x, y + 2, TILE, 1, st.dark);
     rect(ctx, x, y, TILE, 1, PAL.outline);
   }
   if (!m.s) {
-    // 처마 — 벽보다 한 칸 튀어나오게
-    rect(ctx, x, y + TILE - 4, TILE, 3, PAL.roofDark);
+    rect(ctx, x, y + TILE - 4, TILE, 3, st.dark);
     rect(ctx, x, y + TILE - 1, TILE, 1, PAL.outline);
   }
   if (!m.w) {
     rect(ctx, x, y, 1, TILE, PAL.outline);
-    rect(ctx, x + 1, y, 1, TILE, PAL.roofDark);
+    rect(ctx, x + 1, y, 1, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + 2, y, 1, TILE, st.trim);
   }
   if (!m.e) {
     rect(ctx, x + TILE - 1, y, 1, TILE, PAL.outline);
-    rect(ctx, x + TILE - 2, y, 1, TILE, PAL.roofDark);
+    rect(ctx, x + TILE - 2, y, 1, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + TILE - 3, y, 1, TILE, st.trim);
   }
+  // 건물 심볼 — 지붕 가운데 한 칸에만
+  if (st.symbol && !m.n && m.s) {
+    const cx = x + TILE / 2;
+    const cy = y + TILE / 2 + 2;
+    if (st.symbol === 'ball' && gx % 6 === 2) {
+      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
+      ellipse(ctx, cx, cy, 4, 4, '#f8f8f8');
+      rect(ctx, x + 3, y + Math.round(TILE / 2), 11, 1, PAL.outline);
+      ellipse(ctx, cx, cy - 2.5, 3.6, 2.4, '#e04030');
+      ellipse(ctx, cx, cy, 1.6, 1.6, PAL.outline);
+      ellipse(ctx, cx, cy, 0.9, 0.9, '#f8f8f8');
+    }
+    if (st.symbol === 'badge' && gx % 9 === 4) {
+      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
+      ellipse(ctx, cx, cy, 4, 4, '#ffd166');
+      ellipse(ctx, cx, cy, 2, 2, '#f0f4f8');
+    }
+  }
+}
+
+function drawRoof(ctx, x, y, gx, gy, map) {
+  drawRoofKind(ctx, x, y, gx, gy, map, 'roof');
 }
 
 function drawWallBase(ctx, x, y, gx, gy, map) {
@@ -3079,6 +3286,18 @@ function drawDoor(ctx, x, y, gx, gy, map) {
   px(ctx, x + 10, y + 9, '#ffd166');
 }
 
+/** 센터 카운터 */
+function drawCounter(ctx, x, y, gx, gy, map) {
+  drawFloor(ctx, x, y, gx, gy);
+  rect(ctx, x, y + 2, TILE, 12, '#e8c890');
+  rect(ctx, x, y + 2, TILE, 2, '#f8e0b0');
+  rect(ctx, x, y + 12, TILE, 2, '#b08850');
+  rect(ctx, x, y + 14, TILE, 1, PAL.outline);
+  rect(ctx, x, y + 1, TILE, 1, PAL.outline);
+  if (!sameKind(map, gx - 1, gy, 'counter')) rect(ctx, x, y + 2, 1, 12, PAL.outline);
+  if (!sameKind(map, gx + 1, gy, 'counter')) rect(ctx, x + TILE - 1, y + 2, 1, 12, PAL.outline);
+}
+
 function drawPlant(ctx, x, y, gx, gy) {
   drawFloor(ctx, x, y, gx, gy);
   rect(ctx, x + 4, y + 10, 8, 6, PAL.outline);
@@ -3110,8 +3329,12 @@ const GROUND = {
   window: () => {},
   door: () => {},
   roof: () => {},
+  roofCenter: () => {},
+  roofMart: () => {},
+  roofGym: () => {},
   indoorwall: () => {},
   plant: () => {},
+  counter: () => {},
 };
 
 const OBJECT = {
@@ -3121,6 +3344,10 @@ const OBJECT = {
   window: drawWindow,
   door: drawDoor,
   roof: drawRoof,
+  roofCenter: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofCenter'),
+  roofMart: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofMart'),
+  roofGym: (c, x, y, gx, gy, map) => drawRoofKind(c, x, y, gx, gy, map, 'roofGym'),
+  counter: drawCounter,
   indoorwall: drawIndoorWall,
   plant: drawPlant,
   bush: (ctx, x, y, gx, gy) => drawBush(ctx, x, y, gx, gy),
@@ -3418,11 +3645,11 @@ function drawCharScaled(ctx, sheet, dir, frame, x, y, scale) {
 const monsterCache = new Map();
 
 /** 몬스터 한 마리를 size×size 픽셀 캔버스로 굽는다 */
-function monsterCanvas({ speciesId, type, stage, back = false }) {
-  const key = `${speciesId}:${type}:${stage}:${back ? 'b' : 'f'}`;
+function monsterCanvas({ speciesId, type, stage, back = false, expression = 'normal' }) {
+  const key = `${speciesId}:${type}:${stage}:${back ? 'b' : 'f'}:${expression}`;
   if (monsterCache.has(key)) return monsterCache.get(key);
 
-  const shape = monsterShape({ speciesId, stage, back });
+  const shape = monsterShape({ speciesId, stage, back, expression });
   const G = shape.size;
   const { canvas, ctx } = makeCanvas(G, G);
   const palette = tonePalette(TYPES[type]?.color || '#8ab4f8', shade);
@@ -3453,41 +3680,25 @@ function drawMonster(ctx, mon, { x, y, size = 48, flash = 0, alpha = 1 }) {
 
 /* ── src/game/engine/input.js ───────────────────────────────── */
 /**
- * 입력 — 키보드 + 화면 D패드(모바일).
+ * 입력 — 키보드 · 화면 D패드 · 포인터(마우스/터치/레이저 포인터).
  * 게임 로직은 "지금 눌려 있는가(held)" 와 "이번 프레임에 눌렸는가(pressed)" 만 본다.
+ * 어떤 키가 어떤 액션인지는 controls.js 가 정한다.
  */
 
-const KEY_MAP = {
-  ArrowUp: 'up',
-  ArrowDown: 'down',
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  KeyW: 'up',
-  KeyS: 'down',
-  KeyA: 'left',
-  KeyD: 'right',
-  KeyZ: 'confirm',
-  Enter: 'confirm',
-  Space: 'confirm',
-  KeyX: 'cancel',
-  Escape: 'cancel',
-  ShiftLeft: 'run',
-  ShiftRight: 'run',
-};
 
 class Input {
   constructor(target = window) {
     this.held = new Set();
     this.justPressed = new Set();
     this._onKeyDown = (e) => {
-      const action = KEY_MAP[e.code];
+      const action = KEY_BINDINGS[e.code];
       if (!action) return;
       e.preventDefault();
       if (!this.held.has(action)) this.justPressed.add(action);
       this.held.add(action);
     };
     this._onKeyUp = (e) => {
-      const action = KEY_MAP[e.code];
+      const action = KEY_BINDINGS[e.code];
       if (!action) return;
       e.preventDefault();
       this.held.delete(action);
@@ -3497,6 +3708,25 @@ class Input {
     target.addEventListener('keyup', this._onKeyUp);
     window.addEventListener('blur', this._blur);
     this._target = target;
+  }
+
+  /**
+   * 포인터(마우스·터치·자이로 레이저 포인터) 입력.
+   * 화면 좌표를 논리 해상도 좌표로 바꿔 넘긴다 — 씬은 카메라를 더해 칸을 구한다.
+   * @param {HTMLCanvasElement} canvas
+   * @param {(p:{x:number,y:number})=>void} handler
+   */
+  bindPointer(canvas, handler) {
+    const onDown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      handler({
+        x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+        y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+      });
+    };
+    canvas.addEventListener('pointerdown', onDown);
+    this._pointerCleanup = () => canvas.removeEventListener('pointerdown', onDown);
   }
 
   /** 화면 버튼용 — D패드/버튼 요소에 연결 */
@@ -3542,6 +3772,7 @@ class Input {
   }
 
   dispose() {
+    this._pointerCleanup?.();
     this._target.removeEventListener('keydown', this._onKeyDown);
     this._target.removeEventListener('keyup', this._onKeyUp);
     window.removeEventListener('blur', this._blur);
@@ -3606,44 +3837,51 @@ const MAPS = {
     subtitle: '평가 체육관 소재지',
     outdoor: true,
     rows: [
-      '########################################',
-      '########################################',
-      '##..................:::::::::::.......##',
-      '##....RRRRRRRR......:~~~~~~~~~:.......##',
-      '##....RRRRRRRR......:~~~~~~~~~:.......##',
-      '##....WVWDWVWW......:~~~~~~~~~:.......##',
-      '##.......=.....b....:::::::::::...n...##',
-      '##.....S.=..........................**##',
-      '##.......=............................##',
-      '##.**....=......n..................***##',
-      '##.......=............................##',
-      '##.......=.....**...........b.........##',
-      '##.......=............................##',
-      '##.......====================.........##',
-      '##....................RRRR............##',
-      '##....................RRRR............##',
-      '##.FFFFFFFFFF.........WWDW............##',
-      '##.F,,,,,,,,F...........=.............##',
-      '##.F,,,,,,,,F...........=.............##',
-      '##.F,,,,,,,,F...........=.............##',
-      '##.F,,,,,,,,F...........=.............##',
-      '##.F,,,,,,,,F.......::::::::::::::::::##',
-      '##.FFFFF.FFFF.......::::::::::::::::::##',
-      '##......b...........::::::::::::::::::##',
-      '##....***.......n...::::::::::::::::::##',
-      '##......b...........::::::::::::::::::##',
-      '########################################',
-      '########################################',
+      '############################################',
+      '############################################',
+      '##........................................##',
+      '##................GGGGGGGGG...............##',
+      '##................GGGGGGGGG...............##',
+      '##................GGGGGGGGG...............##',
+      '##...CCCCCC.......WVWVDVWVW.....MMMMMM....##',
+      '##...CCCCCC.........S==.........MMMMMM....##',
+      '##...WVDWVW.........b==.........WVDWVW....##',
+      '##....S=...FFFFFFFFF.==...........=.......##',
+      '##....b=...F,,,,,,,F.==....n......=.......##',
+      '##.....=...F,,,,,,,F.==...........=.......##',
+      '##.....=.*.F,,,,,,,F.==.b.........=b......##',
+      '##.....=..*F,,,,,,,F.==...........=.......##',
+      '##..n..=...F,,,,,,,F.==...........=.......##',
+      '##.....=...F,,,,,,,F.==...*...n...=.......##',
+      '##.....=...FFFF.FFFFS==....*......=.*.....##',
+      '##.======================================.##',
+      '##.======================================.##',
+      '##..........b........==...................##',
+      '##...................==.....::::::::::::::##',
+      '##....RRRRR..RRRRR...==...b.::::::::::::::##',
+      '##....RRRRR..RRRRR...==.....::~~~~~~~~~~::##',
+      '##....WVDVW..WVDVW...==.....::~~~~~~~~~~::##',
+      '##......=......=.....==.....::~~~~~~~~~~::##',
+      '##....=================.....::~~~~~~~~~~::##',
+      '##..........................::~~~~~~~~~~::##',
+      '##...b........n..*..........::::::::::::::##',
+      '##................*.........::::::::::::::##',
+      '##........................................##',
+      '############################################',
+      '############################################',
     ],
-    /** 시작 위치 */
-    spawn: { x: 9, y: 8, dir: 'down' },
+    /** 시작 위치 — 마을 큰길 */
+    spawn: { x: 22, y: 19, dir: 'up' },
     /** 문 → 다른 맵 */
     warps: [
-      { x: 9, y: 5, to: 'gym', tx: 9, ty: 12, dir: 'up' },
+      { x: 22, y: 6, to: 'gym', tx: 9, ty: 12, dir: 'up' },
+      { x: 7, y: 8, to: 'center', tx: 7, ty: 9, dir: 'up' },
     ],
     /** 표지판 문구 (키는 'x,y') */
     signs: {
-      '7,7': ['여기는 VCC 타운.', '왼쪽 건물이 이번 달 평가 체육관이다.'],
+      '20,7': ['VCC 평가 체육관.', '이번 달 목표가 관장으로 앉아 있다.'],
+      '6,9': ['회복 센터.', '지친 파트너의 컨디션을 되돌려 준다.'],
+      '20,16': ['↑ 체육관 · 회복 센터 · 마트', '↓ 주택가 · 호숫가'],
     },
     /**
      * NPC. kind:
@@ -3651,20 +3889,61 @@ const MAPS = {
      *  - guide  : 안내 대사만 하는 NPC
      */
     npcs: [
-      { id: 'n-m1', kind: 'member', memberIndex: 0, x: 12, y: 12, dir: 'down', palette: 'purple' },
-      { id: 'n-m2', kind: 'member', memberIndex: 1, x: 6, y: 11, dir: 'right', palette: 'yellow' },
-      { id: 'n-m3', kind: 'member', memberIndex: 2, x: 16, y: 14, dir: 'left', palette: 'gray' },
-      { id: 'n-m4', kind: 'member', memberIndex: 3, x: 26, y: 19, dir: 'left', palette: 'green' },
-      { id: 'n-m5', kind: 'member', memberIndex: 4, x: 30, y: 9, dir: 'down', palette: 'blue' },
+      { id: 'n-m1', kind: 'member', memberIndex: 0, x: 24, y: 19, dir: 'down', palette: 'purple' },
+      { id: 'n-m2', kind: 'member', memberIndex: 1, x: 5, y: 12, dir: 'right', palette: 'yellow' },
+      { id: 'n-m3', kind: 'member', memberIndex: 2, x: 30, y: 11, dir: 'left', palette: 'gray' },
+      { id: 'n-m4', kind: 'member', memberIndex: 3, x: 13, y: 20, dir: 'down', palette: 'green' },
+      { id: 'n-m5', kind: 'member', memberIndex: 4, x: 33, y: 20, dir: 'down', palette: 'blue' },
       {
         id: 'n-guide',
         kind: 'guide',
-        x: 11, y: 6, dir: 'left',
+        x: 23, y: 7, dir: 'left',
         palette: 'brown',
         lines: [
           '체육관 관장은 이번 달 목표 그 자체야.',
           '실적이 곧 기술의 위력이 되니까...',
           '결국 지난 한 달이 널 대신 싸워주는 셈이지.',
+        ],
+      },
+    ],
+  },
+
+  center: {
+    id: 'center',
+    name: '회복 센터',
+    subtitle: '지친 파트너를 돌봐준다',
+    outdoor: false,
+    rows: [
+      '----------------',
+      '----------------',
+      '-______________-',
+      '-__KKKKKKKKKK__-',
+      '-______________-',
+      '-o__________o__-',
+      '-______________-',
+      '-______________-',
+      '-______________-',
+      '-_____++_______-',
+      '-_____DD_______-',
+      '----------------',
+    ],
+    spawn: { x: 6, y: 9, dir: 'up' },
+    warps: [
+      { x: 6, y: 10, to: 'town', tx: 7, ty: 9, dir: 'down' },
+      { x: 7, y: 10, to: 'town', tx: 7, ty: 9, dir: 'down' },
+    ],
+    signs: {},
+    npcs: [
+      {
+        id: 'n-nurse',
+        kind: 'guide',
+        x: 7, y: 2, dir: 'down',
+        palette: 'red',
+        lines: [
+          '어서 오세요, 회복 센터입니다.',
+          '지난 한 달 고생한 파트너를 맡아 드릴게요.',
+          '...컨디션을 모두 회복했습니다!',
+          '다음 달에도 기다릴게요.',
         ],
       },
     ],
@@ -3694,8 +3973,8 @@ const MAPS = {
     ],
     spawn: { x: 9, y: 12, dir: 'up' },
     warps: [
-      { x: 9, y: 13, to: 'town', tx: 9, ty: 6, dir: 'down' },
-      { x: 10, y: 13, to: 'town', tx: 9, ty: 6, dir: 'down' },
+      { x: 9, y: 13, to: 'town', tx: 22, ty: 7, dir: 'down' },
+      { x: 10, y: 13, to: 'town', tx: 22, ty: 7, dir: 'down' },
     ],
     signs: {},
     npcs: [
@@ -3854,6 +4133,79 @@ class Npc extends Actor {
   }
 }
 
+/* ── src/game/world/path.js ───────────────────────────────── */
+/**
+ * 격자 경로 탐색 (BFS).
+ * 포인터로 찍은 칸까지 걸어가거나, 프레젠터 모드에서 대상까지 자동으로 갈 때 쓴다.
+ * 맵이 작아(수천 칸) BFS 로 충분하고, 결과가 항상 같아 디버깅이 쉽다.
+ */
+
+
+/**
+ * @param {{x:number,y:number}} from
+ * @param {{x:number,y:number}} to
+ * @param {(x:number,y:number)=>boolean} isBlocked
+ * @param {{maxNodes?:number, adjacent?:boolean}} opts
+ *        adjacent=true 면 목표 칸이 막혀 있어도 '옆칸까지' 간다 (NPC·문 앞)
+ * @returns {{x:number,y:number}[]} from 다음 칸부터의 경로. 못 가면 빈 배열
+ */
+function findPath(from, to, isBlocked, { maxNodes = 4000, adjacent = false } = {}) {
+  const key = (x, y) => `${x},${y}`;
+  const goals = new Set();
+  if (adjacent) {
+    for (const [dx, dy] of Object.values(DELTA)) {
+      const gx = to.x + dx;
+      const gy = to.y + dy;
+      if (!isBlocked(gx, gy)) goals.add(key(gx, gy));
+    }
+  } else {
+    if (isBlocked(to.x, to.y)) return [];
+    goals.add(key(to.x, to.y));
+  }
+  if (goals.has(key(from.x, from.y))) return [];
+  if (!goals.size) return [];
+
+  const prev = new Map([[key(from.x, from.y), null]]);
+  const queue = [{ x: from.x, y: from.y }];
+  let head = 0;
+  let found = null;
+
+  while (head < queue.length && head < maxNodes) {
+    const cur = queue[head++];
+    for (const [dx, dy] of Object.values(DELTA)) {
+      const nx = cur.x + dx;
+      const ny = cur.y + dy;
+      const k = key(nx, ny);
+      if (prev.has(k) || isBlocked(nx, ny)) continue;
+      prev.set(k, cur);
+      if (goals.has(k)) {
+        found = { x: nx, y: ny };
+        head = queue.length;
+        break;
+      }
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  if (!found) return [];
+
+  const path = [];
+  let cur = found;
+  while (cur) {
+    path.push(cur);
+    cur = prev.get(key(cur.x, cur.y));
+  }
+  path.pop(); // 출발 칸 제거
+  return path.reverse();
+}
+
+/** 경로의 첫 칸으로 가는 방향 */
+function stepDirection(from, next) {
+  if (next.x > from.x) return 'right';
+  if (next.x < from.x) return 'left';
+  if (next.y > from.y) return 'down';
+  return 'up';
+}
+
 /* ── src/game/ui/textbox.js ───────────────────────────────── */
 /**
  * 대화창 — 한 글자씩 찍히고, 확인키로 넘긴다.
@@ -4000,6 +4352,8 @@ class Banner {
 
 
 
+
+
 class FieldScene {
   /**
    * @param {import('../game.js').Game} game
@@ -4015,6 +4369,16 @@ class FieldScene {
     this.npcs = map.npcs.map((def) => new Npc(def));
     this.npcByCell = new Map(this.npcs.map((n) => [`${n.gx},${n.gy}`, n]));
     this.busy = false; // 대화 중에는 움직이지 않는다
+    /** 포인터·프레젠터로 지정한 목적지까지의 경로 */
+    this.path = [];
+    /** 도착하면 말을 걸 칸 */
+    this.pendingInteract = null;
+    this.targets = collectTargets(map);
+  }
+
+  /** 경로 유틸이 쓰는 {x,y} 형태의 플레이어 위치 (Actor 는 gx/gy 를 쓴다) */
+  playerCell() {
+    return { x: this.player.gx, y: this.player.gy };
   }
 
   enter() {
@@ -4029,23 +4393,51 @@ class FieldScene {
   }
 
   update(dt) {
-    const { input, textbox } = this.game;
+    const { input, textbox, presenter } = this.game;
 
     if (textbox.open) {
-      if (input.pressed('confirm') || input.pressed('cancel')) textbox.advance();
+      if (input.pressed('confirm') || input.pressed('cancel') || input.pressed('presenterNext')) {
+        textbox.advance();
+      }
       this.player.update(dt);
       return;
     }
 
+    // 프레젠터(레이저 포인터) — 버튼 2개로 조작
+    if (input.pressed('presenterPrev')) {
+      presenter.enabled = true;
+      presenter.setTargets(this.targetsNear());
+      presenter.next();
+    }
+    if (input.pressed('presenterNext')) {
+      presenter.enabled = true;
+      if (!presenter.current()) presenter.setTargets(this.targetsNear());
+      const target = presenter.current();
+      if (target) this.goTo(target.x, target.y, { interact: true });
+    }
+
     if (input.pressed('confirm')) {
+      this.cancelPath();
       if (this.interact()) return;
     }
 
     if (!this.player.moving && !this.busy) {
       const dir = input.direction();
       if (dir) {
+        this.cancelPath();
         const moved = this.player.tryMove(dir, (x, y) => this.isBlocked(x, y), { run: input.isDown('run') });
         if (moved) this._pendingWarpCheck = true;
+      } else if (this.path.length) {
+        // 경로가 있으면 한 칸씩 자동으로 걷는다
+        const next = this.path[0];
+        const moved = this.player.tryMove(stepDirection(this.playerCell(), next), (x, y) => this.isBlocked(x, y));
+        if (moved) this.path.shift();
+        else this.cancelPath(); // 누가 길을 막았다
+      } else if (this.pendingInteract) {
+        const t = this.pendingInteract;
+        this.pendingInteract = null;
+        this.player.dir = stepDirection(this.playerCell(), t);
+        this.interact();
       }
     }
 
@@ -4059,6 +4451,52 @@ class FieldScene {
     this.camera.follow(this.player, this.pre.width, this.pre.height);
   }
 
+  /** 포인터/프레젠터로 목적지 지정 */
+  goTo(tx, ty, { interact = false } = {}) {
+    const blockedForPath = (x, y) => this.isBlocked(x, y);
+    // 워프가 걸린 문은 '옆'이 아니라 '위'로 가야 한다 (밟으면 들어간다)
+    const isWarpDoor = this.map.warps.some((w) => w.x === tx && w.y === ty);
+    const needsAdjacent = !isWarpDoor && (interact || this.isBlocked(tx, ty));
+    const path = findPath(this.playerCell(), { x: tx, y: ty }, blockedForPath, { adjacent: needsAdjacent });
+    if (!path.length && !(this.player.gx === tx && this.player.gy === ty)) {
+      // 이미 옆에 서 있으면 바로 말을 건다
+      if (needsAdjacent && Math.abs(this.player.gx - tx) + Math.abs(this.player.gy - ty) === 1) {
+        this.player.dir = stepDirection(this.playerCell(), { x: tx, y: ty });
+        this.interact();
+      }
+      return;
+    }
+    this.path = path;
+    this.pendingInteract = needsAdjacent ? { x: tx, y: ty } : null;
+  }
+
+  cancelPath() {
+    this.path = [];
+    this.pendingInteract = null;
+  }
+
+  /** 포인터로 찍은 지점 → 칸 */
+  onPointer({ x, y }) {
+    const { textbox } = this.game;
+    if (textbox.open) {
+      textbox.advance();
+      return;
+    }
+    const tx = Math.floor((x + this.camera.x) / TILE);
+    const ty = Math.floor((y + this.camera.y) / TILE);
+    const target = this.targets.find((t) => t.x === tx && t.y === ty);
+    this.goTo(tx, ty, { interact: !!target });
+  }
+
+  /** 프레젠터 모드 후보 — 가까운 순 */
+  targetsNear() {
+    const p = this.player;
+    return [...this.targets]
+      .map((t) => ({ ...t, d: Math.abs(t.x - p.gx) + Math.abs(t.y - p.gy) }))
+      .sort((a, b) => a.d - b.d || TARGET_ORDER.indexOf(a.kind) - TARGET_ORDER.indexOf(b.kind))
+      .slice(0, 8);
+  }
+
   checkWarp() {
     const w = this.map.warps.find((v) => v.x === this.player.gx && v.y === this.player.gy);
     if (w) this.game.changeMap(w.to, { x: w.tx, y: w.ty, dir: w.dir });
@@ -4067,7 +4505,12 @@ class FieldScene {
   /** 바라보는 칸에 무엇이 있는지 확인하고 반응 */
   interact() {
     const { x, y } = this.player.facing();
-    const npc = this.npcByCell.get(`${x},${y}`);
+    let npc = this.npcByCell.get(`${x},${y}`);
+    // 카운터 너머의 사람에게도 말을 건다 (센터 접수처처럼)
+    if (!npc && tileAt(this.map, x, y)?.tag === 'counter') {
+      const [dx, dy] = DELTA[this.player.dir];
+      npc = this.npcByCell.get(`${x + dx},${y + dy}`);
+    }
     if (npc) {
       npc.lookAt(this.player);
       this.talkTo(npc);
@@ -4077,6 +4520,11 @@ class FieldScene {
     if (tile?.tag === 'sign') {
       const lines = this.map.signs[`${x},${y}`] || ['글씨가 지워져 읽을 수 없다.'];
       this.game.say(lines);
+      return true;
+    }
+    // 들어갈 수 없는 문 (아직 안 만든 건물)
+    if (tile?.tag === 'door' && !this.map.warps.some((w) => w.x === x && w.y === y)) {
+      this.game.say(['문이 잠겨 있다.']);
       return true;
     }
     return false;
@@ -4135,6 +4583,23 @@ class FieldScene {
       a.draw(ctx, cam);
     }
 
+    // 프레젠터 모드 커서 — 지금 고른 대상 위에 ▼
+    const target = this.game.presenter.enabled ? this.game.presenter.current() : null;
+    if (target) {
+      const cx = target.x * TILE - cam.x + TILE / 2;
+      const cy = target.y * TILE - cam.y - 4 + Math.round(Math.sin(time * 5) * 2);
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, cy - 5);
+      ctx.lineTo(cx + 4, cy - 5);
+      ctx.lineTo(cx, cy + 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#2a2028';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
     // 풀숲 앞잎을 캐릭터 위에 덮어 '풀에 들어간' 느낌을 만든다
     const sway = Math.sin(time * 6) > 0 ? 1 : 0;
     for (const [gx, gy] of this.pre.tallGrass) {
@@ -4147,6 +4612,23 @@ class FieldScene {
   }
 
   dispose() {}
+}
+
+/**
+ * 맵에서 '말 걸 수 있는 것' 목록.
+ * 프레젠터 모드의 선택지이자, 포인터 클릭이 대화로 이어지는 판정 기준이다.
+ */
+function collectTargets(map) {
+  const targets = map.npcs.map((n) => ({ kind: 'npc', x: n.x, y: n.y, label: n.id }));
+  map.rows.forEach((row, y) => {
+    [...row].forEach((_ch, x) => {
+      const tile = tileAt(map, x, y);
+      if (tile?.tag === 'door') targets.push({ kind: 'door', x, y, label: '문' });
+      if (tile?.tag === 'counter') targets.push({ kind: 'npc', x, y, label: '접수처' });
+      if (tile?.tag === 'sign') targets.push({ kind: 'sign', x, y, label: '표지판' });
+    });
+  });
+  return targets;
 }
 
 /** 팀원 NPC 대사 — 이번 시즌 평가 결과를 말로 옮긴다 */
@@ -4179,6 +4661,7 @@ function memberLines(e) {
 
 
 
+
 const INTRO = 0.55; // 등장 연출 시간(초)
 
 class BattleScene {
@@ -4204,6 +4687,9 @@ class BattleScene {
     this.shake = 0;
     this.intro = INTRO;
     this.finished = false;
+    /** 이번 달 실적으로 만들어진 기술 4개 (4세대의 2×2 기술 그리드) */
+    this.moves = movesFrom(entry.kpiScores);
+    this.activeMove = -1;
   }
 
   enter() {
@@ -4220,6 +4706,11 @@ class BattleScene {
     const line = this.log[this.i];
     if (typeof line.playerHp === 'number') this.targetPlayerHp = line.playerHp;
     if (typeof line.foeHp === 'number') this.targetFoeHp = line.foeHp;
+    if (line.kind === 'player') {
+      this.activeMove = this.moves.findIndex((mv) => line.text.includes(mv.name));
+    } else if (line.kind === 'foe') {
+      this.activeMove = -1;
+    }
     if (line.dmg > 0) {
       const side = line.kind === 'player' ? 'foe' : 'player';
       this.flash[side] = 0.5;
@@ -4285,7 +4776,7 @@ class BattleScene {
 
     drawMonster(
       ctx,
-      { speciesId: `boss:${this.boss.id}`, type: this.boss.type, stage: 3 },
+      { speciesId: `boss:${this.boss.id}`, type: this.boss.type, stage: 3, expression: faceFor(this.foeHp) },
       { x: W - 76 + slideFoe, y: 30 + this.faint.foe * 26, size: 52, flash: this.flash.foe, alpha: 1 - this.faint.foe },
     );
     drawMonster(
@@ -4295,6 +4786,8 @@ class BattleScene {
     );
 
     ctx.restore();
+
+    if (this.intro <= 0) this.moveGrid(ctx, 6, 44);
 
     // 체력 상자는 반대편에서 들어온다
     this.hpBox(ctx, 6 - slideFoe, 8, this.boss.name, this.boss.level, this.foeHp, null);
@@ -4307,6 +4800,42 @@ class BattleScene {
       this.playerHp,
       this.entry.progress.ratio,
     );
+  }
+
+  /**
+   * 기술 4개를 2×2 로 (4세대 기술 선택 화면의 배치).
+   * 관전 화면이라 '무엇을 썼는지'를 보여주는 용도 — 쓰인 기술에 커서가 붙는다.
+   */
+  moveGrid(ctx, x, y) {
+    const cw = 58;
+    const ch = 24;
+    ctx.textBaseline = 'top';
+    this.moves.forEach((mv, i) => {
+      const cx = x + (i % 2) * (cw + 3);
+      const cy = y + Math.floor(i / 2) * (ch + 3);
+      const active = i === this.activeMove;
+      const type = TYPES[mv.type];
+      roundRect(ctx, cx, cy, cw, ch, 4, active ? '#fffbe8' : 'rgba(248,244,232,0.82)', active ? '#e8a020' : '#6a6058');
+      // 타입 띠 — 4세대 기술 칸의 타입 표시
+      ctx.fillStyle = type?.color || '#888';
+      ctx.fillRect(cx + 3, cy + ch - 5, cw - 6, 3);
+      ctx.fillStyle = '#3a3430';
+      ctx.font = 'bold 8px system-ui, sans-serif';
+      ctx.fillText(KPI_BY_ID[mv.kpiId]?.name || mv.name, cx + (active ? 10 : 5), cy + 3);
+      ctx.fillStyle = '#8a8078';
+      ctx.font = '7px system-ui, sans-serif';
+      ctx.fillText(`위력 ${mv.power}`, cx + 5, cy + 12);
+      ctx.font = 'bold 8px system-ui, sans-serif';
+      if (active) {
+        ctx.fillStyle = '#e8a020';
+        ctx.beginPath();
+        ctx.moveTo(cx + 4, cy + 4);
+        ctx.lineTo(cx + 8, cy + 7);
+        ctx.lineTo(cx + 4, cy + 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
   }
 
   /** 하늘 → 지평선 → 배틀 필드 */
@@ -4389,6 +4918,13 @@ class BattleScene {
   dispose() {}
 }
 
+/** 체력이 깎이면 표정이 어두워진다 */
+function faceFor(hpRatio) {
+  if (hpRatio <= 0.3) return 'hurt';
+  if (hpRatio >= 0.95) return 'happy';
+  return 'normal';
+}
+
 /** 모서리가 둥근 사각형 (테두리 선택) */
 function roundRect(ctx, x, y, w, h, r, fill, stroke) {
   ctx.beginPath();
@@ -4425,8 +4961,14 @@ function roundRect(ctx, x, y, w, h, r, fill, stroke) {
 
 
 
+
 const VIEW_W = 256; // DS 상단 화면과 같은 논리 해상도
 const VIEW_H = 192;
+
+const HINTS = {
+  keyboard: '이동 방향키 · 대화/확인 Z·Space · 취소 X · 달리기 Shift · 화면을 클릭하면 그 자리로 걸어간다',
+  presenter: '레이저 포인터 리모컨: [다음/PageDown] 실행·대화 진행 · [이전/PageUp] 대상 바꾸기',
+};
 
 class Game {
   /**
@@ -4455,7 +4997,11 @@ class Game {
     this.textbox = new TextBox(this.overlay);
     this.banner = new Banner(this.overlay);
     this.input = new Input(window);
+    /** 레이저 포인터(프레젠터 리모컨) 조작 상태 */
+    this.presenter = new PresenterMode();
     this.bindPad();
+    // 포인터(마우스·터치·자이로 레이저 포인터) — 찍은 칸까지 걸어간다
+    this.input.bindPointer(this.canvas, (p) => this.scene?.onPointer?.(p));
 
     this.loop = new Loop((dt, time) => this.step(dt, time));
     this.scene = null;
@@ -4611,22 +5157,44 @@ class Game {
       btn('A', 'confirm', 'gb__btn--a'),
     );
 
+    this.schemeLabel = h('span', { class: 'gb__scheme' }, '조작: 키보드 / 터치');
     const links = h(
       'div',
       { class: 'gb__links' },
+      h(
+        'button',
+        {
+          class: 'btn btn--sm',
+          type: 'button',
+          onClick: () => this.toggleScheme(),
+        },
+        '조작 방식 전환',
+      ),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/dex') }, '도감'),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/league') }, '리그'),
       h('button', { class: 'btn btn--sm', type: 'button', onClick: () => this.onNavigate?.('/admin') }, '실적 입력'),
     );
 
+    this.hintEl = h('p', { class: 'gb__hint' }, HINTS.keyboard);
     return h(
       'div',
       { class: 'gb__pad' },
       this.dpad,
-      h('p', { class: 'gb__hint' }, '이동 방향키 · 대화/확인 Z 또는 Space · 취소 X · 달리기 Shift'),
+      h('div', { class: 'gb__hintwrap' }, this.hintEl, this.schemeLabel),
       this.actions,
       links,
     );
+  }
+
+  /** 키보드 ↔ 레이저 포인터(프레젠터) 조작 전환 */
+  toggleScheme() {
+    this.presenter.enabled = !this.presenter.enabled;
+    if (this.presenter.enabled && this.scene?.targetsNear) {
+      this.presenter.setTargets(this.scene.targetsNear());
+    }
+    const scheme = CONTROL_SCHEMES[this.presenter.enabled ? 1 : 0];
+    this.schemeLabel.textContent = `조작: ${scheme.name}`;
+    this.hintEl.textContent = this.presenter.enabled ? HINTS.presenter : HINTS.keyboard;
   }
 
   bindPad() {

@@ -20,7 +20,11 @@ export const TILES = {
   '#': { name: '나무', kind: 'tree', solid: true },
   F: { name: '울타리', kind: 'fence', solid: true },
   W: { name: '벽', kind: 'wall', solid: true },
-  R: { name: '지붕', kind: 'roof', solid: true },
+  R: { name: '민가 지붕', kind: 'roof', solid: true },
+  C: { name: '센터 지붕', kind: 'roofCenter', solid: true },
+  M: { name: '마트 지붕', kind: 'roofMart', solid: true },
+  G: { name: '체육관 지붕', kind: 'roofGym', solid: true },
+  K: { name: '카운터', kind: 'counter', solid: true, tag: 'counter' },
   V: { name: '창문', kind: 'window', solid: true },
   D: { name: '문', kind: 'door', solid: false, tag: 'door' },
   b: { name: '덤불', kind: 'bush', solid: true },
@@ -35,6 +39,8 @@ export const TILES = {
 export const DEFAULT_TILE = TILES['.'];
 
 export function tileAt(map, x, y) {
+  // NaN 이 들어오면 비교가 전부 false 라 그냥 통과해 버린다 — 먼저 막는다
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return null;
   if (y < 0 || y >= map.rows.length) return null;
   const row = map.rows[y];
   if (x < 0 || x >= row.length) return null;

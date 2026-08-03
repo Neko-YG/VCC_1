@@ -7,11 +7,11 @@ import { makeCanvas, ellipse } from './pixel.js';
 const monsterCache = new Map();
 
 /** 몬스터 한 마리를 size×size 픽셀 캔버스로 굽는다 */
-export function monsterCanvas({ speciesId, type, stage, back = false }) {
-  const key = `${speciesId}:${type}:${stage}:${back ? 'b' : 'f'}`;
+export function monsterCanvas({ speciesId, type, stage, back = false, expression = 'normal' }) {
+  const key = `${speciesId}:${type}:${stage}:${back ? 'b' : 'f'}:${expression}`;
   if (monsterCache.has(key)) return monsterCache.get(key);
 
-  const shape = monsterShape({ speciesId, stage, back });
+  const shape = monsterShape({ speciesId, stage, back, expression });
   const G = shape.size;
   const { canvas, ctx } = makeCanvas(G, G);
   const palette = tonePalette(TYPES[type]?.color || '#8ab4f8', shade);

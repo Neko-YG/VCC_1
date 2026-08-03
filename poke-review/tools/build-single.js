@@ -40,6 +40,7 @@ const ORDER = [
   'src/ui/router.js',
   // 게임(필드) — 화면 모듈보다 먼저 정의되어야 한다
   'src/game/engine/pixel.js',
+  'src/game/engine/controls.js',
   'src/game/world/tiles.js',
   'src/game/engine/tileset.js',
   'src/game/engine/charsprite.js',
@@ -49,6 +50,7 @@ const ORDER = [
   'src/game/world/maps.js',
   'src/game/world/camera.js',
   'src/game/actors/actor.js',
+  'src/game/world/path.js',
   'src/game/ui/textbox.js',
   'src/game/ui/banner.js',
   'src/game/scenes/field.js',
@@ -71,6 +73,34 @@ const strip = (code) =>
     .replace(/^export\s+\{\s*\};?[ \t]*$/gm, '')
     .replace(/^export\s+(const|let|function|class|async)\b/gm, '$1');
 
+/**
+ * ORDER 에 빠진 모듈이 있으면 런타임에 "X is not defined" 로 터진다.
+ * 각 파일의 상대 import 를 훑어 ORDER 에 다 들어 있는지 빌드 때 확인한다.
+ */
+function checkCoverage() {
+  const listed = new Set(ORDER.map((r) => r.replace(/^src\//, '')));
+  const missing = [];
+  const aliased = [];
+  for (const rel of ORDER) {
+    const code = readFileSync(join(ROOT, rel), 'utf8');
+    const dir = dirname(rel);
+    for (const m of code.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
+      const target = join(dir, m[1]).replace(/\\/g, '/').replace(/^src\//, '');
+      if (!listed.has(target)) missing.push(`${rel} → ${m[1]}`);
+    }
+    // import { A as B } 는 스코프 합치기로 표현할 수 없다 (B 라는 이름이 생기지 않는다)
+    for (const m of code.matchAll(/import\s*\{([^}]*)\}\s*from/g)) {
+      if (/\bas\b/.test(m[1])) aliased.push(`${rel} → {${m[1].trim()}}`);
+    }
+  }
+  if (missing.length) {
+    throw new Error(`ORDER 에 빠진 모듈이 있다:\n  ${missing.join('\n  ')}`);
+  }
+  if (aliased.length) {
+    throw new Error(`별칭 import 는 번들할 수 없다 (원래 이름을 그대로 써라):\n  ${aliased.join('\n  ')}`);
+  }
+}
+
 /** 모듈들이 한 스코프로 합쳐지므로, 모듈 안에서만 쓰던 이름도 서로 부딪힌다 */
 const declared = new Map();
 function checkCollisions(rel, code) {
@@ -83,6 +113,8 @@ function checkCollisions(rel, code) {
     declared.set(name, rel);
   }
 }
+
+checkCoverage();
 
 const modules = ORDER.map((rel) => {
   const code = strip(readFileSync(join(ROOT, rel), 'utf8')).trim();

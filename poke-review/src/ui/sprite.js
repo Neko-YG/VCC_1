@@ -11,8 +11,8 @@ import { svg } from './dom.js';
  * @param {object} opts { speciesId, type, stage=1, size=96, animate=true }
  * @returns {SVGElement}
  */
-export function spriteFor({ speciesId = 'ember', type = 'fire', stage = 1, size = 96, animate = true } = {}) {
-  const shape = monsterShape({ speciesId, stage });
+export function spriteFor({ speciesId = 'ember', type = 'fire', stage = 1, size = 96, animate = true, expression = 'normal' } = {}) {
+  const shape = monsterShape({ speciesId, stage, expression });
   const color = TYPES[type]?.color || '#8ab4f8';
   const palette = tonePalette(color, shade);
   const G = shape.size;

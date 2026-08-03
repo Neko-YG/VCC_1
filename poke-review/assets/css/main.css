@@ -510,7 +510,9 @@ input, select, textarea {
   align-items: center;
   gap: 12px;
 }
+.gb__hintwrap { display: grid; gap: 4px; justify-items: center; }
 .gb__hint { margin: 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+.gb__scheme { font-size: 11px; color: var(--accent); font-weight: 700; }
 .gb__dpad {
   display: grid;
   grid-template-columns: repeat(3, 38px);
