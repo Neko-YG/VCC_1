@@ -3,7 +3,7 @@
  * 평가 데이터는 여기서 "대사"로 바뀐다.
  */
 import { TILE, isSolid, tileAt } from '../world/tiles.js';
-import { renderMap, drawWaterSparkle } from '../engine/tileset.js';
+import { renderMap, drawTallGrassFront, WATER_FPS } from '../engine/tileset.js';
 import { Camera } from '../world/camera.js';
 import { Actor, Npc } from '../actors/actor.js';
 import { fmt } from '../../ui/dom.js';
@@ -130,15 +130,27 @@ export class FieldScene {
   draw(ctx, time) {
     const cam = this.camera;
     ctx.imageSmoothingEnabled = false;
-    // 프리렌더된 맵에서 보이는 부분만 잘라 붙인다
-    ctx.drawImage(this.pre.canvas, cam.x, cam.y, cam.w, cam.h, 0, 0, cam.w, cam.h);
-    if (this.map.outdoor) drawWaterSparkle(ctx, this.pre.waterTiles, cam, time);
+
+    // 프리렌더된 맵에서 보이는 부분만 잘라 붙인다 (물결은 프레임 교체로)
+    const frames = this.pre.frames;
+    const frame = frames[Math.floor(Math.max(0, time) * WATER_FPS) % frames.length];
+    ctx.drawImage(frame, cam.x, cam.y, cam.w, cam.h, 0, 0, cam.w, cam.h);
 
     // 아래쪽(y 가 큰) 캐릭터가 나중에 그려져 앞에 서도록
     const actors = [...this.npcs, this.player].sort((a, b) => a.py - b.py);
     for (const a of actors) {
       if (a.px - cam.x < -TILE * 2 || a.px - cam.x > cam.w + TILE * 2) continue;
       a.draw(ctx, cam);
+    }
+
+    // 풀숲 앞잎을 캐릭터 위에 덮어 '풀에 들어간' 느낌을 만든다
+    const sway = Math.sin(time * 6) > 0 ? 1 : 0;
+    for (const [gx, gy] of this.pre.tallGrass) {
+      const sx = gx * TILE - cam.x;
+      const sy = gy * TILE - cam.y;
+      if (sx < -TILE || sy < -TILE || sx > cam.w || sy > cam.h) continue;
+      const stepping = this.player.gx === gx && this.player.gy === gy;
+      drawTallGrassFront(ctx, sx, sy, gx, gy, stepping ? sway : 0);
     }
   }
 

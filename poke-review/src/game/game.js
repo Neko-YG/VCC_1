@@ -48,12 +48,14 @@ export class Game {
     this.loop = new Loop((dt, time) => this.step(dt, time));
     this.scene = null;
     this.fieldScene = null;
+    /** 화면 전환 연출: 검은 페이드(맵 이동) / 흰 플래시(배틀 진입) */
+    this.fx = { fade: 0, flash: 0, phase: null, t: 0, dur: 0.22, onSwap: null };
   }
 
   start() {
     const report = this.report();
     const startMap = MAPS.town;
-    this.changeMap(startMap.id, startMap.spawn);
+    this.changeMap(startMap.id, startMap.spawn, { instant: true });
     this.loop.start();
     if (!report) {
       this.say(['이번 시즌 데이터가 없다. 관리 화면에서 시즌을 만들어 보자.']);
@@ -63,29 +65,87 @@ export class Game {
   step(dt, time) {
     this.textbox.update(dt);
     this.banner.update(dt);
-    this.scene?.update(dt);
+    this.updateFx(dt);
+    // 전환 중에는 조작을 막는다 (문을 넘는 도중 입력이 먹히면 어긋난다)
+    if (!this.fx.phase) this.scene?.update(dt);
     this.scene?.draw(this.ctx, time);
+    this.drawFx();
     this.input.endFrame();
+  }
+
+  /* ── 전환 연출 ──────────────────────────────────── */
+
+  updateFx(dt) {
+    const fx = this.fx;
+    fx.flash = Math.max(0, fx.flash - dt * 3.5);
+    if (!fx.phase) return;
+    fx.t += dt;
+    const k = Math.min(1, fx.t / fx.dur);
+    if (fx.phase === 'out') {
+      fx.fade = k;
+      if (k >= 1) {
+        fx.onSwap?.();
+        fx.onSwap = null;
+        fx.phase = 'in';
+        fx.t = 0;
+      }
+    } else {
+      fx.fade = 1 - k;
+      if (k >= 1) {
+        fx.phase = null;
+        fx.fade = 0;
+      }
+    }
+  }
+
+  drawFx() {
+    const { fade, flash } = this.fx;
+    if (fade > 0) {
+      this.ctx.fillStyle = `rgba(0,0,0,${fade})`;
+      this.ctx.fillRect(0, 0, this.width, this.height);
+    }
+    if (flash > 0) {
+      this.ctx.fillStyle = `rgba(255,255,255,${Math.min(1, flash)})`;
+      this.ctx.fillRect(0, 0, this.width, this.height);
+    }
+  }
+
+  /** 화면을 어둡게 했다가 onSwap 을 실행하고 다시 밝힌다 */
+  fadeThrough(onSwap, dur = 0.22) {
+    this.fx.phase = 'out';
+    this.fx.t = 0;
+    this.fx.dur = dur;
+    this.fx.onSwap = onSwap;
   }
 
   /* ── 씬 ─────────────────────────────────────────── */
 
-  changeMap(mapId, spawn) {
+  changeMap(mapId, spawn, { instant = false } = {}) {
     const map = MAPS[mapId];
     if (!map) return;
-    this.scene?.dispose?.();
-    this.scene = new FieldScene(this, map, spawn || map.spawn);
-    this.fieldScene = this.scene;
-    this.scene.enter();
+    const swap = () => {
+      this.scene?.dispose?.();
+      this.scene = new FieldScene(this, map, spawn || map.spawn);
+      this.fieldScene = this.scene;
+      this.scene.enter();
+    };
+    if (instant) swap();
+    else this.fadeThrough(swap);
   }
 
   startBattle(entry, boss) {
     const field = this.fieldScene;
-    this.scene = new BattleScene(this, entry, boss, () => {
-      this.scene = field;
-      field.enter();
-    });
-    this.scene.enter();
+    this.banner.hide(); // 지역 배너가 체력 상자를 가리지 않게
+    this.fx.flash = 1.6; // 배틀 진입 섬광
+    this.fadeThrough(() => {
+      this.scene = new BattleScene(this, entry, boss, () => {
+        this.fadeThrough(() => {
+          this.scene = field;
+          field.enter();
+        });
+      });
+      this.scene.enter();
+    }, 0.3);
   }
 
   say(lines, opts) {

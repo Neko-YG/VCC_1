@@ -21,6 +21,12 @@ export class Banner {
     this.timer = seconds;
   }
 
+  hide() {
+    this.timer = 0;
+    this.el.hidden = true;
+    this.el.classList.remove('is-in');
+  }
+
   update(dt) {
     if (this.timer <= 0) return;
     this.timer -= dt;

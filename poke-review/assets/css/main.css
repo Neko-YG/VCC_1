@@ -25,6 +25,9 @@
 
 * { box-sizing: border-box; }
 
+/* display 를 지정한 요소는 hidden 속성이 무시된다 — 전역으로 못박아 둔다 */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
