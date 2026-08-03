@@ -8,6 +8,8 @@ import { makeSeedState } from '../src/data/seed.js';
 import { evaluateAll } from '../src/engine/evaluate.js';
 import { totalExpForLevel, levelFromExp } from '../src/engine/leveling.js';
 import { CONFIG } from '../src/core/config.js';
+import { MAPS, validateMaps } from '../src/game/world/maps.js';
+import { TILES, isSolid } from '../src/game/world/tiles.js';
 
 let failed = 0;
 const check = (label, cond, extra = '') => {
@@ -65,6 +67,27 @@ check(
 );
 check('랭킹 1위는 MVP 배지를 받는다', last.ranking[0].badges.includes('mvp'));
 check('한 명 이상 체육관을 돌파했다', last.entries.some((e) => e.battle.win));
+
+console.log('\n= 맵 =');
+const mapProblems = validateMaps();
+for (const [id, map] of Object.entries(MAPS)) {
+  console.log(`  ${id.padEnd(5)} ${map.rows[0].length}×${map.rows.length}  NPC ${map.npcs.length}명  워프 ${map.warps.length}개`);
+}
+check('맵 줄 길이/워프 대상이 모두 정상', mapProblems.length === 0, mapProblems.join(' / '));
+check(
+  '맵의 모든 글자가 정의된 타일',
+  Object.values(MAPS).every((m) => m.rows.every((r) => [...r].every((c) => TILES[c]))),
+);
+check(
+  '시작 위치와 NPC 자리가 막혀 있지 않다',
+  Object.values(MAPS).every(
+    (m) => !isSolid(m, m.spawn.x, m.spawn.y) && m.npcs.every((n) => !isSolid(m, n.x, n.y)),
+  ),
+);
+check(
+  '워프 도착지도 서 있을 수 있는 칸',
+  Object.values(MAPS).every((m) => m.warps.every((w) => !isSolid(MAPS[w.to], w.tx, w.ty))),
+);
 
 console.log(failed ? `\n${failed}개 실패\n` : '\n전부 통과\n');
 process.exit(failed ? 1 : 0);

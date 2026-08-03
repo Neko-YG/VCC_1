@@ -1,7 +1,17 @@
 # 월간 업적 리그 (poke-review)
 
-월간 업적평가를 **포켓몬 게임 문법**으로 다시 쓴 정적 웹앱.
-빌드 도구·서버·의존성 없이 `index.html` 하나로 돌아간다.
+월간 업적평가를 **포켓몬 게임**으로 다시 쓴 정적 웹앱.
+타일맵 마을을 걸어다니고, 팀원에게 말을 걸고, 체육관에 들어가 이번 달 목표와 싸운다.
+빌드 도구·서버·의존성 없이 `index.html` 하나로 돌아간다. 외부 이미지도 0개 — 모든 도트는 코드로 그린다.
+
+화면은 두 겹이다.
+
+| | 무엇 | 경로 |
+| --- | --- | --- |
+| **필드** | 4세대 오버월드. 걷기·대화·체육관 배틀 | `#/field` |
+| **대시보드** | 같은 데이터를 표로 보는 도감·리그·실적 입력 | `#/dex` `#/league` `#/admin` |
+
+둘은 **같은 계산 결과**를 본다. 관리 화면에서 실적 숫자를 고치면 마을 NPC 의 대사도, 체육관 배틀의 승패도 같이 바뀐다.
 
 ```
 poke-review/index.html  ←  브라우저에서 열면 끝 (ES 모듈이라 file:// 은 안 되고 로컬 서버 필요)
@@ -23,6 +33,8 @@ poke-review/index.html  ←  브라우저에서 열면 끝 (ES 모듈이라 file
 | 이번 달 목표       | **체육관 관장** 과의 배틀  | `data/bosses.js`, `engine/battle.js` |
 | 목표 달성/특이 성과 | 배지                       | `data/badges.js`, `engine/badges.js` |
 | 팀 랭킹            | 리그 / 명예의 전당         | `ui/screens/league.js`         |
+| 팀원 근황          | 마을 NPC 대사              | `game/scenes/field.js`         |
+| 이번 달 평가       | 체육관 배틀 (로그 재생)    | `game/scenes/battle.js`        |
 
 핵심 규칙 세 가지:
 
@@ -32,6 +44,8 @@ poke-review/index.html  ←  브라우저에서 열면 끝 (ES 모듈이라 file
    평가 도구가 새로고침마다 결과를 바꾸면 안 되기 때문.
 3. **관장 레벨은 팀 평균을 따라온다.** 고정 레벨이면 초반엔 전패, 후반엔 전승이 된다.
    기본값은 `팀 평균 레벨 + 1` (`CONFIG.battle.bossScaling`), 시즌별로 고정값 지정 가능.
+4. **게임은 계산하지 않는다.** 필드/배틀 씬은 `evaluateAll()` 이 만든 결과를 재생만 한다.
+   그래서 도감에서 본 전적과 체육관에서 본 배틀이 절대 어긋나지 않는다.
 
 ---
 
@@ -52,6 +66,15 @@ node poke-review/tools/smoke.js
 ---
 
 ## 3. 구조
+
+### 조작
+
+| | |
+| --- | --- |
+| 이동 | 방향키 / WASD (화면 D패드도 가능) |
+| 대화·확인 | `Z` 또는 `Space` (A 버튼) |
+| 취소 | `X` / `Esc` (B 버튼) |
+| 달리기 | `Shift` |
 
 ```
 poke-review/
@@ -78,9 +101,25 @@ poke-review/
    │  ├─ battle.js            # 턴제 배틀 시뮬레이션
    │  ├─ badges.js            # 배지 판정 규칙
    │  └─ evaluate.js          # 전 시즌 재생(replay) 오케스트레이션
-   └─ ui/
-      ├─ dom.js, router.js, sprite.js, components.js
-      └─ screens/             # home / pokedex / detail / battle / league / admin
+   ├─ ui/
+   │  ├─ dom.js, router.js, sprite.js, components.js
+   │  └─ screens/             # field / home / pokedex / detail / battle / league / admin
+   └─ game/                   # ★ 게임 부분
+      ├─ game.js              # 화면·입력·루프·씬 전환
+      ├─ engine/
+      │  ├─ pixel.js          # 도트 그리기 유틸
+      │  ├─ tileset.js        # 타일 그림(맵 전체를 한 장에 프리렌더)
+      │  ├─ charsprite.js     # 트레이너 스프라이트 4방향×3프레임 생성
+      │  ├─ monsterdraw.js    # 배틀용 몬스터 렌더러
+      │  ├─ input.js, loop.js
+      ├─ world/
+      │  ├─ tiles.js          # 문자 → 타일 정의
+      │  ├─ maps.js           # ★ 지도 데이터 (여기만 고치면 마을이 바뀐다)
+      │  └─ camera.js
+      ├─ actors/actor.js      # 격자 이동·애니메이션
+      ├─ scenes/field.js      # 오버월드
+      ├─ scenes/battle.js     # 체육관 배틀 재생
+      └─ ui/textbox.js, banner.js
 ```
 
 데이터 흐름은 한 방향이다.
@@ -108,6 +147,11 @@ store(state) → evaluateAll() → 화면
 | 등급 컷(S/A/B/C/D)               | `CONFIG.grades`                                                 |
 | 배지 규칙                        | `engine/badges.js` 의 `RULES` + `data/badges.js` 에 정의 추가    |
 | 스프라이트를 실제 일러스트로     | `ui/sprite.js` 의 `spriteFor()` 를 `<img>` 반환으로 교체        |
+| 지도·건물·NPC 배치               | `game/world/maps.js` 의 `rows` 문자열과 `npcs` 배열              |
+| 새 타일 종류(다리·바위 등)       | `game/world/tiles.js` 에 한 줄 + `game/engine/tileset.js` 에 그리는 함수 |
+| 타일 색감                        | `game/engine/tileset.js` 의 `PAL`                               |
+| 캐릭터 옷/머리 색                | `game/engine/charsprite.js` 의 `PALETTES`                        |
+| 이동 속도                        | `game/actors/actor.js` 의 `WALK_SPEED` / `RUN_SPEED`            |
 
 수치를 바꾼 뒤에는 `node poke-review/tools/smoke.js` 로 결과를 훑어보면 된다
 (레벨 곡선, 시즌별 순위, 돌파율, 배지 획득이 한눈에 나온다).
@@ -130,6 +174,8 @@ EXP       Σ(score × 항목가중치 × basePerKpi) + 연속달성보너스 + �
 
 ## 6. 남은 디테일 (여기부터는 취향의 영역)
 
+- 지도 확장: 지금은 마을 1개 + 체육관 1개. `maps.js` 에 맵을 추가하고 워프로 잇기
+- 풀숲 랜덤 인카운트(지난달 미제 업무와의 조우), 회복 센터, 상점 같은 필드 이벤트
 - 실제 KPI 항목·목표치·가중치를 조직 기준으로 교체 (`data/kpi.js`)
 - 파트너 종족 이름/설명, 관장 대사 톤 (`data/species.js`, `data/bosses.js`)
 - 배지 규칙 추가 (예: 무결점 3개월, 신규 영역 개척, 팀 기여 1위)

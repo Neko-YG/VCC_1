@@ -19,7 +19,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 /** 의존성 순서 (위에서 아래로) */
 const ORDER = [
   'src/core/config.js',
+  'src/core/color.js',
   'src/core/rng.js',
+  'src/core/monster.js',
   'src/data/kpi.js',
   'src/data/species.js',
   'src/data/bosses.js',
@@ -36,6 +38,23 @@ const ORDER = [
   'src/ui/sprite.js',
   'src/ui/components.js',
   'src/ui/router.js',
+  // 게임(필드) — 화면 모듈보다 먼저 정의되어야 한다
+  'src/game/engine/pixel.js',
+  'src/game/world/tiles.js',
+  'src/game/engine/tileset.js',
+  'src/game/engine/charsprite.js',
+  'src/game/engine/monsterdraw.js',
+  'src/game/engine/input.js',
+  'src/game/engine/loop.js',
+  'src/game/world/maps.js',
+  'src/game/world/camera.js',
+  'src/game/actors/actor.js',
+  'src/game/ui/textbox.js',
+  'src/game/ui/banner.js',
+  'src/game/scenes/field.js',
+  'src/game/scenes/battle.js',
+  'src/game/game.js',
+  'src/ui/screens/field.js',
   'src/ui/screens/home.js',
   'src/ui/screens/pokedex.js',
   'src/ui/screens/detail.js',
@@ -52,8 +71,25 @@ const strip = (code) =>
     .replace(/^export\s+\{\s*\};?[ \t]*$/gm, '')
     .replace(/^export\s+(const|let|function|class|async)\b/gm, '$1');
 
+/** 모듈들이 한 스코프로 합쳐지므로, 모듈 안에서만 쓰던 이름도 서로 부딪힌다 */
+const declared = new Map();
+function checkCollisions(rel, code) {
+  const re = /^(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm;
+  for (const m of code.matchAll(re)) {
+    const name = m[1];
+    if (declared.has(name)) {
+      throw new Error(`이름 충돌: '${name}' 이(가) ${declared.get(name)} 와 ${rel} 양쪽에 있다. 한쪽 이름을 바꿔라.`);
+    }
+    declared.set(name, rel);
+  }
+}
+
 const modules = ORDER.map((rel) => {
   const code = strip(readFileSync(join(ROOT, rel), 'utf8')).trim();
+  checkCollisions(rel, code);
+  // 재수출(export { a } / export * from ...)은 스코프 합치기로 표현할 수 없다 — 조용히 깨지느니 여기서 멈춘다
+  const leftover = code.match(/^export\b.*$/m);
+  if (leftover) throw new Error(`${rel}: 번들러가 처리하지 못하는 구문 — ${leftover[0].trim()}`);
   return `/* ── ${rel} ───────────────────────────────── */\n${code}`;
 }).join('\n\n');
 

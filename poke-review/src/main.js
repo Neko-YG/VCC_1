@@ -15,12 +15,14 @@ import { DetailScreen } from './ui/screens/detail.js';
 import { BattleScreen } from './ui/screens/battle.js';
 import { LeagueScreen } from './ui/screens/league.js';
 import { AdminScreen } from './ui/screens/admin.js';
+import { FieldScreen, disposeField } from './ui/screens/field.js';
 import { emptyState } from './ui/components.js';
 
 const root = document.getElementById('app');
 
 const NAV = [
   { path: '/home', label: '홈' },
+  { path: '/field', label: '필드' },
   { path: '/dex', label: '도감' },
   { path: '/battle', label: '체육관' },
   { path: '/league', label: '리그' },
@@ -96,6 +98,7 @@ let lastPath = null;
 let jumpToTop = true;
 
 function mount(screenFn, params) {
+  disposeField(); // 다른 화면으로 넘어가면 게임 루프를 반드시 멈춘다
   const c = ctx(params);
   const scrollY = jumpToTop ? 0 : window.scrollY;
   let view;
@@ -111,6 +114,7 @@ function mount(screenFn, params) {
 }
 
 route('/home', () => mount(HomeScreen, {}));
+route('/field', () => mount(FieldScreen, {}));
 route('/dex', () => mount(PokedexScreen, {}));
 route('/dex/:id', (params) => mount(DetailScreen, params));
 route('/battle', () => mount(BattleScreen, {}));
