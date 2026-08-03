@@ -1,0 +1,3490 @@
+<style>
+/* ─────────────────────────────────────────────────────────
+   월간 업적 리그 — 스타일
+   1) 토큰  2) 레이아웃  3) 공통 조각  4) 화면별
+   ───────────────────────────────────────────────────────── */
+
+/* 1) 토큰 ------------------------------------------------ */
+:root {
+  --bg: #0e1117;
+  --bg-soft: #151a23;
+  --panel: #1a2029;
+  --panel-2: #212936;
+  --line: #2b3444;
+  --text: #e8edf5;
+  --text-dim: #94a1b5;
+  --accent: #6ee7ff;
+  --accent-2: #ffd166;
+  --win: #4ade80;
+  --lose: #f87171;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --font: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(1000px 500px at 15% -10%, rgba(110, 231, 255, 0.09), transparent 60%),
+    radial-gradient(800px 400px at 90% 0%, rgba(255, 209, 102, 0.07), transparent 60%);
+  background-attachment: fixed;
+}
+
+a { color: var(--accent); text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* 2) 레이아웃 -------------------------------------------- */
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.main {
+  width: min(1180px, 100% - 32px);
+  margin: 0 auto;
+  padding: 24px 0 64px;
+  flex: 1;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px min(24px, 4vw);
+  background: rgba(14, 17, 23, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar__brand { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 800; letter-spacing: -0.02em; }
+.topbar__logo { font-size: 20px; color: var(--lose); }
+.topbar__nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+.topbar__link {
+  padding: 7px 13px;
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+}
+.topbar__link:hover { background: var(--panel); color: var(--text); }
+.topbar__link.is-on { background: var(--accent); color: #05202a; }
+.topbar__season select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 20px min(24px, 4vw);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.screen { display: flex; flex-direction: column; gap: 20px; }
+
+.grid { display: grid; gap: 16px; }
+.grid--summary { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.grid--cards { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.grid--two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+
+/* 3) 공통 조각 ------------------------------------------- */
+.panel {
+  background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.panel__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover { background: #2a3444; border-color: #3b4761; }
+.btn:active { transform: translateY(1px); }
+.btn--primary { background: var(--accent); border-color: var(--accent); color: #05202a; }
+.btn--primary:hover { background: #8beeff; }
+.btn--danger { background: transparent; border-color: #5b2a33; color: #ffb3bd; }
+.btn--danger:hover { background: #3a1b21; }
+.btn--ghost { background: transparent; }
+.btn--sm { padding: 6px 12px; font-size: 13px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chip--sm { padding: 3px 8px; font-size: 11px; }
+.chip--type { background: color-mix(in srgb, var(--chip) 22%, transparent); border-color: var(--chip); color: var(--chip); }
+.chip--grade { background: color-mix(in srgb, var(--chip) 20%, transparent); border-color: var(--chip); color: var(--chip); min-width: 30px; justify-content: center; }
+.chip--badge { background: rgba(255, 209, 102, 0.12); border-color: rgba(255, 209, 102, 0.4); }
+.chip--gym { background: rgba(110, 231, 255, 0.12); border-color: rgba(110, 231, 255, 0.4); }
+.chip__icon { font-size: 13px; }
+
+.pill {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.pill:hover { color: var(--text); }
+.pill.is-on { background: var(--chip, var(--accent)); border-color: var(--chip, var(--accent)); color: #0b1017; font-weight: 700; }
+
+.hint { color: var(--text-dim); font-size: 12.5px; margin: 6px 0 0; }
+.win { color: var(--win); font-weight: 700; }
+.lose { color: var(--lose); font-weight: 700; }
+.tag { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+.tag--gold { background: rgba(255, 209, 102, 0.16); color: var(--accent-2); }
+
+.empty { text-align: center; padding: 64px 16px; color: var(--text-dim); display: grid; gap: 14px; justify-items: center; }
+
+.statline { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+.statline:last-child { border-bottom: none; }
+.statline span { color: var(--text-dim); }
+
+.field { display: grid; gap: 6px; font-size: 13px; color: var(--text-dim); }
+.field--inline { display: flex; align-items: center; gap: 8px; }
+input, select, textarea {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--text);
+}
+.field input, .field select, .field textarea,
+.table--input input, .table--input select,
+.cellinput, .json, textarea { width: 100%; }
+.field input:focus, .cellinput:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.json { font-family: var(--mono); font-size: 12px; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar__group { display: flex; flex-wrap: wrap; gap: 6px; }
+.toolbar__sort { font-size: 13px; color: var(--text-dim); }
+.toolbar__sort select { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 5px 8px; }
+
+.details { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.details summary { cursor: pointer; color: var(--text-dim); font-size: 13px; }
+
+.tablewrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; color: var(--text-dim); font-size: 12px; font-weight: 700; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.table td { padding: 8px; border-bottom: 1px solid rgba(43, 52, 68, 0.5); }
+.table--sm { font-size: 13px; }
+.table tr.is-clickable { cursor: pointer; }
+.table tr.is-clickable:hover td { background: var(--panel-2); }
+.table--input input, .table--input select { min-width: 88px; }
+.th__kpi { display: flex; align-items: center; gap: 6px; }
+.rank { font-size: 16px; }
+
+/* 스프라이트 */
+.sprite { image-rendering: pixelated; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
+.sprite--bob { animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.sprite__aura { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
+
+/* EXP / HP 바 */
+.expbar { display: grid; gap: 4px; }
+.expbar__track, .hpbar__track { height: 8px; background: #0c1017; border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+.expbar__fill { height: 100%; background: linear-gradient(90deg, #3ba7ff, var(--accent)); transition: width 0.4s ease; }
+.expbar__meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-dim); }
+.hpbar { display: grid; gap: 4px; min-width: 200px; }
+.hpbar__label { font-size: 12px; font-weight: 700; }
+.hpbar__fill { height: 100%; transition: width 0.35s ease; background: var(--win); }
+.hpbar--ok .hpbar__fill { background: var(--win); }
+.hpbar--warn .hpbar__fill { background: var(--accent-2); }
+.hpbar--danger .hpbar__fill { background: var(--lose); }
+
+/* 스탯 */
+.statbars { display: grid; gap: 6px; margin-top: 12px; }
+.statbars__row { display: grid; grid-template-columns: 52px 44px 1fr; align-items: center; gap: 8px; font-size: 12.5px; }
+.statbars__name { color: var(--text-dim); }
+.statbars__value { font-family: var(--mono); text-align: right; }
+.statbars__track { height: 7px; background: #0c1017; border-radius: 999px; overflow: hidden; }
+.statbars__fill { height: 100%; background: linear-gradient(90deg, var(--type, var(--accent)), #ffffff55); }
+
+.radarwrap { display: flex; justify-content: center; }
+.radar__ring { fill: none; stroke: var(--line); stroke-width: 1; }
+.radar__area { fill: color-mix(in srgb, var(--radar) 25%, transparent); stroke: var(--radar); stroke-width: 2; }
+.radar__label { fill: var(--text-dim); font-size: 9px; font-family: var(--font); }
+
+/* KPI 행 */
+.kpilist { display: grid; gap: 14px; }
+.kpirow { display: grid; gap: 6px; }
+.kpirow__head { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+.kpirow__name { font-weight: 700; }
+.kpirow__val { color: var(--text-dim); margin-left: auto; font-family: var(--mono); font-size: 12px; }
+.kpirow__pct { font-weight: 800; font-family: var(--mono); }
+.kpirow.is-clear .kpirow__pct { color: var(--win); }
+.kpirow__track { position: relative; height: 9px; background: #0c1017; border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+.kpirow__fill { height: 100%; background: linear-gradient(90deg, var(--c), #ffffff66); transition: width 0.4s ease; }
+.kpirow__goal { position: absolute; left: 66.6%; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.35); z-index: 2; }
+.kpirow__foot { display: flex; gap: 12px; font-size: 11.5px; color: var(--text-dim); flex-wrap: wrap; }
+.kpirow__streak { color: var(--accent-2); }
+.summaryrow { display: flex; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-dim); flex-wrap: wrap; align-items: center; }
+
+/* 4) 화면별 --------------------------------------------- */
+
+/* 홈 */
+.hero {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: linear-gradient(120deg, #1b2432, #131922 60%);
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+.hero__eyebrow { margin: 0; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.hero__title { margin: 6px 0 8px; font-size: clamp(24px, 4vw, 36px); letter-spacing: -0.03em; }
+.hero__desc { margin: 0 0 16px; color: var(--text-dim); }
+.hero__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero__boss { display: grid; justify-items: center; gap: 8px; max-width: 260px; }
+.hero__quote { margin: 0; color: var(--text-dim); font-size: 13px; font-style: italic; text-align: center; }
+
+.highlights { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13.5px; }
+.highlights li { line-height: 1.5; }
+.mvp { display: grid; gap: 8px; justify-items: start; }
+.mvp__name { font-size: 17px; }
+.mvp__desc { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+/* 카드 */
+.card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--type) 12%, var(--panel)), var(--bg-soft));
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.card.is-clickable { cursor: pointer; }
+.card.is-clickable:hover { transform: translateY(-3px); border-color: var(--type); }
+.card__sprite { display: grid; place-items: center; }
+.card__body { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.card__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card__name { font-size: 16px; }
+.card__sub { color: var(--text-dim); font-size: 12px; }
+.card__chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.card__foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
+
+/* 상세 */
+.profile { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; padding: 20px; border-radius: var(--radius); border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--type) 16%, var(--panel)), var(--bg-soft)); }
+.profile__sprite { display: grid; justify-items: center; gap: 8px; }
+.profile__stage { font-size: 11px; color: var(--text-dim); }
+.profile__info { flex: 1; min-width: 280px; display: grid; gap: 10px; }
+.profile__info h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+.profile__form { color: var(--type); font-size: 18px; }
+.profile__tagline { margin: 0; color: var(--text-dim); font-style: italic; }
+.profile__chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.profile__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 20px; }
+
+.badgelist { display: flex; gap: 8px; flex-wrap: wrap; }
+.badgegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.badgecard { display: grid; gap: 4px; padding: 12px; border-radius: var(--radius-sm); border: 1px dashed var(--line); opacity: 0.5; }
+.badgecard.is-owned { opacity: 1; border-style: solid; background: var(--panel-2); }
+.badgecard__icon { font-size: 24px; }
+.badgecard__owners { font-size: 11px; color: var(--accent); }
+
+.battlecard { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid var(--line); flex-wrap: wrap; }
+.battlecard strong { flex: 1; }
+
+.trendwrap { overflow-x: auto; }
+.trend { width: 100%; height: 190px; }
+.trend__base { stroke: var(--line); stroke-dasharray: 4 4; }
+.trend__line { fill: none; stroke: var(--c); stroke-width: 2.5; stroke-linejoin: round; }
+.trend__dot { fill: var(--c); }
+.trend__label { fill: var(--text-dim); font-size: 11px; }
+.trend__value { fill: var(--text); font-size: 11px; font-weight: 700; }
+
+.evoline { display: flex; align-items: center; gap: 22px; margin-top: 18px; flex-wrap: wrap; }
+.evoline__item { display: grid; justify-items: center; gap: 4px; opacity: 0.35; filter: grayscale(1); font-size: 12px; }
+.evoline__item.is-on { opacity: 1; filter: none; }
+
+/* 배틀 */
+.stage {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  padding: 26px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(600px 200px at 70% 20%, rgba(110, 231, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #16202c, #0f151d);
+  overflow: hidden;
+}
+.stage__row { display: flex; align-items: center; gap: 20px; }
+.stage__row--foe { justify-content: flex-end; }
+.stage__row--player { justify-content: flex-start; }
+.stage__hp { flex: 0 0 auto; }
+.stage__player, .stage__foe { transition: transform 0.1s ease; }
+.is-hit { animation: hit 0.35s ease; }
+@keyframes hit {
+  0% { transform: translateX(0); filter: none; }
+  25% { transform: translateX(-7px); filter: brightness(2.2); }
+  50% { transform: translateX(6px); filter: none; }
+  75% { transform: translateX(-3px); filter: brightness(1.6); }
+  100% { transform: translateX(0); }
+}
+
+.dialog {
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: #0d1219;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.dialog__text { font-size: 16px; line-height: 1.6; min-height: 3em; }
+.dialog__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.movelist { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.move { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid var(--line); display: grid; gap: 6px; }
+.move__head { display: flex; align-items: center; gap: 6px; }
+.move__meta { display: flex; gap: 10px; font-size: 11.5px; color: var(--text-dim); }
+
+.bossheader { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.bossheader__quote { margin: 0 0 10px; font-style: italic; color: var(--text-dim); }
+.bossheader__meta { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* 리그 */
+.hof { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+.hof__item { display: grid; justify-items: center; gap: 4px; padding: 14px 8px; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid var(--line); cursor: pointer; font-size: 13px; }
+.hof__item:hover { border-color: var(--accent); }
+.hof__item.is-top { background: linear-gradient(180deg, rgba(255, 209, 102, 0.16), var(--panel-2)); border-color: var(--accent-2); }
+.hof__rank { font-weight: 800; color: var(--text-dim); }
+
+@media (max-width: 720px) {
+  .topbar { flex-wrap: wrap; gap: 10px; }
+  .main { width: calc(100% - 20px); }
+  .stage__row { flex-direction: column; align-items: stretch; }
+  .profile { gap: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+</style>
+
+<div id="app"><noscript>이 페이지는 자바스크립트가 필요합니다.</noscript></div>
+
+<script>
+(function () {
+'use strict';
+/* ── src/core/config.js ───────────────────────────────── */
+/**
+ * 게임 밸런스 상수 — 수치 튜닝은 전부 이 파일에서 한다.
+ * 규칙(로직)은 engine/, 데이터(사람·항목)는 data/ 에 있다.
+ */
+const CONFIG = {
+  /** 레벨 곡선: 누적EXP(L) = round(L^3 * k)  (포켓몬 medium-fast 계열) */
+  level: {
+    max: 100,
+    k: 1.0,
+    /** 진화 레벨 (species.line 에서 개별 지정 가능, 없으면 이 값 사용) */
+    evolveAt: [16, 36],
+  },
+
+  /** 업적 → EXP 환산 */
+  exp: {
+    /** KPI 1개를 목표 100% 달성했을 때 주는 기본 EXP */
+    basePerKpi: 400,
+    /** 점수 상한(초과달성 인정 배율). 1.5 = 목표의 150%까지 인정 */
+    scoreCap: 1.5,
+    /** 목표 초과분에 곱하는 가중치 (1.0 초과 구간) */
+    overAchieveWeight: 0.6,
+    /** 전 항목 목표 달성 시 보너스 */
+    perfectSeasonBonus: 800,
+    /** 동일 KPI 연속 달성 1개월당 보너스 (최대 streakBonusCap) */
+    streakBonusPerMonth: 60,
+    streakBonusCap: 600,
+    /** 배틀 결과 보상 */
+    battleWin: 1200,
+    battleLose: 400,
+  },
+
+  /** 업적 → 노력치(EV) 환산 */
+  ev: {
+    /** 점수 1.0 당 얻는 EV */
+    scoreToEv: 40,
+    /** 한 시즌에 한 스탯이 얻을 수 있는 상한 */
+    perSeasonStatCap: 60,
+    /** 스탯별 누적 상한 / 전체 누적 상한 (포켓몬 규칙) */
+    statCap: 252,
+    totalCap: 510,
+  },
+
+  /** 배틀 규칙 */
+  battle: {
+    turnLimit: 24,
+    critChance: 0.0625,
+    critMultiplier: 1.5,
+    /** 데미지 난수 구간 */
+    randMin: 0.85,
+    randMax: 1.0,
+    /** 자속 보정(Same Type Attack Bonus) */
+    stab: 1.2,
+    /** 기술 위력 = powerBase + 점수 * powerScale */
+    powerBase: 40,
+    powerScale: 60,
+    /** 명중률 = min(1, accBase + 점수 * accScale) */
+    accBase: 0.65,
+    accScale: 0.35,
+    /** 플레이어가 배틀에 들고 가는 기술 수 (점수 높은 KPI 순) */
+    moveSlots: 4,
+    /**
+     * 보스 레벨 자동 스케일링.
+     * 고정 레벨로 두면 초반엔 전패, 후반엔 전승이 된다.
+     * 팀 평균 레벨 + offset 으로 맞춰 "이번 달 얼마나 했나"가 승패를 가르게 한다.
+     * 시즌별로 season.bossLevel 을 지정하면 그 값이 우선한다.
+     */
+    bossScaling: { enabled: true, offset: 1, min: 5, max: 100 },
+  },
+
+  /** 배지 획득 기준 (달성률) */
+  badge: {
+    threshold: 1.0,
+    /** 명예 배지(초과달성) 기준 */
+    goldThreshold: 1.2,
+  },
+
+  /** 등급 컷 (시즌 종합 점수 → 등급) */
+  grades: [
+    { id: 'S', label: 'S', min: 1.2, color: '#ffd166' },
+    { id: 'A', label: 'A', min: 1.0, color: '#06d6a0' },
+    { id: 'B', label: 'B', min: 0.85, color: '#4cc9f0' },
+    { id: 'C', label: 'C', min: 0.7, color: '#a0a8b8' },
+    { id: 'D', label: 'D', min: 0, color: '#ef476f' },
+  ],
+};
+
+/** 6스탯 정의 — KPI 영역과 1:1로 대응된다. */
+const STATS = [
+  { id: 'hp', name: 'HP', full: '체력', desc: '학습·성장 누적' },
+  { id: 'atk', name: '공격', full: '공격', desc: '성과 창출' },
+  { id: 'def', name: '방어', full: '방어', desc: '품질·안정성' },
+  { id: 'spa', name: '특공', full: '특수공격', desc: '창의·기획' },
+  { id: 'spd', name: '특방', full: '특수방어', desc: '협업·신뢰' },
+  { id: 'spe', name: '스피드', full: '스피드', desc: '실행 속도' },
+];
+
+const STAT_IDS = STATS.map((s) => s.id);
+
+/** 성격(Nature) — 한 스탯 +10%, 다른 한 스탯 -10% */
+const NATURES = [
+  { id: 'hardy', name: '노력', up: null, down: null },
+  { id: 'adamant', name: '고집', up: 'atk', down: 'spa' },
+  { id: 'modest', name: '조심', up: 'spa', down: 'atk' },
+  { id: 'bold', name: '대담', up: 'def', down: 'atk' },
+  { id: 'calm', name: '차분', up: 'spd', down: 'atk' },
+  { id: 'timid', name: '겁쟁이', up: 'spe', down: 'atk' },
+  { id: 'brave', name: '용감', up: 'atk', down: 'spe' },
+  { id: 'quiet', name: '냉정', up: 'spa', down: 'spe' },
+  { id: 'relaxed', name: '무사태평', up: 'def', down: 'spe' },
+];
+
+const NATURE_BY_ID = Object.fromEntries(NATURES.map((n) => [n.id, n]));
+
+/** 시즌 종합 점수 → 등급 */
+function gradeOf(score) {
+  return CONFIG.grades.find((g) => score >= g.min) || CONFIG.grades[CONFIG.grades.length - 1];
+}
+
+/* ── src/core/rng.js ───────────────────────────────── */
+/**
+ * 결정론적 난수 — 같은 시드면 항상 같은 결과.
+ * 배틀 결과가 새로고침마다 바뀌면 평가 도구로 못 쓰기 때문에 필수다.
+ */
+
+/** 문자열 → 32bit 정수 시드 */
+function hashSeed(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** mulberry32 */
+function createRng(seed) {
+  let a = typeof seed === 'string' ? hashSeed(seed) : seed >>> 0;
+  const next = () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return {
+    next,
+    /** [min, max] 실수 */
+    range: (min, max) => min + next() * (max - min),
+    /** [min, max] 정수 */
+    int: (min, max) => Math.floor(min + next() * (max - min + 1)),
+    chance: (p) => next() < p,
+    pick: (arr) => arr[Math.floor(next() * arr.length)],
+  };
+}
+
+/** 시드에서 0~31 개체값(IV) 6개 뽑기 — 사람마다 고정된 타고난 특성 */
+function rollIvs(seedStr, statIds) {
+  const rng = createRng(`${seedStr}:iv`);
+  const out = {};
+  for (const id of statIds) out[id] = rng.int(0, 31);
+  return out;
+}
+
+/* ── src/data/kpi.js ───────────────────────────────── */
+/**
+ * 평가 영역(타입)과 평가 항목(KPI) 정의.
+ * ─ 항목을 추가/수정할 땐 KPIS 배열만 손대면 나머지 화면이 전부 따라온다.
+ */
+
+/** 타입 = 평가 영역. 스탯과 1:1 대응. */
+const TYPES = {
+  fire: { id: 'fire', name: '불꽃', domain: '성과', stat: 'atk', color: '#ff7043', desc: '매출·목표 달성 등 직접 성과' },
+  steel: { id: 'steel', name: '강철', domain: '품질', stat: 'def', color: '#90a4ae', desc: '완성도·장애·리스크 관리' },
+  psychic: { id: 'psychic', name: '에스퍼', domain: '창의', stat: 'spa', color: '#ba68c8', desc: '기획·개선 제안·신규 시도' },
+  water: { id: 'water', name: '물', domain: '협업', stat: 'spd', color: '#4fc3f7', desc: '동료 평가·지원·공유' },
+  electric: { id: 'electric', name: '전기', domain: '실행', stat: 'spe', color: '#ffd54f', desc: '납기·응답 속도·처리량' },
+  grass: { id: 'grass', name: '풀', domain: '성장', stat: 'hp', color: '#81c784', desc: '학습·자격·역량 강화' },
+};
+
+const TYPE_LIST = Object.values(TYPES);
+
+/**
+ * 상성표: TYPE_CHART[공격][방어] = 배율.
+ * 없으면 1.0. "성과는 품질 이슈를 밀어붙이지만 창의 앞에선 약하다" 같은
+ * 조직의 관점을 그대로 숫자로 박아 넣는 자리다.
+ */
+const TYPE_CHART = {
+  fire: { steel: 2, grass: 2, water: 0.5, fire: 0.5 },
+  steel: { psychic: 2, electric: 2, fire: 0.5, steel: 0.5, water: 0.5 },
+  psychic: { fire: 2, water: 2, steel: 0.5, psychic: 0.5 },
+  water: { fire: 2, electric: 2, grass: 0.5, water: 0.5 },
+  electric: { water: 2, steel: 2, grass: 0.5, electric: 0.5 },
+  grass: { water: 2, electric: 2, fire: 0.5, steel: 0.5, grass: 0.5 },
+};
+
+function typeEffectiveness(attackType, defenseType) {
+  return TYPE_CHART[attackType]?.[defenseType] ?? 1;
+}
+
+function effectivenessLabel(mul) {
+  if (mul >= 2) return '효과가 굉장했다!';
+  if (mul <= 0.5) return '효과가 별로인 듯하다...';
+  return '';
+}
+
+/** @type {import('../core/types.js').Kpi[]} */
+const KPIS = [
+  {
+    id: 'revenue',
+    name: '목표 달성',
+    type: 'fire',
+    stat: 'atk',
+    category: 'physical',
+    weight: 1.4,
+    target: 100,
+    unit: '%',
+    desc: '이번 달 개인 정량 목표 달성률',
+  },
+  {
+    id: 'quality',
+    name: '품질 방어',
+    type: 'steel',
+    stat: 'def',
+    category: 'physical',
+    weight: 1.1,
+    target: 100,
+    unit: '점',
+    desc: '결함·재작업·장애 없이 넘긴 산출물 비율',
+  },
+  {
+    id: 'idea',
+    name: '개선 제안',
+    type: 'psychic',
+    stat: 'spa',
+    category: 'special',
+    weight: 1.0,
+    target: 2,
+    unit: '건',
+    desc: '채택 여부와 무관하게 문서로 남긴 제안',
+  },
+  {
+    id: 'collab',
+    name: '협업 지원',
+    type: 'water',
+    stat: 'spd',
+    category: 'special',
+    weight: 1.0,
+    target: 5,
+    unit: '건',
+    desc: '동료 요청 대응·리뷰·지식 공유',
+  },
+  {
+    id: 'speed',
+    name: '납기 준수',
+    type: 'electric',
+    stat: 'spe',
+    category: 'physical',
+    weight: 1.2,
+    target: 100,
+    unit: '%',
+    desc: '약속한 일정 안에 끝낸 업무 비율',
+  },
+  {
+    id: 'growth',
+    name: '학습 성장',
+    type: 'grass',
+    stat: 'hp',
+    category: 'special',
+    weight: 0.8,
+    target: 4,
+    unit: 'h',
+    desc: '교육·스터디·자격 준비 시간',
+  },
+];
+
+const KPI_BY_ID = Object.fromEntries(KPIS.map((k) => [k.id, k]));
+
+/** 총 가중치 — 종합 점수 계산에 쓴다. */
+const TOTAL_WEIGHT = KPIS.reduce((s, k) => s + k.weight, 0);
+
+/* ── src/data/species.js ───────────────────────────────── */
+/**
+ * 파트너 종족(진화 라인). 타입별로 1라인씩.
+ * 이름/설명은 마음대로 바꿔도 되고, base(종족값)만 밸런스에 영향을 준다.
+ */
+
+/** @type {import('../core/types.js').Species[]} */
+const SPECIES = [
+  {
+    id: 'ember',
+    type: 'fire',
+    base: { hp: 60, atk: 95, def: 60, spa: 70, spd: 60, spe: 85 },
+    line: [
+      { name: '불씨몽', minLevel: 1, tagline: '작지만 꺼지지 않는 불씨' },
+      { name: '화염몽', minLevel: 16, tagline: '목표 앞에서 더 뜨거워진다' },
+      { name: '작열몽', minLevel: 36, tagline: '숫자를 태워 결과로 바꾼다' },
+    ],
+  },
+  {
+    id: 'bolt',
+    type: 'steel',
+    base: { hp: 75, atk: 70, def: 100, spa: 55, spd: 80, spe: 50 },
+    line: [
+      { name: '볼트링', minLevel: 1, tagline: '나사 하나도 그냥 지나치지 않는다' },
+      { name: '강판링', minLevel: 16, tagline: '한 번 막으면 뚫리지 않는다' },
+      { name: '요새링', minLevel: 36, tagline: '장애 없는 달이 훈장이다' },
+    ],
+  },
+  {
+    id: 'idea',
+    type: 'psychic',
+    base: { hp: 60, atk: 50, def: 60, spa: 105, spd: 85, spe: 70 },
+    line: [
+      { name: '뿅상', minLevel: 1, tagline: '엉뚱한 질문을 자주 한다' },
+      { name: '몽상가', minLevel: 16, tagline: '남들이 못 본 각도를 본다' },
+      { name: '창안자', minLevel: 36, tagline: '아이디어를 실행까지 끌고 간다' },
+    ],
+  },
+  {
+    id: 'drop',
+    type: 'water',
+    base: { hp: 80, atk: 60, def: 75, spa: 70, spd: 100, spe: 65 },
+    line: [
+      { name: '물방울', minLevel: 1, tagline: '누가 부르면 일단 간다' },
+      { name: '파도돌', minLevel: 16, tagline: '팀의 흐름을 만든다' },
+      { name: '해류신', minLevel: 36, tagline: '있으면 팀이 굴러간다' },
+    ],
+  },
+  {
+    id: 'spark',
+    type: 'electric',
+    base: { hp: 60, atk: 80, def: 55, spa: 75, spd: 60, spe: 110 },
+    line: [
+      { name: '찌릿', minLevel: 1, tagline: '메시지 읽자마자 답한다' },
+      { name: '번쩍', minLevel: 16, tagline: '마감이 빨라진다' },
+      { name: '뇌섬', minLevel: 36, tagline: '일정이 밀리는 걸 못 본다' },
+    ],
+  },
+  {
+    id: 'sprout',
+    type: 'grass',
+    base: { hp: 100, atk: 65, def: 80, spa: 75, spd: 75, spe: 55 },
+    line: [
+      { name: '새싹', minLevel: 1, tagline: '오늘도 뭔가 배웠다' },
+      { name: '푸른잎', minLevel: 16, tagline: '배운 걸 써먹기 시작했다' },
+      { name: '거목', minLevel: 36, tagline: '이제 남을 키운다' },
+    ],
+  },
+];
+
+const SPECIES_BY_ID = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
+const SPECIES_BY_TYPE = Object.fromEntries(SPECIES.map((s) => [s.type, s]));
+
+/* ── src/data/bosses.js ───────────────────────────────── */
+/**
+ * 체육관 관장 = 그 달의 목표를 의인화한 상대.
+ * level 을 올리면 그 달 평가가 그만큼 빡세진다 (난이도 다이얼).
+ */
+
+/** @type {import('../core/types.js').Boss[]} */
+const BOSSES = [
+  {
+    id: 'gym-fire',
+    name: '홍염',
+    title: '숫자의 관장',
+    type: 'fire',
+    level: 20,
+    base: { hp: 80, atk: 100, def: 70, spa: 65, spd: 70, spe: 85 },
+    badgeId: 'flame',
+    quote: '숫자는 변명을 듣지 않아. 가져왔나?',
+    moves: [
+      { name: '실적 압박', type: 'fire', power: 85, category: 'physical' },
+      { name: '목표 상향', type: 'fire', power: 70, category: 'special' },
+      { name: '마감 돌진', type: 'electric', power: 65, category: 'physical' },
+    ],
+  },
+  {
+    id: 'gym-steel',
+    name: '강진',
+    title: '품질의 관장',
+    type: 'steel',
+    level: 20,
+    base: { hp: 90, atk: 75, def: 110, spa: 60, spd: 85, spe: 45 },
+    badgeId: 'iron',
+    quote: '빠른 건 됐고. 안 터지는 걸 가져와.',
+    moves: [
+      { name: '결함 지적', type: 'steel', power: 80, category: 'physical' },
+      { name: '재작업 요구', type: 'steel', power: 60, category: 'physical' },
+      { name: '리스크 경고', type: 'psychic', power: 70, category: 'special' },
+    ],
+  },
+  {
+    id: 'gym-psychic',
+    name: '지운',
+    title: '발상의 관장',
+    type: 'psychic',
+    level: 20,
+    base: { hp: 70, atk: 55, def: 65, spa: 115, spd: 90, spe: 75 },
+    badgeId: 'mind',
+    quote: '작년이랑 똑같은 걸 가져오면 지는 거야.',
+    moves: [
+      { name: '근본 질문', type: 'psychic', power: 90, category: 'special' },
+      { name: '전제 붕괴', type: 'psychic', power: 70, category: 'special' },
+      { name: '차가운 검토', type: 'water', power: 65, category: 'special' },
+    ],
+  },
+  {
+    id: 'gym-water',
+    name: '유하',
+    title: '신뢰의 관장',
+    type: 'water',
+    level: 20,
+    base: { hp: 95, atk: 65, def: 85, spa: 75, spd: 105, spe: 60 },
+    badgeId: 'tide',
+    quote: '혼자 잘하는 건 여기서 안 통해.',
+    moves: [
+      { name: '협업 요청', type: 'water', power: 75, category: 'special' },
+      { name: '동료 평가', type: 'water', power: 85, category: 'special' },
+      { name: '지식 공유', type: 'grass', power: 60, category: 'special' },
+    ],
+  },
+  {
+    id: 'gym-electric',
+    name: '섬광',
+    title: '속도의 관장',
+    type: 'electric',
+    level: 20,
+    base: { hp: 65, atk: 90, def: 55, spa: 80, spd: 60, spe: 120 },
+    badgeId: 'volt',
+    quote: '내일 준다고? 그럼 진 거야.',
+    moves: [
+      { name: '즉시 처리', type: 'electric', power: 80, category: 'physical' },
+      { name: '일정 단축', type: 'electric', power: 65, category: 'special' },
+      { name: '병목 돌파', type: 'fire', power: 70, category: 'physical' },
+    ],
+  },
+  {
+    id: 'gym-grass',
+    name: '초록',
+    title: '성장의 관장',
+    type: 'grass',
+    level: 20,
+    base: { hp: 110, atk: 70, def: 90, spa: 80, spd: 80, spe: 55 },
+    badgeId: 'leaf',
+    quote: '작년의 너를 이겨야 통과다.',
+    moves: [
+      { name: '기본기 점검', type: 'grass', power: 75, category: 'physical' },
+      { name: '성장 압박', type: 'grass', power: 85, category: 'special' },
+      { name: '뿌리 내리기', type: 'steel', power: 60, category: 'physical' },
+    ],
+  },
+];
+
+const BOSS_BY_ID = Object.fromEntries(BOSSES.map((b) => [b.id, b]));
+
+/* ── src/data/badges.js ───────────────────────────────── */
+/**
+ * 배지 = 그 달에 무엇을 증명했는지에 대한 기록.
+ * gym  : 월간 보스(체육관 관장)를 이기면 획득
+ * achievement : engine/badges.js 의 규칙으로 자동 판정
+ */
+
+/** @type {import('../core/types.js').Badge[]} */
+const BADGES = [
+  // 체육관 배지 (보스 1인당 1개)
+  { id: 'flame', name: '화염 배지', icon: '🔥', kind: 'gym', desc: '성과 목표를 정면으로 넘겼다' },
+  { id: 'iron', name: '강철 배지', icon: '🛡️', kind: 'gym', desc: '품질 기준을 지켜냈다' },
+  { id: 'mind', name: '사념 배지', icon: '🔮', kind: 'gym', desc: '새로운 방식을 증명했다' },
+  { id: 'tide', name: '조수 배지', icon: '🌊', kind: 'gym', desc: '팀을 움직였다' },
+  { id: 'volt', name: '전격 배지', icon: '⚡', kind: 'gym', desc: '누구보다 빨리 끝냈다' },
+  { id: 'leaf', name: '초록 배지', icon: '🌱', kind: 'gym', desc: '스스로를 키웠다' },
+
+  // 업적 배지 (규칙 자동 판정 — engine/badges.js 의 RULES 와 id 가 맞아야 한다)
+  { id: 'perfect', name: '퍼펙트', icon: '💯', kind: 'achievement', desc: '전 항목 목표 달성' },
+  { id: 'streak3', name: '연속 3', icon: '🔗', kind: 'achievement', desc: '3개월 연속 종합 A 이상' },
+  { id: 'overdrive', name: '오버드라이브', icon: '🚀', kind: 'achievement', desc: '한 항목 150% 이상 달성' },
+  { id: 'evolved', name: '진화', icon: '✨', kind: 'achievement', desc: '파트너가 진화했다' },
+  { id: 'mvp', name: 'MVP', icon: '👑', kind: 'achievement', desc: '해당 시즌 종합 1위' },
+  { id: 'allrounder', name: '올라운더', icon: '🎯', kind: 'achievement', desc: '전 항목 0.9 이상, 편차 작음' },
+  { id: 'comeback', name: '리바운드', icon: '📈', kind: 'achievement', desc: '전월 대비 종합 +0.25 이상' },
+];
+
+const BADGE_BY_ID = Object.fromEntries(BADGES.map((b) => [b.id, b]));
+
+/* ── src/data/seed.js ───────────────────────────────── */
+/**
+ * 초기 예시 데이터. 처음 실행할 때 한 번만 localStorage 로 복사된다.
+ * 실제 팀 데이터는 관리자 화면에서 넣거나, 이 파일을 통째로 갈아끼우면 된다.
+ */
+
+
+/** @type {import('../core/types.js').Member[]} */
+const SEED_MEMBERS = [
+  { id: 'm1', name: '김하늘', role: '기획', team: '전략팀', speciesId: 'idea', natureId: 'modest', joinedAt: '2024-03' },
+  { id: 'm2', name: '박도현', role: '영업', team: '세일즈팀', speciesId: 'ember', natureId: 'adamant', joinedAt: '2023-01' },
+  { id: 'm3', name: '이수민', role: '개발', team: '프로덕트팀', speciesId: 'bolt', natureId: 'bold', joinedAt: '2022-09' },
+  { id: 'm4', name: '정우재', role: '운영', team: '프로덕트팀', speciesId: 'spark', natureId: 'timid', joinedAt: '2025-02' },
+  { id: 'm5', name: '한서윤', role: '디자인', team: '브랜드팀', speciesId: 'drop', natureId: 'calm', joinedAt: '2024-11' },
+];
+
+/** 시드 기록을 손으로 다 적지 않으려고 쓰는 헬퍼 */
+function rec(values) {
+  const out = {};
+  KPIS.forEach((k, i) => {
+    out[k.id] = values[i];
+  });
+  return out;
+}
+
+// 입력 순서: 목표달성(%) / 품질(점) / 제안(건) / 협업(건) / 납기(%) / 학습(h)
+/** @type {import('../core/types.js').Season[]} */
+const SEED_SEASONS = [
+  {
+    id: '2026-05',
+    title: '5월 — 시즌 개막',
+    bossId: 'gym-fire',
+    records: {
+      m1: rec([92, 95, 3, 6, 88, 6]),
+      m2: rec([124, 82, 1, 4, 95, 2]),
+      m3: rec([101, 99, 2, 8, 92, 5]),
+      m4: rec([88, 90, 1, 5, 100, 3]),
+      m5: rec([95, 93, 4, 7, 85, 4]),
+    },
+    notes: { m2: '신규 계정 2건 클로징. 품질 리뷰는 다음 달 보완 필요.' },
+  },
+  {
+    id: '2026-06',
+    title: '6월 — 품질 점검의 달',
+    bossId: 'gym-steel',
+    records: {
+      m1: rec([98, 97, 4, 5, 91, 5]),
+      m2: rec([131, 88, 2, 3, 97, 3]),
+      m3: rec([105, 100, 3, 9, 96, 6]),
+      m4: rec([94, 95, 2, 6, 100, 4]),
+      m5: rec([89, 96, 5, 8, 82, 5]),
+    },
+    notes: {},
+  },
+  {
+    id: '2026-07',
+    title: '7월 — 신규 과제 착수',
+    bossId: 'gym-psychic',
+    records: {
+      m1: rec([110, 94, 6, 7, 93, 7]),
+      m2: rec([118, 91, 3, 5, 99, 3]),
+      m3: rec([99, 98, 4, 10, 94, 6]),
+      m4: rec([102, 92, 3, 6, 100, 5]),
+      m5: rec([96, 97, 6, 9, 88, 6]),
+    },
+    notes: {},
+  },
+];
+
+function makeSeedState() {
+  return {
+    version: 1,
+    members: structuredClone(SEED_MEMBERS),
+    seasons: structuredClone(SEED_SEASONS),
+    settings: {
+      orgName: 'VCC 트레이너 리그',
+      currentSeasonId: '2026-07',
+    },
+  };
+}
+
+/* ── src/engine/leveling.js ───────────────────────────────── */
+/**
+ * EXP → 레벨 → 진화 단계.
+ * 누적EXP(L) = round(L^3 * k)  (CONFIG.level.k)
+ */
+
+
+
+/** 레벨 L 에 도달하는 데 필요한 누적 EXP */
+function totalExpForLevel(level) {
+  const l = Math.max(1, Math.min(CONFIG.level.max, level));
+  return Math.round(Math.pow(l, 3) * CONFIG.level.k);
+}
+
+function levelFromExp(exp) {
+  let level = 1;
+  while (level < CONFIG.level.max && exp >= totalExpForLevel(level + 1)) level++;
+  return level;
+}
+
+/** 레벨 + 다음 레벨까지의 진행도 */
+function levelProgress(exp) {
+  const level = levelFromExp(exp);
+  const cur = totalExpForLevel(level);
+  const next = level >= CONFIG.level.max ? cur : totalExpForLevel(level + 1);
+  const gained = exp - cur;
+  const need = Math.max(1, next - cur);
+  return {
+    exp,
+    level,
+    into: gained,
+    need,
+    ratio: level >= CONFIG.level.max ? 1 : Math.max(0, Math.min(1, gained / need)),
+    toNext: Math.max(0, next - exp),
+    isMax: level >= CONFIG.level.max,
+  };
+}
+
+/** 멤버의 파트너 종족 결정 (지정 없으면 주력 타입으로 자동 배정) */
+function resolveSpecies(member, dominantType) {
+  return (
+    SPECIES_BY_ID[member.speciesId] ||
+    SPECIES_BY_TYPE[dominantType] ||
+    SPECIES_BY_ID[Object.keys(SPECIES_BY_ID)[0]]
+  );
+}
+
+/** 레벨에 맞는 진화 형태 */
+function formAt(species, level) {
+  const line = species.line;
+  let idx = 0;
+  for (let i = 0; i < line.length; i++) {
+    const min = line[i].minLevel ?? CONFIG.level.evolveAt[i - 1] ?? 1;
+    if (level >= min) idx = i;
+  }
+  const entry = line[idx];
+  const nextEntry = line[idx + 1] || null;
+  return {
+    speciesId: species.id,
+    type: species.type,
+    stage: idx + 1,
+    stageCount: line.length,
+    name: entry.name,
+    tagline: entry.tagline,
+    nextName: nextEntry ? nextEntry.name : null,
+    nextAt: nextEntry ? nextEntry.minLevel : null,
+    isFinal: !nextEntry,
+  };
+}
+
+/** 두 레벨 사이에 진화가 일어났는지 */
+function didEvolve(species, fromLevel, toLevel) {
+  return formAt(species, toLevel).stage > formAt(species, fromLevel).stage;
+}
+
+/* ── src/engine/stats.js ───────────────────────────────── */
+/**
+ * 실제 스탯 계산 — 포켓몬 3세대 이후 공식을 그대로 쓴다.
+ *   HP   = floor((2*종족값 + 개체값 + floor(노력치/4)) * L/100) + L + 10
+ *   그 외 = (floor((2*종족값 + 개체값 + floor(노력치/4)) * L/100) + 5) * 성격보정
+ *
+ * 종족값 = 파트너 고유 재능, 개체값 = 사람마다 타고난 편차(고정),
+ * 노력치 = 실제 업적으로 쌓은 부분(= 이 도구에서 유일하게 스스로 바꿀 수 있는 값).
+ */
+
+
+function calcStat(statId, base, iv, ev, level, nature) {
+  const core = Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100);
+  if (statId === 'hp') return core + level + 10;
+  let value = core + 5;
+  if (nature) {
+    if (nature.up === statId) value = Math.floor(value * 1.1);
+    if (nature.down === statId) value = Math.floor(value * 0.9);
+  }
+  return value;
+}
+
+/** 6스탯 전부 */
+function calcStats({ base, ivs, evs, level, natureId }) {
+  const nature = NATURE_BY_ID[natureId] || null;
+  const out = {};
+  for (const id of STAT_IDS) {
+    out[id] = calcStat(id, base[id] ?? 50, ivs?.[id] ?? 0, evs?.[id] ?? 0, level, nature);
+  }
+  out.total = STAT_IDS.reduce((s, id) => s + out[id], 0);
+  return out;
+}
+
+/** 빈 노력치 */
+function emptyEvs() {
+  return Object.fromEntries(STAT_IDS.map((id) => [id, 0]));
+}
+
+/**
+ * 노력치 누적. 스탯별 상한(252)·총합 상한(510)을 지킨다.
+ * @returns {{evs: object, applied: object}} applied = 실제로 들어간 양
+ */
+function addEvs(evs, gains, caps) {
+  const next = { ...evs };
+  const applied = {};
+  let total = STAT_IDS.reduce((s, id) => s + (next[id] || 0), 0);
+  for (const id of STAT_IDS) {
+    const want = Math.max(0, Math.round(gains[id] || 0));
+    if (!want) {
+      applied[id] = 0;
+      continue;
+    }
+    const roomStat = Math.max(0, caps.statCap - (next[id] || 0));
+    const roomTotal = Math.max(0, caps.totalCap - total);
+    const give = Math.min(want, roomStat, roomTotal);
+    next[id] = (next[id] || 0) + give;
+    total += give;
+    applied[id] = give;
+  }
+  return { evs: next, applied };
+}
+
+/** 레이더 차트용 정규화 (0~1) */
+function normalizeStats(stats, max = 400) {
+  return STAT_IDS.map((id) => Math.max(0.04, Math.min(1, (stats[id] || 0) / max)));
+}
+
+/* ── src/engine/scoring.js ───────────────────────────────── */
+/**
+ * 업적 기록 → 점수 / EXP / 노력치.
+ * "이번 달 실적을 어떻게 게임 수치로 바꿀 것인가"의 전부가 여기 있다.
+ */
+
+
+
+
+/** 이번 시즌에 적용될 KPI 목표치 (시즌별 override 지원) */
+function targetFor(kpi, season) {
+  const t = season?.targets?.[kpi.id];
+  return typeof t === 'number' && t > 0 ? t : kpi.target;
+}
+
+/**
+ * 실적 1건 → 점수. 목표 대비 비율에 상한을 씌우고,
+ * 초과분은 overAchieveWeight 만큼만 인정한다(무한 인플레 방지).
+ */
+function scoreOf(value, target) {
+  const raw = target > 0 ? value / target : 0;
+  if (raw <= 1) return { raw, score: Math.max(0, raw) };
+  const over = Math.min(raw, CONFIG.exp.scoreCap) - 1;
+  return { raw, score: 1 + over * CONFIG.exp.overAchieveWeight };
+}
+
+/**
+ * 한 멤버의 한 시즌 채점.
+ * @param {object} season
+ * @param {Record<string, number>} record  { kpiId: 실적 }
+ * @param {Record<string, number>} streaks { kpiId: 직전까지 연속 달성 개월 }
+ */
+function scoreSeason(season, record, streaks = {}) {
+  /** @type {import('../core/types.js').KpiScore[]} */
+  const kpiScores = KPIS.map((kpi) => {
+    const value = Number(record?.[kpi.id] ?? 0);
+    const target = targetFor(kpi, season);
+    const { raw, score } = scoreOf(value, target);
+    const cleared = raw >= CONFIG.badge.threshold;
+
+    const streak = cleared ? streaks[kpi.id] || 0 : 0;
+    const streakBonus = Math.min(
+      CONFIG.exp.streakBonusCap,
+      streak * CONFIG.exp.streakBonusPerMonth,
+    );
+
+    const exp = Math.round(score * kpi.weight * CONFIG.exp.basePerKpi + streakBonus);
+    const ev = Math.min(
+      CONFIG.ev.perSeasonStatCap,
+      Math.round(score * CONFIG.ev.scoreToEv * kpi.weight),
+    );
+
+    return { kpiId: kpi.id, value, target, raw, score, exp, ev, cleared, streak, streakBonus };
+  });
+
+  const overall =
+    kpiScores.reduce((s, k) => s + k.score * KPI_BY_ID[k.kpiId].weight, 0) / TOTAL_WEIGHT;
+
+  const perfect = kpiScores.every((k) => k.cleared);
+  const baseExp = kpiScores.reduce((s, k) => s + k.exp, 0);
+  const bonusExp = perfect ? CONFIG.exp.perfectSeasonBonus : 0;
+
+  return {
+    kpiScores,
+    overall,
+    grade: gradeOf(overall),
+    perfect,
+    expFromKpi: baseExp,
+    expBonus: bonusExp,
+    evGains: evGainsFrom(kpiScores),
+  };
+}
+
+/** KPI 점수 → 스탯별 노력치 */
+function evGainsFrom(kpiScores) {
+  const gains = {};
+  for (const ks of kpiScores) {
+    const kpi = KPI_BY_ID[ks.kpiId];
+    gains[kpi.stat] = (gains[kpi.stat] || 0) + ks.ev;
+  }
+  return gains;
+}
+
+/** 가장 잘한 영역 = 파트너 타입 자동 배정 근거 */
+function dominantType(kpiScores) {
+  let best = null;
+  for (const ks of kpiScores) {
+    const kpi = KPI_BY_ID[ks.kpiId];
+    const w = ks.score * kpi.weight;
+    if (!best || w > best.w) best = { w, type: kpi.type };
+  }
+  return best ? best.type : Object.keys(TYPES)[0];
+}
+
+/** 배틀에 들고 갈 기술 = 점수 높은 KPI 상위 N개 */
+function movesFrom(kpiScores) {
+  return [...kpiScores]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, CONFIG.battle.moveSlots)
+    .map((ks) => {
+      const kpi = KPI_BY_ID[ks.kpiId];
+      return {
+        kpiId: kpi.id,
+        name: kpi.name,
+        type: kpi.type,
+        category: kpi.category,
+        stat: kpi.stat,
+        power: Math.round(CONFIG.battle.powerBase + ks.score * CONFIG.battle.powerScale),
+        accuracy: Math.min(1, CONFIG.battle.accBase + ks.score * CONFIG.battle.accScale),
+        score: ks.score,
+      };
+    });
+}
+
+/* ── src/engine/battle.js ───────────────────────────────── */
+/**
+ * 월간 보스전 시뮬레이션.
+ * 같은 데이터 → 항상 같은 로그. (rng 시드 = seasonId + memberId)
+ */
+
+
+
+
+
+const IV31 = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
+
+/** 보스도 같은 공식으로 스탯을 만든다 (노력치 없음, 개체값 만렙) */
+function bossStats(boss) {
+  return calcStats({ base: boss.base, ivs: IV31, evs: {}, level: boss.level, natureId: null });
+}
+
+function damage({ level, power, atk, def, stab, eff, crit, rand }) {
+  const core = Math.floor((Math.floor((2 * level) / 5 + 2) * power * atk) / def / 50) + 2;
+  return Math.max(1, Math.floor(core * stab * eff * crit * rand));
+}
+
+/**
+ * @param {object} attacker { name, level, type, stats }
+ * @param {object} defender
+ * @param {object} move { name, type, power, category, stat? }
+ */
+function attack(attacker, defender, move, rng) {
+  const acc = move.accuracy ?? 1;
+  if (!rng.chance(acc)) {
+    return { miss: true, dmg: 0, text: `${attacker.name}의 ${move.name}! 하지만 빗나갔다...` };
+  }
+  const atkStat = move.stat || (move.category === 'physical' ? 'atk' : 'spa');
+  const defStat = move.category === 'physical' ? 'def' : 'spd';
+  const eff = typeEffectiveness(move.type, defender.type);
+  const stab = move.type === attacker.type ? CONFIG.battle.stab : 1;
+  const isCrit = rng.chance(CONFIG.battle.critChance);
+  const dmg = damage({
+    level: attacker.level,
+    power: move.power,
+    atk: attacker.stats[atkStat],
+    def: defender.stats[defStat],
+    stab,
+    eff,
+    crit: isCrit ? CONFIG.battle.critMultiplier : 1,
+    rand: rng.range(CONFIG.battle.randMin, CONFIG.battle.randMax),
+  });
+  const extras = [isCrit ? '급소에 맞았다!' : '', effectivenessLabel(eff)].filter(Boolean);
+  return {
+    miss: false,
+    dmg,
+    crit: isCrit,
+    eff,
+    text: `${attacker.name}의 ${move.name}!${extras.length ? ' ' + extras.join(' ') : ''}`,
+  };
+}
+
+/**
+ * 배틀 실행.
+ * @param {object} player { name, level, type, stats, moves }
+ * @param {object} boss   data/bosses.js 엔트리
+ * @param {string} seed
+ */
+function runBattle(player, boss, seed) {
+  const rng = createRng(seed);
+  const bStats = bossStats(boss);
+  const foe = { name: `${boss.title} ${boss.name}`, level: boss.level, type: boss.type, stats: bStats };
+
+  let pHp = player.stats.hp;
+  let fHp = bStats.hp;
+  const pMaxHp = pHp;
+  const fMaxHp = fHp;
+
+  const log = [
+    { kind: 'intro', text: `${foe.name}이(가) 승부를 걸어왔다!` },
+    { kind: 'quote', text: `"${boss.quote}"` },
+    { kind: 'intro', text: `가랏, ${player.name}!` },
+  ];
+
+  const playerFirst = player.stats.spe >= bStats.spe;
+  let turn = 0;
+
+  while (pHp > 0 && fHp > 0 && turn < CONFIG.battle.turnLimit) {
+    turn++;
+    const order = playerFirst ? ['player', 'foe'] : ['foe', 'player'];
+    for (const side of order) {
+      if (pHp <= 0 || fHp <= 0) break;
+      if (side === 'player') {
+        const move = pickPlayerMove(player, foe, rng, turn);
+        const r = attack(player, foe, move, rng);
+        fHp = Math.max(0, fHp - r.dmg);
+        log.push({ kind: 'player', turn, text: r.text, dmg: r.dmg, foeHp: fHp / fMaxHp, playerHp: pHp / pMaxHp });
+      } else {
+        const move = boss.moves[(turn - 1) % boss.moves.length];
+        const r = attack(foe, player, { ...move, accuracy: 0.95 }, rng);
+        pHp = Math.max(0, pHp - r.dmg);
+        log.push({ kind: 'foe', turn, text: r.text, dmg: r.dmg, foeHp: fHp / fMaxHp, playerHp: pHp / pMaxHp });
+      }
+    }
+  }
+
+  const win = fHp <= 0 && pHp > 0;
+  const draw = fHp > 0 && pHp > 0;
+  log.push({
+    kind: 'result',
+    text: win
+      ? `${foe.name}을(를) 쓰러뜨렸다! ${boss.badgeId ? '배지를 획득했다!' : ''}`
+      : draw
+        ? '시간 초과. 승부가 나지 않았다...'
+        : `${player.name}은(는) 쓰러졌다...`,
+  });
+
+  return {
+    win,
+    draw,
+    turns: turn,
+    playerHpLeft: pHp / pMaxHp,
+    foeHpLeft: fHp / fMaxHp,
+    log,
+    foe: { name: foe.name, level: foe.level, type: foe.type, stats: bStats, badgeId: boss.badgeId },
+    expReward: win ? CONFIG.exp.battleWin : CONFIG.exp.battleLose,
+  };
+}
+
+/**
+ * 기대 데미지(위력 × 자속 × 상성 × 명중 × 공격스탯)가 가장 높은 기술을 고른다.
+ * 실제 트레이너처럼 상성을 보고 고르되, 25% 확률로 다른 기술도 섞어 변수를 준다.
+ */
+function pickPlayerMove(player, foe, rng, turn) {
+  const moves = player.moves;
+  if (!moves.length) {
+    return { name: '몸통박치기', type: 'grass', power: 40, category: 'physical', accuracy: 1 };
+  }
+  const ranked = [...moves].sort((a, b) => expected(b) - expected(a));
+  return rng.chance(0.25) ? ranked[(turn - 1) % ranked.length] : ranked[0];
+
+  function expected(mv) {
+    const atkStat = player.stats[mv.stat || (mv.category === 'physical' ? 'atk' : 'spa')] || 1;
+    const defStat = foe.stats[mv.category === 'physical' ? 'def' : 'spd'] || 1;
+    const stab = mv.type === player.type ? CONFIG.battle.stab : 1;
+    return mv.power * stab * typeEffectiveness(mv.type, foe.type) * (mv.accuracy ?? 1) * (atkStat / defStat);
+  }
+}
+
+/* ── src/engine/badges.js ───────────────────────────────── */
+/**
+ * 업적 배지 판정 규칙.
+ * 규칙 추가 = RULES 에 한 줄 추가 (id 는 data/badges.js 와 맞출 것).
+ *
+ * ctx = {
+ *   result,        // 이번 시즌 결과 (kpiScores, overall, perfect, ...)
+ *   prev,          // 직전 시즌 결과 or null
+ *   history,       // 이전 시즌 결과 배열 (오래된 → 최근)
+ *   evolved,       // 이번 시즌에 진화했는지
+ *   rankInSeason,  // 1부터
+ * }
+ */
+
+
+const RULES = [
+  {
+    id: 'perfect',
+    test: (ctx) => ctx.result.perfect,
+  },
+  {
+    id: 'overdrive',
+    test: (ctx) => ctx.result.kpiScores.some((k) => k.raw >= CONFIG.badge.goldThreshold + 0.3),
+  },
+  {
+    id: 'evolved',
+    test: (ctx) => ctx.evolved,
+  },
+  {
+    id: 'mvp',
+    test: (ctx) => ctx.rankInSeason === 1,
+  },
+  {
+    id: 'streak3',
+    test: (ctx) => {
+      const last = [...ctx.history.slice(-2), ctx.result];
+      return last.length === 3 && last.every((r) => r.overall >= 1.0);
+    },
+  },
+  {
+    id: 'allrounder',
+    test: (ctx) => {
+      const scores = ctx.result.kpiScores.map((k) => k.score);
+      if (!scores.length || Math.min(...scores) < 0.9) return false;
+      const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const sd = Math.sqrt(scores.reduce((s, v) => s + (v - avg) ** 2, 0) / scores.length);
+      return sd <= 0.15;
+    },
+  },
+  {
+    id: 'comeback',
+    test: (ctx) => !!ctx.prev && ctx.result.overall - ctx.prev.overall >= 0.25,
+  },
+];
+
+/** 이번 시즌에 새로 얻은 배지 id 목록 (체육관 배지는 배틀 승리로 별도 부여) */
+function evaluateBadges(ctx) {
+  return RULES.filter((r) => {
+    try {
+      return r.test(ctx);
+    } catch {
+      return false;
+    }
+  }).map((r) => r.id);
+}
+
+/* ── src/engine/evaluate.js ───────────────────────────────── */
+/**
+ * 파이프라인 오케스트레이션.
+ * 시즌을 오래된 순서대로 재생(replay)하면서 누적 EXP·노력치·배지·연속기록을 쌓는다.
+ * 화면(ui/)은 이 함수의 결과만 읽는다 — 계산 로직이 UI로 새어나가지 않게.
+ */
+
+
+
+
+
+
+
+
+
+
+const sortSeasons = (seasons) => [...seasons].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+/**
+ * 전체 리그 계산.
+ * @param {{members:any[], seasons:any[]}} state
+ */
+function evaluateAll(state) {
+  const members = state.members || [];
+  const seasons = sortSeasons(state.seasons || []);
+
+  /** 멤버별 누적 상태 */
+  const carry = new Map(
+    members.map((m) => [
+      m.id,
+      {
+        totalExp: 0,
+        evs: emptyEvs(),
+        streaks: {},
+        badges: new Set(),
+        history: [],
+        results: [],
+      },
+    ]),
+  );
+
+  const seasonReports = [];
+
+  for (const season of seasons) {
+    const bossDef = BOSS_BY_ID[season.bossId] || BOSSES[0];
+    const entries = [];
+
+    // 1차: 점수 → EXP/노력치 → 레벨/스탯
+    for (const member of members) {
+      const c = carry.get(member.id);
+      const record = season.records?.[member.id] || {};
+      const scored = scoreSeason(season, record, c.streaks);
+
+      const ivs = rollIvs(member.id, STAT_IDS);
+      const species = resolveSpecies(member, dominantType(scored.kpiScores));
+
+      const levelBefore = levelFromExp(c.totalExp);
+
+      // 업적 EXP·노력치 반영
+      const expFromWork = scored.expFromKpi + scored.expBonus;
+      const evResult = addEvs(c.evs, scored.evGains, CONFIG.ev);
+      const expAfterWork = c.totalExp + expFromWork;
+      const levelAfterWork = levelFromExp(expAfterWork);
+
+      entries.push({
+        memberId: member.id,
+        member,
+        seasonId: season.id,
+        species,
+        ivs,
+        ...scored,
+        expFromWork,
+        levelBefore,
+        levelAfterWork,
+        evs: evResult.evs,
+        evApplied: evResult.applied,
+        statsForBattle: calcStats({
+          base: species.base,
+          ivs,
+          evs: evResult.evs,
+          level: levelAfterWork,
+          natureId: member.natureId,
+        }),
+      });
+    }
+
+    // 2차: 체육관 배틀 (관장 레벨은 팀 평균에 맞춰 스케일링)
+    const boss = { ...bossDef, level: resolveBossLevel(bossDef, season, entries) };
+
+    for (const e of entries) {
+      const battle = runBattle(
+        {
+          name: formAt(e.species, e.levelAfterWork).name,
+          level: e.levelAfterWork,
+          type: e.species.type,
+          stats: e.statsForBattle,
+          moves: movesFrom(e.kpiScores),
+        },
+        boss,
+        `${season.id}:${e.memberId}`,
+      );
+
+      const totalExp = c0(carry, e.memberId).totalExp + e.expFromWork + battle.expReward;
+      const progress = levelProgress(totalExp);
+      const form = formAt(e.species, progress.level);
+
+      Object.assign(e, {
+        battle,
+        expFromBattle: battle.expReward,
+        expGained: e.expFromWork + battle.expReward,
+        totalExp,
+        progress,
+        form,
+        stats: calcStats({
+          base: e.species.base,
+          ivs: e.ivs,
+          evs: e.evs,
+          level: progress.level,
+          natureId: e.member.natureId,
+        }),
+        evolved: form.stage > formAt(e.species, e.levelBefore).stage,
+      });
+      delete e.statsForBattle;
+    }
+
+    // 3차: 랭킹이 필요한 판정(배지) — 종합점수 내림차순
+    const ranking = [...entries].sort((a, b) => b.overall - a.overall || b.totalExp - a.totalExp);
+    ranking.forEach((e, i) => {
+      e.rank = i + 1;
+    });
+
+    for (const e of entries) {
+      const c = carry.get(e.memberId);
+      const gained = evaluateBadges({
+        result: e,
+        prev: c.history[c.history.length - 1] || null,
+        history: c.history,
+        evolved: e.evolved,
+        rankInSeason: e.rank,
+      });
+      if (e.battle.win && e.battle.foe.badgeId) gained.push(e.battle.foe.badgeId);
+
+      e.newBadges = gained.filter((id) => !c.badges.has(id));
+      e.newBadges.forEach((id) => c.badges.add(id));
+      e.badges = [...c.badges];
+
+      // 누적 상태 갱신
+      c.totalExp = e.totalExp;
+      c.evs = e.evs;
+      c.streaks = nextStreaks(c.streaks, e.kpiScores);
+      c.history.push(e);
+      c.results.push(e);
+    }
+
+    seasonReports.push({
+      season,
+      boss,
+      entries,
+      ranking,
+      teamAverage: entries.length
+        ? entries.reduce((s, e) => s + e.overall, 0) / entries.length
+        : 0,
+      clearRate: entries.length ? entries.filter((e) => e.battle.win).length / entries.length : 0,
+    });
+  }
+
+  const bySeasonId = Object.fromEntries(seasonReports.map((r) => [r.season.id, r]));
+  const timelines = Object.fromEntries([...carry].map(([id, c]) => [id, c.results]));
+  const latest = Object.fromEntries(
+    [...carry].map(([id, c]) => [id, c.results[c.results.length - 1] || null]),
+  );
+
+  return {
+    members,
+    seasons,
+    seasonReports,
+    bySeasonId,
+    timelines,
+    latest,
+    /** 명예의 전당: 누적 EXP 순 */
+    hallOfFame: members
+      .map((m) => ({ member: m, result: latest[m.id] }))
+      .filter((x) => x.result)
+      .sort((a, b) => b.result.totalExp - a.result.totalExp),
+  };
+}
+
+const c0 = (carry, memberId) => carry.get(memberId);
+
+/**
+ * 이번 달 관장 레벨.
+ * 우선순위: season.bossLevel(수동) > 팀 평균 + offset(자동) > bosses.js 의 기본값
+ */
+function resolveBossLevel(bossDef, season, entries) {
+  if (typeof season.bossLevel === 'number' && season.bossLevel > 0) return season.bossLevel;
+  const cfg = CONFIG.battle.bossScaling;
+  if (!cfg.enabled || !entries.length) return bossDef.level;
+  const avg = entries.reduce((s, e) => s + e.levelAfterWork, 0) / entries.length;
+  return Math.max(cfg.min, Math.min(cfg.max, Math.round(avg + (season.bossLevelOffset ?? cfg.offset))));
+}
+
+/** KPI별 연속 달성 개월 수 갱신 */
+function nextStreaks(prev, kpiScores) {
+  const out = {};
+  for (const ks of kpiScores) {
+    out[ks.kpiId] = ks.cleared ? (prev[ks.kpiId] || 0) + 1 : 0;
+  }
+  return out;
+}
+
+/** 한 멤버의 KPI별 시즌 추이 (그래프용) */
+function trendOf(timeline, kpiId) {
+  return timeline.map((r) => {
+    const ks = r.kpiScores.find((k) => k.kpiId === kpiId);
+    return { seasonId: r.seasonId, score: ks ? ks.score : 0, value: ks ? ks.value : 0 };
+  });
+}
+
+function kpiLabel(kpiId) {
+  return KPI_BY_ID[kpiId]?.name || kpiId;
+}
+
+/* ── src/core/store.js ───────────────────────────────── */
+/**
+ * 상태 보관소 — localStorage 영속 + 구독.
+ * 서버가 없으므로 데이터의 원본은 브라우저다. 백업은 관리자 화면의 JSON 내보내기.
+ */
+
+
+const KEY = 'pokereview.state.v1';
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return makeSeedState();
+    const parsed = JSON.parse(raw);
+    return migrate(parsed);
+  } catch (e) {
+    console.warn('[store] 불러오기 실패, 시드 데이터로 시작합니다.', e);
+    return makeSeedState();
+  }
+}
+
+/** 스키마 버전이 올라갈 때 여기서 변환 */
+function migrate(state) {
+  if (!state.version) state.version = 1;
+  state.members ||= [];
+  state.seasons ||= [];
+  state.settings ||= { orgName: '트레이너 리그', currentSeasonId: state.seasons.at(-1)?.id };
+  return state;
+}
+
+let state = load();
+const listeners = new Set();
+
+function persist() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('[store] 저장 실패', e);
+  }
+}
+
+function emit() {
+  for (const fn of listeners) fn(state);
+}
+
+const store = {
+  get: () => state,
+
+  subscribe(fn) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  },
+
+  /** mutator(draft) 안에서 state 를 직접 수정 */
+  update(mutator) {
+    mutator(state);
+    persist();
+    emit();
+  },
+
+  replace(next) {
+    state = migrate(next);
+    persist();
+    emit();
+  },
+
+  reset() {
+    store.replace(makeSeedState());
+  },
+
+  clearAll() {
+    store.replace({ version: 1, members: [], seasons: [], settings: { orgName: '트레이너 리그' } });
+  },
+
+  // ── 편의 액션 ───────────────────────────────────────────
+  upsertMember(member) {
+    store.update((s) => {
+      const i = s.members.findIndex((m) => m.id === member.id);
+      if (i >= 0) s.members[i] = { ...s.members[i], ...member };
+      else s.members.push(member);
+    });
+  },
+
+  removeMember(id) {
+    store.update((s) => {
+      s.members = s.members.filter((m) => m.id !== id);
+      s.seasons.forEach((se) => {
+        delete se.records?.[id];
+        delete se.notes?.[id];
+      });
+    });
+  },
+
+  upsertSeason(season) {
+    store.update((s) => {
+      const i = s.seasons.findIndex((x) => x.id === season.id);
+      if (i >= 0) s.seasons[i] = { ...s.seasons[i], ...season };
+      else s.seasons.push({ records: {}, notes: {}, ...season });
+      s.seasons.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    });
+  },
+
+  removeSeason(id) {
+    store.update((s) => {
+      s.seasons = s.seasons.filter((x) => x.id !== id);
+      if (s.settings.currentSeasonId === id) s.settings.currentSeasonId = s.seasons.at(-1)?.id;
+    });
+  },
+
+  setRecord(seasonId, memberId, kpiId, value) {
+    store.update((s) => {
+      const season = s.seasons.find((x) => x.id === seasonId);
+      if (!season) return;
+      season.records ||= {};
+      season.records[memberId] ||= {};
+      season.records[memberId][kpiId] = Number(value) || 0;
+    });
+  },
+
+  setNote(seasonId, memberId, text) {
+    store.update((s) => {
+      const season = s.seasons.find((x) => x.id === seasonId);
+      if (!season) return;
+      season.notes ||= {};
+      season.notes[memberId] = text;
+    });
+  },
+
+  setSetting(key, value) {
+    store.update((s) => {
+      s.settings[key] = value;
+    });
+  },
+
+  exportJson() {
+    return JSON.stringify(state, null, 2);
+  },
+
+  importJson(text) {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.members)) {
+      throw new Error('형식이 올바르지 않습니다 (members 배열이 필요).');
+    }
+    store.replace(parsed);
+  },
+};
+
+/** 새 id 생성 */
+function uid(prefix = 'm') {
+  return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e3).toString(36)}`;
+}
+
+/* ── src/ui/dom.js ───────────────────────────────── */
+/** 아주 작은 DOM 헬퍼 — 프레임워크 없이 화면을 만든다. */
+
+function h(tag, props = {}, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') applyStyle(el, v);
+    else if (k === 'dataset') Object.assign(el.dataset, v);
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'html') el.innerHTML = v;
+    else el.setAttribute(k, v === true ? '' : String(v));
+  }
+  append(el, children);
+  return el;
+}
+
+/** CSS 변수(--x)는 setProperty 로만 설정된다 — 대입은 무시된다 */
+function applyStyle(el, styles) {
+  for (const [prop, value] of Object.entries(styles)) {
+    if (prop.startsWith('--')) el.style.setProperty(prop, value);
+    else el.style[prop] = value;
+  }
+}
+
+function append(el, children) {
+  for (const c of children.flat(Infinity)) {
+    if (c === null || c === undefined || c === false) continue;
+    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+}
+
+function clear(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+function svg(tag, props = {}, ...children) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    el.setAttribute(k, String(v));
+  }
+  for (const c of children.flat(Infinity)) if (c) el.appendChild(c);
+  return el;
+}
+
+const fmt = {
+  pct: (v, digits = 0) => `${(v * 100).toFixed(digits)}%`,
+  num: (v) => new Intl.NumberFormat('ko-KR').format(Math.round(v)),
+  score: (v) => v.toFixed(2),
+  season: (id) => {
+    const [y, m] = String(id).split('-');
+    return m ? `${y}년 ${Number(m)}월` : id;
+  },
+};
+
+/* ── src/ui/sprite.js ───────────────────────────────── */
+/**
+ * 절차적 픽셀 스프라이트 — 외부 이미지 파일 없이 SVG 로 생성한다.
+ * 같은 (종족, 진화단계) 면 항상 같은 모양.  실제 일러스트로 교체하고 싶으면
+ * spriteFor() 만 <img> 반환으로 바꾸면 나머지 화면은 그대로 동작한다.
+ */
+
+
+
+
+const GRID = 16;
+
+function shade(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, Math.min(255, ((n >> 16) & 255) + amount));
+  const g = Math.max(0, Math.min(255, ((n >> 8) & 255) + amount));
+  const b = Math.max(0, Math.min(255, (n & 255) + amount));
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
+/**
+ * @param {object} opts { speciesId, type, stage=1, size=96, animate=true }
+ * @returns {SVGElement}
+ */
+function spriteFor({ speciesId = 'ember', type = 'fire', stage = 1, size = 96, animate = true } = {}) {
+  const rng = createRng(`${speciesId}:${stage}`);
+  const color = TYPES[type]?.color || '#8ab4f8';
+  const light = shade(color, 45);
+  const dark = shade(color, -60);
+
+  const half = GRID / 2;
+  const cells = [];
+  // 몸통: 진화할수록 커지고 실루엣이 복잡해진다
+  const bodyW = 3.4 + stage * 0.5;
+  const bodyH = 3.6 + stage * 0.6;
+  const noise = 0.22 + stage * 0.08;
+
+  for (let y = 0; y < GRID; y++) {
+    for (let x = 0; x < half; x++) {
+      const dx = (x - (half - 0.5)) / bodyW;
+      const dy = (y - (GRID / 2 + 0.5)) / bodyH;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const filled = d < 1 ? true : d < 1 + noise ? rng.chance(1 - (d - 1) / noise) : false;
+      if (filled) {
+        cells.push([x, y]);
+        cells.push([GRID - 1 - x, y]); // 좌우 대칭
+      }
+    }
+  }
+
+  // 머리 위 장식(뿔/불꽃) — 2단계부터
+  if (stage >= 2) {
+    const hornH = stage;
+    for (let i = 0; i < hornH; i++) {
+      const y = 2 - i;
+      if (y < 0) continue;
+      const x = half - 2 - rng.int(0, 1);
+      cells.push([x, y], [GRID - 1 - x, y]);
+    }
+  }
+
+  const unit = size / GRID;
+  const root = svg('svg', {
+    viewBox: `0 0 ${GRID} ${GRID}`,
+    width: size,
+    height: size,
+    class: `sprite ${animate ? 'sprite--bob' : ''}`,
+    'shape-rendering': 'crispEdges',
+    role: 'img',
+    'aria-label': `${TYPES[type]?.name || type} 타입 파트너`,
+  });
+
+  const g = svg('g');
+  const seen = new Set();
+  for (const [x, y] of cells) {
+    const key = `${x},${y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    // 위쪽은 밝게, 아래쪽은 어둡게 (간단한 셰이딩)
+    const t = y / GRID;
+    const fill = t < 0.35 ? light : t > 0.75 ? dark : color;
+    g.appendChild(svg('rect', { x, y, width: 1.02, height: 1.02, fill }));
+  }
+  root.appendChild(g);
+
+  // 눈
+  const eyeY = 5 + (stage >= 3 ? 0 : 1);
+  const eyeX = half - 2;
+  for (const ex of [eyeX, GRID - 1 - eyeX]) {
+    root.appendChild(svg('rect', { x: ex, y: eyeY, width: 1, height: 1.4, fill: '#12151c' }));
+    root.appendChild(svg('rect', { x: ex, y: eyeY, width: 0.5, height: 0.5, fill: '#ffffff' }));
+  }
+  // 입
+  root.appendChild(
+    svg('rect', { x: half - 1, y: eyeY + 2.2, width: 2, height: 0.6, fill: shade(dark, -20) }),
+  );
+
+  // 최종 진화 오라
+  if (stage >= 3) {
+    root.appendChild(
+      svg('circle', {
+        cx: half,
+        cy: GRID / 2,
+        r: GRID / 2 - 0.5,
+        fill: 'none',
+        stroke: light,
+        'stroke-width': 0.25,
+        opacity: 0.55,
+        class: 'sprite__aura',
+      }),
+    );
+  }
+
+  root.dataset.unit = unit;
+  return root;
+}
+
+/** 보스는 실루엣을 조금 다르게 (더 크고 각지게) */
+function bossSprite(boss, size = 112) {
+  return spriteFor({ speciesId: `boss:${boss.id}`, type: boss.type, stage: 3, size });
+}
+
+/* ── src/ui/components.js ───────────────────────────────── */
+/** 화면 여러 곳에서 재사용하는 조각들. */
+
+
+
+
+
+
+function typeChip(typeId, { small = false } = {}) {
+  const t = TYPES[typeId];
+  if (!t) return h('span', { class: 'chip' }, typeId);
+  return h(
+    'span',
+    { class: `chip chip--type ${small ? 'chip--sm' : ''}`, style: { '--chip': t.color } },
+    `${t.name}`,
+  );
+}
+
+function gradeChip(grade) {
+  return h('span', { class: 'chip chip--grade', style: { '--chip': grade.color } }, grade.label);
+}
+
+function badgeChip(id, { showName = true } = {}) {
+  const b = BADGE_BY_ID[id];
+  if (!b) return h('span', { class: 'chip' }, id);
+  return h(
+    'span',
+    { class: `chip chip--badge chip--${b.kind}`, title: `${b.name} — ${b.desc}` },
+    h('span', { class: 'chip__icon' }, b.icon),
+    showName ? b.name : null,
+  );
+}
+
+function expBar(progress) {
+  return h(
+    'div',
+    { class: 'expbar' },
+    h('div', { class: 'expbar__track' }, h('div', { class: 'expbar__fill', style: { width: `${progress.ratio * 100}%` } })),
+    h(
+      'div',
+      { class: 'expbar__meta' },
+      h('span', {}, `Lv.${progress.level}`),
+      h('span', {}, progress.isMax ? 'MAX' : `다음 레벨까지 ${fmt.num(progress.toNext)} EXP`),
+    ),
+  );
+}
+
+function hpBar(ratio, label) {
+  const cls = ratio > 0.5 ? 'ok' : ratio > 0.2 ? 'warn' : 'danger';
+  return h(
+    'div',
+    { class: 'hpbar' },
+    label ? h('div', { class: 'hpbar__label' }, label) : null,
+    h('div', { class: `hpbar__track hpbar--${cls}` }, h('div', { class: 'hpbar__fill', style: { width: `${Math.max(0, ratio) * 100}%` } })),
+  );
+}
+
+/**
+ * 스탯 눈금 자동 결정 — 레벨이 낮을 땐 그래프가 점처럼 보이지 않도록,
+ * 높을 땐 잘리지 않도록 실제 값에 맞춰 올림한다.
+ */
+function statScale(stats) {
+  const peak = Math.max(...STAT_IDS.map((id) => stats[id] || 0), 1);
+  return Math.max(50, Math.ceil((peak * 1.25) / 25) * 25);
+}
+
+/** 6스탯 막대 */
+function statBars(stats, { max = statScale(stats) } = {}) {
+  return h(
+    'div',
+    { class: 'statbars' },
+    STATS.map((s) =>
+      h(
+        'div',
+        { class: 'statbars__row' },
+        h('span', { class: 'statbars__name' }, s.name),
+        h('span', { class: 'statbars__value' }, fmt.num(stats[s.id] || 0)),
+        h(
+          'div',
+          { class: 'statbars__track' },
+          h('div', {
+            class: 'statbars__fill',
+            style: { width: `${Math.min(100, ((stats[s.id] || 0) / max) * 100)}%` },
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+/** 육각형 레이더 차트 */
+function radar(stats, { size = 220, max = statScale(stats), color = '#6ee7ff' } = {}) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 28;
+  const n = STAT_IDS.length;
+  const pt = (i, ratio) => {
+    const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+    return [cx + Math.cos(a) * r * ratio, cy + Math.sin(a) * r * ratio];
+  };
+
+  const root = svg('svg', { viewBox: `0 0 ${size} ${size}`, width: size, height: size, class: 'radar' });
+
+  for (const ring of [0.25, 0.5, 0.75, 1]) {
+    root.appendChild(
+      svg('polygon', {
+        points: STAT_IDS.map((_, i) => pt(i, ring).join(',')).join(' '),
+        class: 'radar__ring',
+      }),
+    );
+  }
+  root.appendChild(
+    svg('polygon', {
+      points: STAT_IDS.map((id, i) => pt(i, Math.max(0.05, Math.min(1, (stats[id] || 0) / max))).join(',')).join(' '),
+      class: 'radar__area',
+      style: `--radar:${color}`,
+    }),
+  );
+  STATS.forEach((s, i) => {
+    const [x, y] = pt(i, 1.22);
+    const label = svg('text', { x, y, class: 'radar__label', 'text-anchor': 'middle' });
+    label.textContent = `${s.name} ${stats[s.id] || 0}`;
+    root.appendChild(label);
+  });
+  return root;
+}
+
+/** KPI 한 줄 (점수 막대 + 실적/목표) */
+function kpiRow(ks) {
+  const kpi = KPI_BY_ID[ks.kpiId];
+  const pct = Math.min(1.5, ks.raw) / 1.5;
+  return h(
+    'div',
+    { class: `kpirow ${ks.cleared ? 'is-clear' : ''}` },
+    h(
+      'div',
+      { class: 'kpirow__head' },
+      typeChip(kpi.type, { small: true }),
+      h('span', { class: 'kpirow__name' }, kpi.name),
+      h('span', { class: 'kpirow__val' }, `${fmt.num(ks.value)}${kpi.unit} / ${fmt.num(ks.target)}${kpi.unit}`),
+      h('span', { class: 'kpirow__pct' }, fmt.pct(ks.raw)),
+    ),
+    h(
+      'div',
+      { class: 'kpirow__track' },
+      h('div', { class: 'kpirow__goal' }),
+      h('div', {
+        class: 'kpirow__fill',
+        style: { width: `${pct * 100}%`, '--c': TYPES[kpi.type].color },
+      }),
+    ),
+    h(
+      'div',
+      { class: 'kpirow__foot' },
+      h('span', {}, `+${fmt.num(ks.exp)} EXP`),
+      h('span', {}, `노력치 +${ks.ev} (${STATS.find((s) => s.id === kpi.stat).name})`),
+      ks.streak > 0 ? h('span', { class: 'kpirow__streak' }, `연속 ${ks.streak}개월 🔗`) : null,
+    ),
+  );
+}
+
+/** 도감/대시보드용 카드 */
+function memberCard(result, { onClick } = {}) {
+  const { member, form, progress, grade, overall, species } = result;
+  const card = h(
+    'article',
+    { class: 'card card--member', style: { '--type': TYPES[species.type].color } },
+    h(
+      'div',
+      { class: 'card__sprite' },
+      spriteFor({ speciesId: species.id, type: species.type, stage: form.stage, size: 88 }),
+    ),
+    h(
+      'div',
+      { class: 'card__body' },
+      h(
+        'div',
+        { class: 'card__top' },
+        h('strong', { class: 'card__name' }, member.name),
+        gradeChip(grade),
+      ),
+      h('div', { class: 'card__sub' }, `${member.role || ''} · ${form.name}`),
+      h('div', { class: 'card__chips' }, typeChip(species.type, { small: true }), h('span', { class: 'chip chip--sm' }, `Lv.${progress.level}`)),
+      expBar(progress),
+      h(
+        'div',
+        { class: 'card__foot' },
+        h('span', {}, `종합 ${fmt.score(overall)}`),
+        h('span', { class: result.battle.win ? 'win' : 'lose' }, result.battle.win ? '체육관 클리어' : '재도전 필요'),
+      ),
+    ),
+  );
+  if (onClick) {
+    card.classList.add('is-clickable');
+    card.addEventListener('click', () => onClick(result));
+  }
+  return card;
+}
+
+function statLine(label, value) {
+  return h('div', { class: 'statline' }, h('span', {}, label), h('strong', {}, value));
+}
+
+function panel(title, ...children) {
+  return h('section', { class: 'panel' }, title ? h('h2', { class: 'panel__title' }, title) : null, ...children);
+}
+
+function emptyState(text, action) {
+  return h('div', { class: 'empty' }, h('p', {}, text), action || null);
+}
+
+function natureLabel(natureId) {
+  const n = NATURE_BY_ID[natureId];
+  if (!n) return '노력';
+  if (!n.up) return `${n.name} (보정 없음)`;
+  const nameOf = (id) => STATS.find((s) => s.id === id)?.name || id;
+  return `${n.name} (${nameOf(n.up)}↑ ${nameOf(n.down)}↓)`;
+}
+
+/* ── src/ui/router.js ───────────────────────────────── */
+/** 해시 기반 라우터. #/dex/m1 처럼 파라미터를 쓴다. */
+
+const routes = [];
+let notFound = null;
+let onRender = null;
+
+function route(pattern, handler) {
+  const keys = [];
+  const regex = new RegExp(
+    '^' +
+      pattern
+        .split('/')
+        .map((seg) => {
+          if (seg.startsWith(':')) {
+            keys.push(seg.slice(1));
+            return '([^/]+)';
+          }
+          return seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        })
+        .join('/') +
+      '$',
+  );
+  routes.push({ regex, keys, handler, pattern });
+}
+
+function setNotFound(handler) {
+  notFound = handler;
+}
+
+function onNavigate(fn) {
+  onRender = fn;
+}
+
+function currentPath() {
+  const hash = location.hash.replace(/^#/, '');
+  return hash || '/home';
+}
+
+function navigate(path) {
+  if (currentPath() === path) render();
+  else location.hash = path;
+}
+
+function render() {
+  const path = currentPath();
+  for (const r of routes) {
+    const m = path.match(r.regex);
+    if (m) {
+      const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
+      onRender?.(path, r.pattern);
+      r.handler(params);
+      return;
+    }
+  }
+  onRender?.(path, null);
+  notFound?.();
+}
+
+function startRouter() {
+  window.addEventListener('hashchange', render);
+  render();
+}
+
+/* ── src/ui/screens/home.js ───────────────────────────────── */
+/** 홈 — 이번 시즌 요약 대시보드 */
+
+
+
+
+
+function HomeScreen({ league, state, seasonId }) {
+  const report = league.bySeasonId[seasonId] || league.seasonReports.at(-1);
+  if (!report) {
+    return emptyState(
+      '아직 시즌이 없습니다. 관리자 화면에서 이번 달을 만들어 주세요.',
+      h('button', { class: 'btn btn--primary', onClick: () => navigate('/admin') }, '관리자로 이동'),
+    );
+  }
+
+  const { season, boss, entries, ranking } = report;
+  const mvp = ranking[0];
+  const evolvedList = entries.filter((e) => e.evolved);
+  const newBadges = entries.flatMap((e) => e.newBadges.map((b) => ({ e, b })));
+
+  return h(
+    'div',
+    { class: 'screen screen--home' },
+    h(
+      'header',
+      { class: 'hero' },
+      h(
+        'div',
+        { class: 'hero__text' },
+        h('p', { class: 'hero__eyebrow' }, state.settings.orgName || '트레이너 리그'),
+        h('h1', { class: 'hero__title' }, season.title || fmt.season(season.id)),
+        h('p', { class: 'hero__desc' }, `이번 달 체육관: ${boss.title} ${boss.name} (Lv.${boss.level})`),
+        h(
+          'div',
+          { class: 'hero__actions' },
+          h('button', { class: 'btn btn--primary', onClick: () => navigate(`/battle/${season.id}`) }, '체육관 전적 보기'),
+          h('button', { class: 'btn', onClick: () => navigate('/dex') }, '트레이너 도감'),
+        ),
+      ),
+      h('div', { class: 'hero__boss' }, bossSprite(boss, 128), h('p', { class: 'hero__quote' }, `"${boss.quote}"`)),
+    ),
+
+    h(
+      'div',
+      { class: 'grid grid--summary' },
+      panel(
+        '시즌 요약',
+        statLine('팀 평균 종합', fmt.score(report.teamAverage)),
+        statLine('체육관 돌파율', fmt.pct(report.clearRate)),
+        statLine('참가 트레이너', `${entries.length}명`),
+        statLine('이번 달 타입', typeChip(boss.type)),
+      ),
+      panel(
+        '이달의 MVP',
+        mvp
+          ? h(
+              'div',
+              { class: 'mvp' },
+              h('strong', { class: 'mvp__name' }, `${mvp.member.name} · ${mvp.form.name}`),
+              h('p', { class: 'mvp__desc' }, `종합 ${fmt.score(mvp.overall)} · Lv.${mvp.progress.level} · +${fmt.num(mvp.expGained)} EXP`),
+              h('button', { class: 'btn btn--sm', onClick: () => navigate(`/dex/${mvp.memberId}`) }, '상세 보기'),
+            )
+          : h('p', {}, '기록 없음'),
+      ),
+      panel(
+        '이번 달 하이라이트',
+        h(
+          'ul',
+          { class: 'highlights' },
+          evolvedList.map((e) => h('li', {}, `✨ ${e.member.name}의 파트너가 ${e.form.name}(으)로 진화!`)),
+          newBadges
+            .slice(0, 6)
+            .map(({ e, b }) => h('li', {}, h('span', {}, `${e.member.name} `), badgeChip(b))),
+          !evolvedList.length && !newBadges.length ? h('li', {}, '조용한 달이었다.') : null,
+        ),
+      ),
+    ),
+
+    panel(
+      '파티 현황',
+      h(
+        'div',
+        { class: 'grid grid--cards' },
+        entries.map((e) => memberCard(e, { onClick: (r) => navigate(`/dex/${r.memberId}`) })),
+      ),
+    ),
+  );
+}
+
+/* ── src/ui/screens/pokedex.js ───────────────────────────────── */
+/** 도감 — 트레이너 목록 (최신 시즌 기준) */
+
+
+
+
+
+let filterType = 'all';
+let sortKey = 'exp';
+
+function PokedexScreen({ league }) {
+  const entries = league.members.map((m) => league.latest[m.id]).filter(Boolean);
+  if (!entries.length) return emptyState('아직 평가된 트레이너가 없습니다.');
+
+  const filtered = entries
+    .filter((e) => filterType === 'all' || e.species.type === filterType)
+    .sort((a, b) => {
+      if (sortKey === 'exp') return b.totalExp - a.totalExp;
+      if (sortKey === 'overall') return b.overall - a.overall;
+      if (sortKey === 'name') return a.member.name.localeCompare(b.member.name);
+      return 0;
+    });
+
+  const rerender = () => navigate('/dex');
+
+  return h(
+    'div',
+    { class: 'screen' },
+    panel(
+      null,
+      h(
+        'div',
+        { class: 'toolbar' },
+        h(
+          'div',
+          { class: 'toolbar__group' },
+          h(
+            'button',
+            { class: `pill ${filterType === 'all' ? 'is-on' : ''}`, onClick: () => ((filterType = 'all'), rerender()) },
+            '전체',
+          ),
+          TYPE_LIST.map((t) =>
+            h(
+              'button',
+              {
+                class: `pill ${filterType === t.id ? 'is-on' : ''}`,
+                style: { '--chip': t.color },
+                onClick: () => ((filterType = t.id), rerender()),
+              },
+              `${t.name}·${t.domain}`,
+            ),
+          ),
+        ),
+        h(
+          'label',
+          { class: 'toolbar__sort' },
+          '정렬 ',
+          h(
+            'select',
+            { onChange: (e) => ((sortKey = e.target.value), rerender()) },
+            h('option', { value: 'exp', selected: sortKey === 'exp' }, '누적 EXP'),
+            h('option', { value: 'overall', selected: sortKey === 'overall' }, '최근 종합'),
+            h('option', { value: 'name', selected: sortKey === 'name' }, '이름'),
+          ),
+        ),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'grid grid--cards' },
+      filtered.map((e) => memberCard(e, { onClick: (r) => navigate(`/dex/${r.memberId}`) })),
+    ),
+    h(
+      'p',
+      { class: 'hint' },
+      `총 ${filtered.length}명 · 최신 시즌 ${fmt.season(entries[0].seasonId)} 기준 · 타입은 파트너 종족 기준 `,
+      typeChip(entries[0].species.type, { small: true }),
+    ),
+  );
+}
+
+/* ── src/ui/screens/detail.js ───────────────────────────────── */
+/** 트레이너 상세 — 스탯 / 이번 달 업적 / 배지 / 성장 추이 */
+
+
+
+
+
+
+
+
+function DetailScreen({ league, params, seasonId }) {
+  const memberId = params.id;
+  const timeline = league.timelines[memberId] || [];
+  const result = timeline.find((r) => r.seasonId === seasonId) || timeline.at(-1);
+  if (!result) return emptyState('해당 트레이너의 기록이 없습니다.');
+
+  const { member, species, form, progress, stats, evs, ivs, grade } = result;
+  const season = league.bySeasonId[result.seasonId].season;
+  const color = TYPES[species.type].color;
+
+  return h(
+    'div',
+    { class: 'screen screen--detail', style: { '--type': color } },
+    h(
+      'button',
+      { class: 'btn btn--ghost btn--sm', onClick: () => navigate('/dex') },
+      '← 도감으로',
+    ),
+
+    h(
+      'div',
+      { class: 'profile' },
+      h(
+        'div',
+        { class: 'profile__sprite' },
+        spriteFor({ speciesId: species.id, type: species.type, stage: form.stage, size: 168 }),
+        h('div', { class: 'profile__stage' }, `${form.stage} / ${form.stageCount} 단계`),
+      ),
+      h(
+        'div',
+        { class: 'profile__info' },
+        h('h1', {}, member.name, h('span', { class: 'profile__form' }, ` · ${form.name}`)),
+        h('p', { class: 'profile__tagline' }, `"${form.tagline}"`),
+        h(
+          'div',
+          { class: 'profile__chips' },
+          typeChip(species.type),
+          gradeChip(grade),
+          h('span', { class: 'chip' }, member.role || '직무 미지정'),
+          h('span', { class: 'chip' }, member.team || '소속 미지정'),
+          h('span', { class: 'chip' }, natureLabel(member.natureId)),
+        ),
+        expBar(progress),
+        h(
+          'div',
+          { class: 'profile__stats' },
+          statLine('누적 EXP', fmt.num(result.totalExp)),
+          statLine('이번 달 획득', `+${fmt.num(result.expGained)}`),
+          statLine('종합 점수', fmt.score(result.overall)),
+          statLine(
+            '다음 진화',
+            form.isFinal ? '최종 단계' : `${form.nextName} (Lv.${form.nextAt})`,
+          ),
+        ),
+      ),
+    ),
+
+    h(
+      'div',
+      { class: 'grid grid--two' },
+      panel(
+        '능력치',
+        h('div', { class: 'radarwrap' }, radar(stats, { color })),
+        statBars(stats),
+        h(
+          'details',
+          { class: 'details' },
+          h('summary', {}, '개체값 / 노력치 자세히'),
+          h(
+            'table',
+            { class: 'table table--sm' },
+            h(
+              'thead',
+              {},
+              h('tr', {}, h('th', {}, '스탯'), h('th', {}, '종족값'), h('th', {}, '개체값'), h('th', {}, '노력치'), h('th', {}, '실제')),
+            ),
+            h(
+              'tbody',
+              {},
+              STATS.map((s) =>
+                h(
+                  'tr',
+                  {},
+                  h('td', {}, s.name),
+                  h('td', {}, species.base[s.id]),
+                  h('td', {}, ivs[s.id]),
+                  h('td', {}, evs[s.id] || 0),
+                  h('td', {}, h('strong', {}, stats[s.id])),
+                ),
+              ),
+            ),
+          ),
+          h('p', { class: 'hint' }, '종족값=파트너 재능(고정) · 개체값=타고난 편차(고정) · 노력치=업적으로 쌓은 값(변동)'),
+        ),
+      ),
+      panel(
+        `${fmt.season(result.seasonId)} 업적`,
+        h('div', { class: 'kpilist' }, result.kpiScores.map(kpiRow)),
+        h(
+          'div',
+          { class: 'summaryrow' },
+          h('span', {}, `업적 EXP +${fmt.num(result.expFromWork)}`),
+          h('span', {}, `배틀 EXP +${fmt.num(result.expFromBattle)}`),
+          result.perfect ? h('span', { class: 'tag tag--gold' }, '퍼펙트 보너스') : null,
+        ),
+        h(
+          'div',
+          { class: 'battlecard' },
+          h('strong', {}, `${result.battle.foe.name} 전`),
+          h('span', { class: result.battle.win ? 'win' : 'lose' }, result.battle.win ? '승리' : result.battle.draw ? '무승부' : '패배'),
+          h('button', { class: 'btn btn--sm', onClick: () => navigate(`/battle/${result.seasonId}/${memberId}`) }, '배틀 재생'),
+        ),
+        h(
+          'label',
+          { class: 'field' },
+          h('span', {}, '평가 코멘트'),
+          h('textarea', {
+            rows: 3,
+            placeholder: '리더 코멘트를 남겨주세요.',
+            value: season.notes?.[memberId] || '',
+            onChange: (e) => store.setNote(result.seasonId, memberId, e.target.value),
+          }),
+        ),
+      ),
+    ),
+
+    panel(
+      '배지',
+      result.badges.length
+        ? h('div', { class: 'badgelist' }, result.badges.map((b) => badgeChip(b)))
+        : h('p', { class: 'hint' }, '아직 배지가 없습니다.'),
+      result.newBadges.length
+        ? h('p', { class: 'hint' }, `이번 달 신규: ${result.newBadges.length}개`)
+        : null,
+    ),
+
+    panel('성장 추이', trendChart(timeline, color), evolutionLine(species, progress.level)),
+  );
+}
+
+/** 시즌별 종합점수 꺾은선 */
+function trendChart(timeline, color) {
+  const W = 640;
+  const H = 180;
+  const pad = 32;
+  if (timeline.length < 2) return h('p', { class: 'hint' }, '시즌이 2개 이상 쌓이면 추이가 표시됩니다.');
+
+  const xs = (i) => pad + (i * (W - pad * 2)) / (timeline.length - 1);
+  // 데이터 폭에 맞춰 y축을 잡는다 (0부터 그리면 선이 납작해져 추이가 안 보인다)
+  const values = timeline.map((r) => r.overall);
+  const lo = Math.min(0.85, ...values) - 0.08;
+  const hi = Math.max(1.15, ...values) + 0.08;
+  const ys = (v) => H - pad - ((v - lo) / (hi - lo)) * (H - pad * 2);
+
+  const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'trend', preserveAspectRatio: 'none' });
+  // 기준선 1.0
+  root.appendChild(svg('line', { x1: pad, x2: W - pad, y1: ys(1), y2: ys(1), class: 'trend__base' }));
+  root.appendChild(
+    svg('polyline', {
+      points: timeline.map((r, i) => `${xs(i)},${ys(r.overall)}`).join(' '),
+      class: 'trend__line',
+      style: `--c:${color}`,
+    }),
+  );
+  timeline.forEach((r, i) => {
+    root.appendChild(svg('circle', { cx: xs(i), cy: ys(r.overall), r: 4, class: 'trend__dot', style: `--c:${color}` }));
+    const t = svg('text', { x: xs(i), y: H - 8, class: 'trend__label', 'text-anchor': 'middle' });
+    t.textContent = r.seasonId.slice(5) + '월';
+    root.appendChild(t);
+    const v = svg('text', { x: xs(i), y: ys(r.overall) - 10, class: 'trend__value', 'text-anchor': 'middle' });
+    v.textContent = fmt.score(r.overall);
+    root.appendChild(v);
+  });
+  return h('div', { class: 'trendwrap' }, root);
+}
+
+/** 진화 라인 표시 */
+function evolutionLine(species, level) {
+  return h(
+    'div',
+    { class: 'evoline' },
+    species.line.map((entry, i) => {
+      const unlocked = level >= entry.minLevel;
+      return h(
+        'div',
+        { class: `evoline__item ${unlocked ? 'is-on' : ''}` },
+        spriteFor({ speciesId: species.id, type: species.type, stage: i + 1, size: 64, animate: false }),
+        h('strong', {}, entry.name),
+        h('span', { class: 'hint' }, `Lv.${entry.minLevel}`),
+      );
+    }),
+  );
+}
+
+/* ── src/ui/screens/battle.js ───────────────────────────────── */
+/** 체육관 배틀 — 시즌 전적 목록 + 로그 재생 */
+
+
+
+
+
+
+function BattleScreen({ league, params, seasonId }) {
+  const sid = params.seasonId || seasonId;
+  const report = league.bySeasonId[sid] || league.seasonReports.at(-1);
+  if (!report) return emptyState('배틀 기록이 없습니다.');
+
+  if (params.memberId) {
+    const entry = report.entries.find((e) => e.memberId === params.memberId);
+    if (!entry) return emptyState('해당 트레이너의 배틀 기록이 없습니다.');
+    return BattleTheater(report, entry);
+  }
+
+  return h(
+    'div',
+    { class: 'screen' },
+    panel(
+      `${fmt.season(report.season.id)} 체육관 — ${report.boss.title} ${report.boss.name}`,
+      h(
+        'div',
+        { class: 'bossheader' },
+        bossSprite(report.boss, 120),
+        h(
+          'div',
+          {},
+          h('p', { class: 'bossheader__quote' }, `"${report.boss.quote}"`),
+          h(
+            'div',
+            { class: 'bossheader__meta' },
+            typeChip(report.boss.type),
+            h('span', { class: 'chip' }, `Lv.${report.boss.level}`),
+            h('span', { class: 'chip' }, `돌파율 ${fmt.pct(report.clearRate)}`),
+          ),
+        ),
+      ),
+    ),
+    panel(
+      '전적',
+      h(
+        'table',
+        { class: 'table' },
+        h(
+          'thead',
+          {},
+          h('tr', {}, h('th', {}, '트레이너'), h('th', {}, '파트너'), h('th', {}, 'Lv'), h('th', {}, '결과'), h('th', {}, '턴'), h('th', {}, '남은 HP'), h('th', {}, '')),
+        ),
+        h(
+          'tbody',
+          {},
+          report.entries.map((e) =>
+            h(
+              'tr',
+              {},
+              h('td', {}, e.member.name),
+              h('td', {}, e.form.name),
+              h('td', {}, e.progress.level),
+              h('td', {}, h('span', { class: e.battle.win ? 'win' : 'lose' }, e.battle.win ? '승리' : e.battle.draw ? '무승부' : '패배')),
+              h('td', {}, e.battle.turns),
+              h('td', {}, fmt.pct(e.battle.playerHpLeft)),
+              h(
+                'td',
+                {},
+                h('button', { class: 'btn btn--sm', onClick: () => navigate(`/battle/${sid}/${e.memberId}`) }, '재생'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/** 로그를 한 줄씩 재생하는 배틀 화면 */
+function BattleTheater(report, entry) {
+  const { battle, member, species, form, progress } = entry;
+  const log = battle.log;
+  let idx = 0;
+
+  const playerHp = hpBar(1, `${form.name}  Lv.${progress.level}`);
+  const foeHp = hpBar(1, `${battle.foe.name}  Lv.${battle.foe.level}`);
+  const textBox = h('div', { class: 'dialog__text' }, log[0].text);
+  const playerSprite = h(
+    'div',
+    { class: 'stage__player' },
+    spriteFor({ speciesId: species.id, type: species.type, stage: form.stage, size: 128 }),
+  );
+  const foeSprite = h('div', { class: 'stage__foe' }, bossSprite(report.boss, 120));
+
+  const setHp = (bar, ratio) => {
+    const fill = bar.querySelector('.hpbar__fill');
+    const track = bar.querySelector('.hpbar__track');
+    fill.style.width = `${Math.max(0, ratio) * 100}%`;
+    track.classList.remove('hpbar--ok', 'hpbar--warn', 'hpbar--danger');
+    track.classList.add(ratio > 0.5 ? 'hpbar--ok' : ratio > 0.2 ? 'hpbar--warn' : 'hpbar--danger');
+  };
+
+  const step = () => {
+    if (idx >= log.length - 1) return false;
+    idx++;
+    const line = log[idx];
+    textBox.textContent = line.text;
+    if (typeof line.playerHp === 'number') setHp(playerHp, line.playerHp);
+    if (typeof line.foeHp === 'number') setHp(foeHp, line.foeHp);
+    const hitSide = line.kind === 'player' ? foeSprite : line.kind === 'foe' ? playerSprite : null;
+    if (hitSide && line.dmg > 0) {
+      hitSide.classList.remove('is-hit');
+      void hitSide.offsetWidth;
+      hitSide.classList.add('is-hit');
+    }
+    return true;
+  };
+
+  let timer = null;
+  const autoplay = () => {
+    stop();
+    timer = setInterval(() => {
+      if (!root.isConnected || !step()) stop();
+    }, 900);
+  };
+  const stop = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
+  const skipAll = () => {
+    stop();
+    while (step());
+  };
+
+  const root = h(
+    'div',
+    { class: 'screen screen--battle' },
+    h(
+      'button',
+      { class: 'btn btn--ghost btn--sm', onClick: () => (stop(), navigate(`/battle/${report.season.id}`)) },
+      '← 전적으로',
+    ),
+    h(
+      'div',
+      { class: 'stage' },
+      h('div', { class: 'stage__row stage__row--foe' }, h('div', { class: 'stage__hp' }, foeHp), foeSprite),
+      h('div', { class: 'stage__row stage__row--player' }, playerSprite, h('div', { class: 'stage__hp' }, playerHp)),
+    ),
+    h(
+      'div',
+      { class: 'dialog' },
+      textBox,
+      h(
+        'div',
+        { class: 'dialog__actions' },
+        h('button', { class: 'btn btn--sm', onClick: step }, '▶ 다음'),
+        h('button', { class: 'btn btn--sm', onClick: autoplay }, '자동 재생'),
+        h('button', { class: 'btn btn--sm btn--ghost', onClick: skipAll }, '끝까지'),
+      ),
+    ),
+    panel(
+      '사용 기술 (점수 상위 KPI)',
+      h(
+        'div',
+        { class: 'movelist' },
+        movesFrom(entry.kpiScores).map((mv) =>
+          h(
+            'div',
+            { class: 'move' },
+            h('div', { class: 'move__head' }, typeChip(mv.type, { small: true }), h('strong', {}, mv.name)),
+            h(
+              'div',
+              { class: 'move__meta' },
+              h('span', {}, `위력 ${mv.power}`),
+              h('span', {}, `명중 ${fmt.pct(mv.accuracy)}`),
+              h('span', {}, mv.category === 'physical' ? '물리' : '특수'),
+            ),
+          ),
+        ),
+      ),
+      h('p', { class: 'hint' }, `${member.name}의 이번 달 실적이 곧 기술의 위력과 명중률이 된다.`),
+    ),
+  );
+
+  // 화면을 떠나면 타이머 정리
+  const observer = new MutationObserver(() => {
+    if (!root.isConnected) {
+      stop();
+      observer.disconnect();
+    }
+  });
+  queueMicrotask(() => {
+    if (root.parentNode) observer.observe(root.parentNode, { childList: true });
+  });
+
+  return root;
+}
+
+/* ── src/ui/screens/league.js ───────────────────────────────── */
+/** 리그 — 시즌 랭킹 + 명예의 전당 + 배지 현황 */
+
+
+
+
+
+
+
+function LeagueScreen({ league, seasonId }) {
+  const report = league.bySeasonId[seasonId] || league.seasonReports.at(-1);
+  if (!report) return emptyState('집계할 시즌이 없습니다.');
+
+  return h(
+    'div',
+    { class: 'screen' },
+    panel(
+      `${fmt.season(report.season.id)} 랭킹`,
+      h(
+        'table',
+        { class: 'table table--rank' },
+        h(
+          'thead',
+          {},
+          h(
+            'tr',
+            {},
+            h('th', {}, '#'),
+            h('th', {}, '트레이너'),
+            h('th', {}, '종합'),
+            h('th', {}, '등급'),
+            h('th', {}, 'Lv'),
+            h('th', {}, '획득 EXP'),
+            h('th', {}, '체육관'),
+            h('th', {}, '신규 배지'),
+          ),
+        ),
+        h(
+          'tbody',
+          {},
+          report.ranking.map((e) =>
+            h(
+              'tr',
+              { class: 'is-clickable', onClick: () => navigate(`/dex/${e.memberId}`) },
+              h('td', { class: 'rank' }, medal(e.rank)),
+              h('td', {}, h('strong', {}, e.member.name), h('span', { class: 'hint' }, ` ${e.form.name}`)),
+              h('td', {}, fmt.score(e.overall)),
+              h('td', {}, gradeChip(e.grade)),
+              h('td', {}, e.progress.level),
+              h('td', {}, `+${fmt.num(e.expGained)}`),
+              h('td', {}, h('span', { class: e.battle.win ? 'win' : 'lose' }, e.battle.win ? '돌파' : '실패')),
+              h('td', {}, e.newBadges.map((b) => badgeChip(b, { showName: false }))),
+            ),
+          ),
+        ),
+      ),
+    ),
+
+    panel(
+      '명예의 전당 (누적 EXP)',
+      h(
+        'div',
+        { class: 'hof' },
+        league.hallOfFame.slice(0, 8).map((x, i) =>
+          h(
+            'div',
+            { class: `hof__item ${i === 0 ? 'is-top' : ''}`, onClick: () => navigate(`/dex/${x.member.id}`) },
+            h('span', { class: 'hof__rank' }, `#${i + 1}`),
+            spriteFor({
+              speciesId: x.result.species.id,
+              type: x.result.species.type,
+              stage: x.result.form.stage,
+              size: 72,
+              animate: false,
+            }),
+            h('strong', {}, x.member.name),
+            h('span', { class: 'hint' }, `Lv.${x.result.progress.level} · ${fmt.num(x.result.totalExp)} EXP`),
+            typeChip(x.result.species.type, { small: true }),
+          ),
+        ),
+      ),
+    ),
+
+    panel('KPI별 팀 평균', teamKpiTable(report)),
+
+    panel(
+      '배지 도감',
+      h(
+        'div',
+        { class: 'badgegrid' },
+        BADGES.map((b) => {
+          const owners = league.members.filter((m) => league.latest[m.id]?.badges.includes(b.id));
+          return h(
+            'div',
+            { class: `badgecard ${owners.length ? 'is-owned' : ''}` },
+            h('div', { class: 'badgecard__icon' }, b.icon),
+            h('strong', {}, b.name),
+            h('span', { class: 'hint' }, b.desc),
+            h('span', { class: 'badgecard__owners' }, owners.length ? owners.map((o) => o.name).join(', ') : '미획득'),
+          );
+        }),
+      ),
+    ),
+  );
+}
+
+function medal(rank) {
+  return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank);
+}
+
+function teamKpiTable(report) {
+  const rows = KPIS.map((kpi) => {
+    const scores = report.entries.map((e) => e.kpiScores.find((k) => k.kpiId === kpi.id));
+    const avg = scores.reduce((s, k) => s + (k?.score || 0), 0) / Math.max(1, scores.length);
+    const clear = scores.filter((k) => k?.cleared).length;
+    return { kpi, avg, clear, total: scores.length };
+  });
+  return h(
+    'table',
+    { class: 'table' },
+    h('thead', {}, h('tr', {}, h('th', {}, '항목'), h('th', {}, '영역'), h('th', {}, '팀 평균 점수'), h('th', {}, '달성 인원'))),
+    h(
+      'tbody',
+      {},
+      rows.map((r) =>
+        h(
+          'tr',
+          {},
+          h('td', {}, r.kpi.name),
+          h('td', {}, typeChip(r.kpi.type, { small: true })),
+          h('td', {}, fmt.score(r.avg)),
+          h('td', {}, `${r.clear} / ${r.total}`),
+        ),
+      ),
+    ),
+  );
+}
+
+/* ── src/ui/screens/admin.js ───────────────────────────────── */
+/** 관리자 — 시즌/멤버/실적 입력, 데이터 반출입 */
+
+
+
+
+
+
+
+
+
+
+function AdminScreen({ state, seasonId }) {
+  const season = state.seasons.find((s) => s.id === seasonId) || state.seasons.at(-1);
+
+  return h(
+    'div',
+    { class: 'screen screen--admin' },
+    panel('시즌', seasonEditor(state, season)),
+    season ? panel(`${fmt.season(season.id)} 실적 입력`, recordGrid(state, season)) : emptyState('시즌을 먼저 만들어 주세요.'),
+    panel('트레이너 관리', memberEditor(state)),
+    panel('데이터', dataTools(state)),
+  );
+}
+
+/* ── 시즌 ─────────────────────────────────────────────── */
+
+function seasonEditor(state, season) {
+  const nextId = suggestNextSeasonId(state);
+
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'div',
+      { class: 'toolbar' },
+      h(
+        'label',
+        { class: 'field field--inline' },
+        h('span', {}, '현재 시즌'),
+        h(
+          'select',
+          {
+            onChange: (e) => {
+              store.setSetting('currentSeasonId', e.target.value);
+              navigate('/admin');
+            },
+          },
+          state.seasons.map((s) => h('option', { value: s.id, selected: season?.id === s.id }, `${s.id} · ${s.title || ''}`)),
+        ),
+      ),
+      h(
+        'button',
+        {
+          class: 'btn btn--primary btn--sm',
+          onClick: () => {
+            store.upsertSeason({ id: nextId, title: `${Number(nextId.slice(5))}월`, bossId: BOSSES[0].id, records: {}, notes: {} });
+            store.setSetting('currentSeasonId', nextId);
+            navigate('/admin');
+          },
+        },
+        `+ ${nextId} 시즌 추가`,
+      ),
+      season
+        ? h(
+            'button',
+            {
+              class: 'btn btn--danger btn--sm',
+              onClick: () => {
+                if (confirm(`${season.id} 시즌을 삭제할까요? 되돌릴 수 없습니다.`)) {
+                  store.removeSeason(season.id);
+                  navigate('/admin');
+                }
+              },
+            },
+            '시즌 삭제',
+          )
+        : null,
+    ),
+    season
+      ? h(
+          'div',
+          { class: 'formgrid' },
+          field('제목', h('input', { value: season.title || '', onChange: (e) => store.upsertSeason({ id: season.id, title: e.target.value }) })),
+          field(
+            '체육관 관장',
+            h(
+              'select',
+              { onChange: (e) => store.upsertSeason({ id: season.id, bossId: e.target.value }) },
+              BOSSES.map((b) => h('option', { value: b.id, selected: season.bossId === b.id }, `${b.title} ${b.name} (${b.type})`)),
+            ),
+          ),
+          field(
+            '관장 레벨 (비우면 팀 평균에 자동 맞춤)',
+            h('input', {
+              type: 'number',
+              min: 1,
+              max: 100,
+              placeholder: '자동',
+              value: season.bossLevel ?? '',
+              onChange: (e) => {
+                const v = e.target.value === '' ? null : Number(e.target.value);
+                store.upsertSeason({ id: season.id, bossLevel: v });
+              },
+            }),
+          ),
+          field(
+            '난이도 보정 (자동일 때 팀 평균 +N)',
+            h('input', {
+              type: 'number',
+              step: 1,
+              placeholder: String(CONFIG.battle.bossScaling.offset),
+              value: season.bossLevelOffset ?? '',
+              onChange: (e) => {
+                const v = e.target.value === '' ? null : Number(e.target.value);
+                store.upsertSeason({ id: season.id, bossLevelOffset: v });
+              },
+            }),
+          ),
+        )
+      : null,
+    season ? targetEditor(season) : null,
+  );
+}
+
+function targetEditor(season) {
+  return h(
+    'details',
+    { class: 'details' },
+    h('summary', {}, '이번 달 목표치 조정 (기본값 덮어쓰기)'),
+    h(
+      'div',
+      { class: 'formgrid' },
+      KPIS.map((kpi) =>
+        field(
+          `${kpi.name} (${kpi.unit})`,
+          h('input', {
+            type: 'number',
+            step: 'any',
+            value: targetFor(kpi, season),
+            onChange: (e) => {
+              const v = Number(e.target.value);
+              store.upsertSeason({ id: season.id, targets: { ...(season.targets || {}), [kpi.id]: v } });
+            },
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+/* ── 실적 입력 ─────────────────────────────────────────── */
+
+function recordGrid(state, season) {
+  if (!state.members.length) return emptyState('트레이너를 먼저 등록해 주세요.');
+
+  return h(
+    'div',
+    { class: 'tablewrap' },
+    h(
+      'table',
+      { class: 'table table--input' },
+      h(
+        'thead',
+        {},
+        h(
+          'tr',
+          {},
+          h('th', {}, '트레이너'),
+          KPIS.map((k) =>
+            h(
+              'th',
+              {},
+              h('div', { class: 'th__kpi' }, typeChip(k.type, { small: true }), h('span', {}, k.name)),
+              h('span', { class: 'hint' }, `목표 ${targetFor(k, season)}${k.unit}`),
+            ),
+          ),
+        ),
+      ),
+      h(
+        'tbody',
+        {},
+        state.members.map((m) =>
+          h(
+            'tr',
+            {},
+            h('td', {}, h('strong', {}, m.name), h('div', { class: 'hint' }, m.role || '')),
+            KPIS.map((k) =>
+              h(
+                'td',
+                {},
+                h('input', {
+                  type: 'number',
+                  step: 'any',
+                  class: 'cellinput',
+                  value: season.records?.[m.id]?.[k.id] ?? '',
+                  placeholder: '0',
+                  onChange: (e) => store.setRecord(season.id, m.id, k.id, e.target.value),
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+    h('p', { class: 'hint' }, '값을 입력하고 칸을 벗어나면 즉시 저장되고 레벨·배틀 결과가 다시 계산됩니다.'),
+  );
+}
+
+/* ── 멤버 ─────────────────────────────────────────────── */
+
+function memberEditor(state) {
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'div',
+      { class: 'tablewrap' },
+      h(
+        'table',
+        { class: 'table table--input' },
+        h(
+          'thead',
+          {},
+          h('tr', {}, h('th', {}, '이름'), h('th', {}, '직무'), h('th', {}, '소속'), h('th', {}, '파트너'), h('th', {}, '성격'), h('th', {}, '')),
+        ),
+        h(
+          'tbody',
+          {},
+          state.members.map((m) =>
+            h(
+              'tr',
+              {},
+              h('td', {}, h('input', { value: m.name, onChange: (e) => store.upsertMember({ id: m.id, name: e.target.value }) })),
+              h('td', {}, h('input', { value: m.role || '', onChange: (e) => store.upsertMember({ id: m.id, role: e.target.value }) })),
+              h('td', {}, h('input', { value: m.team || '', onChange: (e) => store.upsertMember({ id: m.id, team: e.target.value }) })),
+              h(
+                'td',
+                {},
+                h(
+                  'select',
+                  { onChange: (e) => store.upsertMember({ id: m.id, speciesId: e.target.value }) },
+                  h('option', { value: '', selected: !m.speciesId }, '자동 (주력 영역)'),
+                  SPECIES.map((s) => h('option', { value: s.id, selected: m.speciesId === s.id }, `${s.line[0].name} (${s.type})`)),
+                ),
+              ),
+              h(
+                'td',
+                {},
+                h(
+                  'select',
+                  { onChange: (e) => store.upsertMember({ id: m.id, natureId: e.target.value }) },
+                  NATURES.map((n) => h('option', { value: n.id, selected: m.natureId === n.id }, n.name)),
+                ),
+              ),
+              h(
+                'td',
+                {},
+                h(
+                  'button',
+                  {
+                    class: 'btn btn--danger btn--sm',
+                    onClick: () => confirm(`${m.name} 트레이너를 삭제할까요?`) && store.removeMember(m.id),
+                  },
+                  '삭제',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+    h(
+      'button',
+      {
+        class: 'btn btn--primary btn--sm',
+        onClick: () => store.upsertMember({ id: uid('m'), name: '새 트레이너', role: '', team: '', speciesId: '', natureId: 'hardy' }),
+      },
+      '+ 트레이너 추가',
+    ),
+  );
+}
+
+/* ── 데이터 ───────────────────────────────────────────── */
+
+function dataTools(state) {
+  const textarea = h('textarea', { rows: 8, class: 'json', spellcheck: 'false' });
+  textarea.value = store.exportJson();
+
+  return h(
+    'div',
+    { class: 'stack' },
+    h(
+      'div',
+      { class: 'toolbar' },
+      h(
+        'button',
+        {
+          class: 'btn btn--sm',
+          onClick: () => {
+            const blob = new Blob([store.exportJson()], { type: 'application/json' });
+            const a = h('a', { href: URL.createObjectURL(blob), download: `pokereview-${new Date().toISOString().slice(0, 10)}.json` });
+            a.click();
+            URL.revokeObjectURL(a.href);
+          },
+        },
+        '⬇ JSON 내보내기',
+      ),
+      h(
+        'button',
+        {
+          class: 'btn btn--sm',
+          onClick: () => {
+            try {
+              store.importJson(textarea.value);
+              alert('불러왔습니다.');
+              navigate('/admin');
+            } catch (e) {
+              alert(`불러오기 실패: ${e.message}`);
+            }
+          },
+        },
+        '⬆ 아래 내용으로 가져오기',
+      ),
+      h(
+        'button',
+        { class: 'btn btn--sm btn--ghost', onClick: () => confirm('예시 데이터로 되돌릴까요?') && (store.reset(), navigate('/admin')) },
+        '시드 데이터로 초기화',
+      ),
+      h(
+        'button',
+        { class: 'btn btn--sm btn--danger', onClick: () => confirm('모든 데이터를 지울까요?') && (store.clearAll(), navigate('/admin')) },
+        '전체 삭제',
+      ),
+    ),
+    textarea,
+    h(
+      'p',
+      { class: 'hint' },
+      `현재 ${state.members.length}명 · ${state.seasons.length}시즌. 데이터는 이 브라우저(localStorage)에만 저장됩니다. 공유하려면 JSON 을 내보내세요.`,
+    ),
+  );
+}
+
+/* ── 유틸 ─────────────────────────────────────────────── */
+
+function field(label, control) {
+  return h('label', { class: 'field' }, h('span', {}, label), control);
+}
+
+function suggestNextSeasonId(state) {
+  const last = state.seasons.at(-1)?.id;
+  const base = last ? new Date(`${last}-01T00:00:00`) : new Date();
+  if (last) base.setMonth(base.getMonth() + 1);
+  return `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/* ── src/main.js ───────────────────────────────── */
+/**
+ * 앱 진입점 — 라우팅 + 재계산 + 렌더.
+ *
+ * 데이터 흐름 한 방향:
+ *   store(state)  →  evaluateAll()  →  화면
+ * 화면은 store 의 액션만 호출하고, 계산은 절대 하지 않는다.
+ */
+
+
+
+
+
+
+
+
+
+
+
+
+const root = document.getElementById('app');
+
+const NAV = [
+  { path: '/home', label: '홈' },
+  { path: '/dex', label: '도감' },
+  { path: '/battle', label: '체육관' },
+  { path: '/league', label: '리그' },
+  { path: '/admin', label: '관리' },
+];
+
+function ctx(params = {}) {
+  const state = store.get();
+  const league = evaluateAll(state);
+  const seasonId =
+    params.seasonId ||
+    state.settings.currentSeasonId ||
+    league.seasonReports.at(-1)?.season.id;
+  return { state, league, params, seasonId };
+}
+
+function shell(view, { state, league, seasonId }) {
+  const path = currentPath();
+  const header = h(
+    'header',
+    { class: 'topbar' },
+    h(
+      'a',
+      { class: 'topbar__brand', href: '#/home' },
+      h('span', { class: 'topbar__logo' }, '◓'),
+      h('span', {}, '월간 업적 리그'),
+    ),
+    h(
+      'nav',
+      { class: 'topbar__nav' },
+      NAV.map((n) =>
+        h('a', { class: `topbar__link ${path.startsWith(n.path) ? 'is-on' : ''}`, href: `#${n.path}` }, n.label),
+      ),
+    ),
+    h(
+      'label',
+      { class: 'topbar__season' },
+      h(
+        'select',
+        {
+          onChange: (e) => {
+            store.setSetting('currentSeasonId', e.target.value);
+            navigate(basePath(path));
+          },
+        },
+        league.seasons.map((s) => h('option', { value: s.id, selected: s.id === seasonId }, fmt.season(s.id))),
+      ),
+    ),
+  );
+
+  return h(
+    'div',
+    { class: 'app' },
+    header,
+    h('main', { class: 'main' }, view),
+    h(
+      'footer',
+      { class: 'footer' },
+      `${state.settings.orgName || '트레이너 리그'} · 데이터는 브라우저에만 저장됩니다 · `,
+      h('a', { href: '#/admin' }, 'JSON 백업'),
+    ),
+  );
+}
+
+/** /battle/2026-07/m1 → /battle 처럼 시즌 전환 시 돌아갈 기본 경로 */
+function basePath(path) {
+  const seg = path.split('/')[1] || 'home';
+  return `/${seg}`;
+}
+
+/** 경로가 바뀐 렌더에서만 맨 위로 올린다 (입력 중 재렌더 시 스크롤 유지) */
+let lastPath = null;
+let jumpToTop = true;
+
+function mount(screenFn, params) {
+  const c = ctx(params);
+  const scrollY = jumpToTop ? 0 : window.scrollY;
+  let view;
+  try {
+    view = screenFn(c);
+  } catch (err) {
+    console.error(err);
+    view = emptyState(`화면을 그리는 중 오류가 발생했습니다: ${err.message}`);
+  }
+  clear(root);
+  root.appendChild(shell(view, c));
+  window.scrollTo(0, scrollY);
+}
+
+route('/home', () => mount(HomeScreen, {}));
+route('/dex', () => mount(PokedexScreen, {}));
+route('/dex/:id', (params) => mount(DetailScreen, params));
+route('/battle', () => mount(BattleScreen, {}));
+route('/battle/:seasonId', (params) => mount(BattleScreen, params));
+route('/battle/:seasonId/:memberId', (params) => mount(BattleScreen, params));
+route('/league', () => mount(LeagueScreen, {}));
+route('/admin', () => mount(AdminScreen, {}));
+
+setNotFound(() => mount(() => emptyState('없는 페이지입니다.', h('a', { class: 'btn', href: '#/home' }, '홈으로')), {}));
+
+onNavigate((path) => {
+  jumpToTop = path !== lastPath;
+  lastPath = path;
+});
+
+// 데이터가 바뀌면 현재 화면을 다시 그린다
+store.subscribe(() => render());
+
+startRouter();
+
+// 콘솔에서 밸런스 확인할 때 쓰라고 열어둔다
+window.PokeReview = { store, evaluateAll };
+})();
+</script>
