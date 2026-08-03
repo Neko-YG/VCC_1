@@ -1,0 +1,10 @@
+{
+  "name": "poke-review",
+  "private": true,
+  "type": "module",
+  "description": "월간 업적평가를 포켓몬식 트레이너 리그로 만든 정적 웹앱 (빌드 도구 없음)",
+  "scripts": {
+    "smoke": "node tools/smoke.js",
+    "serve": "node ../preview-server.js"
+  }
+}
