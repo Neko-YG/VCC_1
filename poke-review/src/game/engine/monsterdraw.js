@@ -3,6 +3,7 @@ import { monsterShape, tonePalette } from '../../core/monster.js';
 import { shade } from '../../core/color.js';
 import { TYPES } from '../../data/kpi.js';
 import { makeCanvas, ellipse } from './pixel.js';
+import { monsterAsset } from './assets.js';
 
 const monsterCache = new Map();
 
@@ -30,12 +31,17 @@ export function monsterCanvas({ speciesId, type, stage, back = false, expression
  */
 export function drawMonster(ctx, mon, { x, y, size = 48, flash = 0, alpha = 1 }) {
   if (alpha <= 0.02) return;
-  const img = monsterCanvas(mon);
+  const asset = monsterAsset(mon.speciesId, mon.stage, mon.back);
+  const img = asset ? asset.img : monsterCanvas(mon);
   ctx.save();
   ctx.globalAlpha = alpha;
   ellipse(ctx, x + size / 2, y + size - 1, size * 0.34, size * 0.1, 'rgba(0,0,0,0.22)');
   if (flash > 0) ctx.globalAlpha = alpha * (flash > 0.5 ? 0.35 : 1);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, Math.round(x), Math.round(y), size, size);
+  if (asset) {
+    ctx.drawImage(asset.img, asset.x, asset.y, asset.w, asset.h, Math.round(x), Math.round(y), size, size);
+  } else {
+    ctx.drawImage(img, Math.round(x), Math.round(y), size, size);
+  }
   ctx.restore();
 }

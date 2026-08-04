@@ -24,6 +24,7 @@ export class Actor {
     this.dir = dir;
     this.px = x * TILE;
     this.py = y * TILE;
+    this.palette = palette;
     this.sheet = charSheet(palette);
     this.moving = false;
     this.animTime = 0;
@@ -88,7 +89,7 @@ export class Actor {
     // 스프라이트가 타일보다 크므로 발밑을 타일에 맞춘다
     const x = this.px - camera.x;
     const y = this.py - camera.y - (CH - TILE);
-    drawChar(ctx, this.sheet, this.dir, WALK_CYCLE[this.animIndex], x, y);
+    drawChar(ctx, this.sheet, this.dir, WALK_CYCLE[this.animIndex], x, y, this.palette);
   }
 }
 

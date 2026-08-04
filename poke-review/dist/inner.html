@@ -2747,6 +2747,137 @@ class PresenterMode {
   }
 }
 
+/* ── src/game/engine/assets.js ───────────────────────────────── */
+/**
+ * 에셋 파이프라인 — 진짜 도트 그림을 꽂는 자리.
+ *
+ * 코드로 만든 그림에는 한계가 있다. "그 게임과 똑같이" 만들려면 결국 사람이
+ * 찍은 도트가 필요하다. 그래서 이 게임은 **그림을 갈아 끼울 수 있게** 만들어져
+ * 있다: 아래 매니페스트에 이미지와 좌표를 적어 두면, 렌더러가 코드 그림 대신
+ * 그 이미지를 쓴다. 매니페스트가 없으면 지금처럼 코드 그림으로 돌아간다.
+ *
+ * ※ 남의 게임에서 추출한 스프라이트는 배포할 수 없다. 직접 그렸거나, CC0·
+ *   구매·의뢰한 에셋만 넣을 것.
+ *
+ * 매니페스트: assets/sprites/manifest.json
+ * {
+ *   "tileSize": 16,
+ *   "sheets": { "world": "tiles.png", "people": "people.png", "mons": "mons.png" },
+ *   "tiles": {                     // 맵 문자 → 시트 위의 칸
+ *     ".": { "sheet": "world", "x": 0,  "y": 0 },
+ *     "#": { "sheet": "world", "x": 16, "y": 0, "h": 32, "oy": -16 }
+ *   },
+ *   "characters": {                // 팔레트 이름 → 4방향×3프레임 시트
+ *     "red": { "sheet": "people", "x": 0, "y": 0, "w": 16, "h": 24 }
+ *   },
+ *   "monsters": {                  // "종족:단계" → 그림
+ *     "ember:1": { "sheet": "mons", "x": 0, "y": 0, "w": 32, "h": 32 }
+ *   }
+ * }
+ *
+ * 좌표는 픽셀. w/h 를 생략하면 tileSize 를 쓴다.
+ * oy 는 위로 삐져나오는 오브젝트(나무처럼)를 올려 그릴 때 쓴다.
+ */
+
+const BASE = 'assets/sprites/';
+
+/** @type {{manifest:object|null, images:Record<string,HTMLImageElement>, ready:boolean}} */
+const assets = {
+  manifest: null,
+  images: {},
+  ready: false,
+};
+
+/**
+ * 매니페스트를 읽어 이미지를 모두 불러온다.
+ * 파일이 없으면 조용히 넘어간다 — 코드 그림으로 돌아가면 되기 때문.
+ * @param {string} baseUrl 게임 페이지 기준 경로
+ * @returns {Promise<boolean>} 에셋을 쓸 수 있으면 true
+ */
+async function loadAssets(baseUrl = BASE) {
+  try {
+    const manifest = await readManifest(baseUrl);
+    if (!manifest) return false;
+    const entries = Object.entries(manifest.sheets || {});
+    const images = {};
+    await Promise.all(
+      entries.map(
+        ([name, file]) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              images[name] = img;
+              resolve();
+            };
+            img.onerror = () => resolve(); // 한 장이 없어도 나머지는 쓴다
+            img.src = `${baseUrl}${file}`;
+          }),
+      ),
+    );
+    assets.manifest = manifest;
+    assets.images = images;
+    assets.ready = Object.keys(images).length > 0;
+    return assets.ready;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 매니페스트 읽기.
+ * file:// 로 연 페이지는 fetch 가 CORS 로 막히므로(단일 파일 빌드가 그렇다),
+ * 그럴 땐 페이지에 직접 심어 둔 window.POKE_ASSETS 를 쓴다.
+ *
+ *   페이지에 window.POKE_ASSETS = { tileSize: 16, sheets: {...}, tiles: {...} } 를 심으면 된다
+ */
+async function readManifest(baseUrl) {
+  if (typeof window !== 'undefined' && window.POKE_ASSETS) return window.POKE_ASSETS;
+  if (typeof location !== 'undefined' && location.protocol === 'file:') return null;
+  const res = await fetch(`${baseUrl}manifest.json`, { cache: 'no-cache' });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+/** 매니페스트에서 한 조각 찾기 (없으면 null → 코드 그림 사용) */
+function lookup(group, key) {
+  if (!assets.ready) return null;
+  const entry = assets.manifest?.[group]?.[key];
+  if (!entry) return null;
+  const img = assets.images[entry.sheet];
+  if (!img) return null;
+  const size = assets.manifest.tileSize || 16;
+  return {
+    img,
+    x: entry.x || 0,
+    y: entry.y || 0,
+    w: entry.w || size,
+    h: entry.h || size,
+    ox: entry.ox || 0,
+    oy: entry.oy || 0,
+  };
+}
+
+/**
+ * 맵 문자에 대응하는 그림을 그린다.
+ * @returns {boolean} 그렸으면 true (false 면 호출한 쪽이 코드 그림을 그린다)
+ */
+function drawTileAsset(ctx, ch, x, y) {
+  const a = lookup('tiles', ch);
+  if (!a) return false;
+  ctx.drawImage(a.img, a.x, a.y, a.w, a.h, x + a.ox, y + a.oy, a.w, a.h);
+  return true;
+}
+
+/** 캐릭터 시트 (4방향 × 3프레임) — 있으면 그 이미지를 그대로 쓴다 */
+function characterAsset(paletteId) {
+  return lookup('characters', paletteId);
+}
+
+/** 몬스터 그림 — 키는 '종족:단계' 또는 '종족:단계:back' */
+function monsterAsset(speciesId, stage, back) {
+  return lookup('monsters', `${speciesId}:${stage}${back ? ':back' : ''}`);
+}
+
 /* ── src/game/world/tiles.js ───────────────────────────────── */
 /**
  * 타일 정의 — 맵의 문자 1개 = 타일 1칸.
@@ -2827,6 +2958,7 @@ function isSolid(map, x, y) {
  * 맵은 통째로 미리 그려 두고(프리렌더) 보이는 부분만 잘라 쓴다.
  * 물결은 3프레임을 각각 프리렌더해 번갈아 보여준다.
  */
+
 
 
 
@@ -3374,6 +3506,9 @@ function renderFrame(map, frame) {
   };
 
   each((tile, gx, gy, x, y) => {
+    // 에셋 매니페스트에 그림이 있으면 그것을 쓰고, 없으면 코드 그림
+    const ch = tileCharAt(map, gx, gy);
+    if (drawTileAsset(ctx, ch, x, y)) return;
     const draw = GROUND[tile.kind] || drawGrass;
     draw(ctx, x, y, gx, gy, map, frame);
     if (tile.kind === 'tree') trees.push([x, y, gx, gy]);
@@ -3388,6 +3523,7 @@ function renderFrame(map, frame) {
   }
 
   each((tile, gx, gy, x, y) => {
+    if (drawTileAsset(ctx, tileCharAt(map, gx, gy), x, y)) return;
     const draw = OBJECT[tile.kind];
     if (draw) draw(ctx, x, y, gx, gy, map);
   });
@@ -3430,6 +3566,7 @@ function renderMap(map) {
  *
  * 시트 한 장 = 4방향 × 3프레임. 색만 바꾸면 새 캐릭터가 된다.
  */
+
 
 
 
@@ -3622,9 +3759,27 @@ function charSheet(paletteId) {
   return sheetCache.get(paletteId);
 }
 
-/** 시트에서 한 프레임을 화면에 그린다 */
-function drawChar(ctx, sheet, dir, frame, x, y) {
+/**
+ * 시트에서 한 프레임을 화면에 그린다.
+ * 에셋 매니페스트에 같은 이름의 캐릭터 시트가 있으면 그쪽을 우선한다.
+ */
+function drawChar(ctx, sheet, dir, frame, x, y, paletteId) {
   const row = Math.max(0, DIRS.indexOf(dir));
+  const asset = paletteId ? characterAsset(paletteId) : null;
+  if (asset) {
+    ctx.drawImage(
+      asset.img,
+      asset.x + frame * asset.w,
+      asset.y + row * asset.h,
+      asset.w,
+      asset.h,
+      Math.round(x) + asset.ox,
+      Math.round(y) + asset.oy - (asset.h - CH),
+      asset.w,
+      asset.h,
+    );
+    return;
+  }
   ctx.drawImage(sheet.canvas, frame * CW, row * CH, CW, CH, Math.round(x), Math.round(y), CW, CH);
 }
 
@@ -3637,6 +3792,7 @@ function drawCharScaled(ctx, sheet, dir, frame, x, y, scale) {
 
 /* ── src/game/engine/monsterdraw.js ───────────────────────────────── */
 /** 배틀 화면용 몬스터 렌더러 — 형상은 core/monster.js, 여기선 캔버스에 찍기만 한다. */
+
 
 
 
@@ -3668,13 +3824,18 @@ function monsterCanvas({ speciesId, type, stage, back = false, expression = 'nor
  */
 function drawMonster(ctx, mon, { x, y, size = 48, flash = 0, alpha = 1 }) {
   if (alpha <= 0.02) return;
-  const img = monsterCanvas(mon);
+  const asset = monsterAsset(mon.speciesId, mon.stage, mon.back);
+  const img = asset ? asset.img : monsterCanvas(mon);
   ctx.save();
   ctx.globalAlpha = alpha;
   ellipse(ctx, x + size / 2, y + size - 1, size * 0.34, size * 0.1, 'rgba(0,0,0,0.22)');
   if (flash > 0) ctx.globalAlpha = alpha * (flash > 0.5 ? 0.35 : 1);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, Math.round(x), Math.round(y), size, size);
+  if (asset) {
+    ctx.drawImage(asset.img, asset.x, asset.y, asset.w, asset.h, Math.round(x), Math.round(y), size, size);
+  } else {
+    ctx.drawImage(img, Math.round(x), Math.round(y), size, size);
+  }
   ctx.restore();
 }
 
@@ -4050,6 +4211,7 @@ class Actor {
     this.dir = dir;
     this.px = x * TILE;
     this.py = y * TILE;
+    this.palette = palette;
     this.sheet = charSheet(palette);
     this.moving = false;
     this.animTime = 0;
@@ -4114,7 +4276,7 @@ class Actor {
     // 스프라이트가 타일보다 크므로 발밑을 타일에 맞춘다
     const x = this.px - camera.x;
     const y = this.py - camera.y - (CH - TILE);
-    drawChar(ctx, this.sheet, this.dir, WALK_CYCLE[this.animIndex], x, y);
+    drawChar(ctx, this.sheet, this.dir, WALK_CYCLE[this.animIndex], x, y, this.palette);
   }
 }
 
@@ -4962,6 +5124,7 @@ function roundRect(ctx, x, y, w, h, r, fill, stroke) {
 
 
 
+
 const VIEW_W = 256; // DS 상단 화면과 같은 논리 해상도
 const VIEW_H = 192;
 
@@ -4975,12 +5138,13 @@ class Game {
    * @param {HTMLElement} root
    * @param {{league:object, seasonId:string, playerMemberId?:string, onNavigate?:(path:string)=>void}} opts
    */
-  constructor(root, { league, seasonId, playerMemberId, onNavigate }) {
+  constructor(root, { league, seasonId, playerMemberId, onNavigate, assetBase = 'assets/sprites/' }) {
     this.root = root;
     this.league = league;
     this.seasonId = seasonId;
     this.playerMemberId = playerMemberId;
     this.onNavigate = onNavigate;
+    this.assetBase = assetBase;
     this.width = VIEW_W;
     this.height = VIEW_H;
 
@@ -5011,6 +5175,14 @@ class Game {
   }
 
   start() {
+    // 실제 도트 에셋이 있으면 그것으로 그린다 (없으면 코드 그림 그대로)
+    loadAssets(this.assetBase).then((ok) => {
+      if (ok && this.fieldScene) this.changeMap(this.fieldScene.map.id, {
+        x: this.fieldScene.player.gx,
+        y: this.fieldScene.player.gy,
+        dir: this.fieldScene.player.dir,
+      }, { instant: true });
+    });
     const report = this.report();
     const startMap = MAPS.town;
     this.changeMap(startMap.id, startMap.spawn, { instant: true });

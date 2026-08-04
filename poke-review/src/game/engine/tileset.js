@@ -15,6 +15,7 @@ import { TILE, TILES, tileCharAt, sameKind } from '../world/tiles.js';
 import { makeCanvas, rect, px, ellipse } from './pixel.js';
 import { mix, shade } from '../../core/color.js';
 import { createRng, hashSeed } from '../../core/rng.js';
+import { drawTileAsset } from './assets.js';
 
 export const WATER_FRAMES = 3;
 export const WATER_FPS = 3.5;
@@ -558,6 +559,9 @@ function renderFrame(map, frame) {
   };
 
   each((tile, gx, gy, x, y) => {
+    // 에셋 매니페스트에 그림이 있으면 그것을 쓰고, 없으면 코드 그림
+    const ch = tileCharAt(map, gx, gy);
+    if (drawTileAsset(ctx, ch, x, y)) return;
     const draw = GROUND[tile.kind] || drawGrass;
     draw(ctx, x, y, gx, gy, map, frame);
     if (tile.kind === 'tree') trees.push([x, y, gx, gy]);
@@ -572,6 +576,7 @@ function renderFrame(map, frame) {
   }
 
   each((tile, gx, gy, x, y) => {
+    if (drawTileAsset(ctx, tileCharAt(map, gx, gy), x, y)) return;
     const draw = OBJECT[tile.kind];
     if (draw) draw(ctx, x, y, gx, gy, map);
   });

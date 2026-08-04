@@ -11,6 +11,7 @@ import { TextBox } from './ui/textbox.js';
 import { Banner } from './ui/banner.js';
 import { MAPS } from './world/maps.js';
 import { PresenterMode, CONTROL_SCHEMES } from './engine/controls.js';
+import { loadAssets } from './engine/assets.js';
 import { FieldScene } from './scenes/field.js';
 import { BattleScene } from './scenes/battle.js';
 
@@ -27,12 +28,13 @@ export class Game {
    * @param {HTMLElement} root
    * @param {{league:object, seasonId:string, playerMemberId?:string, onNavigate?:(path:string)=>void}} opts
    */
-  constructor(root, { league, seasonId, playerMemberId, onNavigate }) {
+  constructor(root, { league, seasonId, playerMemberId, onNavigate, assetBase = 'assets/sprites/' }) {
     this.root = root;
     this.league = league;
     this.seasonId = seasonId;
     this.playerMemberId = playerMemberId;
     this.onNavigate = onNavigate;
+    this.assetBase = assetBase;
     this.width = VIEW_W;
     this.height = VIEW_H;
 
@@ -63,6 +65,14 @@ export class Game {
   }
 
   start() {
+    // 실제 도트 에셋이 있으면 그것으로 그린다 (없으면 코드 그림 그대로)
+    loadAssets(this.assetBase).then((ok) => {
+      if (ok && this.fieldScene) this.changeMap(this.fieldScene.map.id, {
+        x: this.fieldScene.player.gx,
+        y: this.fieldScene.player.gy,
+        dir: this.fieldScene.player.dir,
+      }, { instant: true });
+    });
     const report = this.report();
     const startMap = MAPS.town;
     this.changeMap(startMap.id, startMap.spawn, { instant: true });

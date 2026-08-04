@@ -41,6 +41,7 @@ const ORDER = [
   // 게임(필드) — 화면 모듈보다 먼저 정의되어야 한다
   'src/game/engine/pixel.js',
   'src/game/engine/controls.js',
+  'src/game/engine/assets.js',
   'src/game/world/tiles.js',
   'src/game/engine/tileset.js',
   'src/game/engine/charsprite.js',
@@ -131,6 +132,9 @@ const title = shellHtml.match(/<title>([^<]*)<\/title>/)?.[1] ?? '월간 업적 
 // href 안의 SVG 에 '>' 가 들어 있어 태그 정규식으로는 못 자른다 — 줄 단위로 가져온다
 const favicon = shellHtml.split('\n').find((l) => l.includes('rel="icon"'))?.trim() ?? '';
 
+// 코드나 주석 안의 '</script>' 는 인라인 스크립트를 조기 종료시킨다 — 반드시 깨 놓는다
+const safeModules = modules.replace(/<\/script/gi, '<\\/script');
+
 const inner = `<style>
 ${css}
 </style>
@@ -140,7 +144,7 @@ ${css}
 <script>
 (function () {
 'use strict';
-${modules}
+${safeModules}
 })();
 </script>
 `;

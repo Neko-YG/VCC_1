@@ -10,6 +10,7 @@
  */
 import { makeCanvas, rect, px, ellipse } from './pixel.js';
 import { shade } from '../../core/color.js';
+import { characterAsset } from './assets.js';
 
 export const CW = 16; // 스프라이트 폭
 export const CH = 24; // 높이 (타일 16보다 커서 머리가 윗 타일을 덮는다)
@@ -200,9 +201,27 @@ export function charSheet(paletteId) {
   return sheetCache.get(paletteId);
 }
 
-/** 시트에서 한 프레임을 화면에 그린다 */
-export function drawChar(ctx, sheet, dir, frame, x, y) {
+/**
+ * 시트에서 한 프레임을 화면에 그린다.
+ * 에셋 매니페스트에 같은 이름의 캐릭터 시트가 있으면 그쪽을 우선한다.
+ */
+export function drawChar(ctx, sheet, dir, frame, x, y, paletteId) {
   const row = Math.max(0, DIRS.indexOf(dir));
+  const asset = paletteId ? characterAsset(paletteId) : null;
+  if (asset) {
+    ctx.drawImage(
+      asset.img,
+      asset.x + frame * asset.w,
+      asset.y + row * asset.h,
+      asset.w,
+      asset.h,
+      Math.round(x) + asset.ox,
+      Math.round(y) + asset.oy - (asset.h - CH),
+      asset.w,
+      asset.h,
+    );
+    return;
+  }
   ctx.drawImage(sheet.canvas, frame * CW, row * CH, CW, CH, Math.round(x), Math.round(y), CW, CH);
 }
 
