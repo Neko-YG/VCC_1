@@ -8,7 +8,7 @@
 
 | | 무엇 | 경로 |
 | --- | --- | --- |
-| **필드** | 4세대 오버월드. 걷기·대화·체육관 배틀 | `#/field` |
+| **필드** | 4세대 오버월드. 걷기·대화·체육관 배틀 (타일 32px · 화면 512×384) | `#/field` |
 | **대시보드** | 같은 데이터를 표로 보는 도감·리그·실적 입력 | `#/dex` `#/league` `#/admin` |
 
 둘은 **같은 계산 결과**를 본다. 관리 화면에서 실적 숫자를 고치면 마을 NPC 의 대사도, 체육관 배틀의 승패도 같이 바뀐다.
@@ -218,6 +218,7 @@ store(state) → evaluateAll() → 화면
 | 몬스터 실루엣(귀·꼬리·체형)      | `core/monster.js` 의 `monsterShape()`                            |
 | 배틀 화면 배치·체력 상자         | `game/scenes/battle.js`                                          |
 | 이동 속도                        | `game/actors/actor.js` 의 `WALK_SPEED` / `RUN_SPEED`            |
+| 해상도(타일·화면 크기)           | `world/tiles.js` 의 `TILE`, `game/game.js` 의 `VIEW_W/H`         |
 | 리모컨 키 배치                   | `game/engine/controls.js` 의 `KEY_BINDINGS`                      |
 | 레이저 포인터 대상 우선순위      | `game/engine/controls.js` 의 `TARGET_ORDER`                      |
 

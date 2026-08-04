@@ -127,16 +127,18 @@ function grassTone(gx, gy) {
 function drawGrass(ctx, x, y, gx, gy) {
   const rng = at(gx, gy, 'g');
   rect(ctx, x, y, TILE, TILE, mix(PAL.grass, PAL.grassAlt, grassTone(gx, gy)));
-  // 잔디 결: 짧은 밝은 선 + 어두운 선 (4세대 잔디의 자잘한 텍스처)
-  for (let i = 0; i < 2; i++) {
-    px(ctx, x + rng.int(1, TILE - 2), y + rng.int(1, TILE - 2), PAL.grassLight);
-  }
-  for (let i = 0; i < 3; i++) {
+  // 잔디 결 — 32px 칸이라 풀포기를 여러 개 심을 수 있다
+  for (let i = 0; i < 7; i++) {
     const sx = x + rng.int(1, TILE - 4);
-    const sy = y + rng.int(1, TILE - 2);
-    rect(ctx, sx, sy, 2, 1, PAL.grassLine);
-    px(ctx, sx + 2, sy + 1, PAL.grassDark);
+    const sy = y + rng.int(2, TILE - 3);
+    // 'V' 자 풀포기: 어두운 줄기 + 밝은 끝
+    rect(ctx, sx, sy, 1, 2, PAL.grassLine);
+    rect(ctx, sx + 2, sy, 1, 2, PAL.grassLine);
+    px(ctx, sx + 1, sy + 2, PAL.grassDark);
+    px(ctx, sx, sy - 1, PAL.grassLight);
+    px(ctx, sx + 2, sy - 1, PAL.grassLight);
   }
+  for (let i = 0; i < 5; i++) px(ctx, x + rng.int(0, TILE - 1), y + rng.int(0, TILE - 1), PAL.grassLight);
 }
 
 /* ── 오토타일 ───────────────────────────────────────── */
@@ -155,7 +157,7 @@ function mask(map, gx, gy, kind) {
  * 바깥 모서리는 깎아내고, 안쪽 모서리는 채워서 둥근 덩어리처럼 보이게 한다.
  * @param cut  가장자리 바깥을 무엇으로 덮을지 (보통 잔디)
  */
-function autoEdge(ctx, x, y, m, { rim, cut, t = 2, corner = 3 }) {
+function autoEdge(ctx, x, y, m, { rim, cut, t = 4, corner = 6 }) {
   // 바깥 모서리 깎기 — 두 변이 모두 열려 있으면 그 귀퉁이를 잘라낸다
   const carve = (cx, cy) => rect(ctx, cx, cy, corner, corner, cut);
   if (!m.n && !m.w) carve(x, y);
@@ -192,8 +194,14 @@ function drawSoil(ctx, x, y, gx, gy, map) {
   const m = mask(map, gx, gy, 'path');
   rect(ctx, x, y, TILE, TILE, PAL.soil);
   const rng = at(gx, gy, 'soil');
-  // 흙 알갱이
-  for (let i = 0; i < 5; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), rng.chance(0.5) ? PAL.soilLight : PAL.soilDark);
+  // 흙 알갱이 + 잔자갈
+  for (let i = 0; i < 14; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), rng.chance(0.5) ? PAL.soilLight : PAL.soilDark);
+  for (let i = 0; i < 3; i++) {
+    const sx = x + rng.int(3, TILE - 5);
+    const sy = y + rng.int(3, TILE - 4);
+    rect(ctx, sx, sy, 2, 1, PAL.soilDark);
+    px(ctx, sx, sy - 1, PAL.soilLight);
+  }
   autoEdge(ctx, x, y, m, { rim: PAL.soilEdge, cut: mix(PAL.grass, PAL.grassAlt, grassTone(gx, gy)) });
 }
 
@@ -202,7 +210,7 @@ function drawSand(ctx, x, y, gx, gy, map) {
   const m = mask(map, gx, gy, 'sand');
   rect(ctx, x, y, TILE, TILE, PAL.sand);
   const rng = at(gx, gy, 'sand');
-  for (let i = 0; i < 4; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), rng.chance(0.5) ? PAL.sandLight : PAL.sandDark);
+  for (let i = 0; i < 12; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), rng.chance(0.5) ? PAL.sandLight : PAL.sandDark);
   autoEdge(ctx, x, y, m, { rim: PAL.sandDark, cut: mix(PAL.grass, PAL.grassAlt, grassTone(gx, gy)) });
 }
 
@@ -212,48 +220,66 @@ function drawWater(ctx, x, y, gx, gy, map, frame = 0) {
   rect(ctx, x, y, TILE, TILE, PAL.water);
   const rng = at(gx, gy, 'w');
   // 깊은 물 얼룩
-  for (let i = 0; i < 2; i++) {
-    rect(ctx, x + rng.int(1, TILE - 6), y + rng.int(1, TILE - 2), rng.int(3, 5), 1, PAL.waterDeep);
+  for (let i = 0; i < 5; i++) {
+    rect(ctx, x + rng.int(1, TILE - 10), y + rng.int(1, TILE - 2), rng.int(5, 9), 1, PAL.waterDeep);
   }
-  // 물결 — 프레임마다 한 칸씩 흐른다
-  const wx = (rng.int(0, TILE - 1) + frame * 3) % TILE;
-  const wy = (rng.int(0, TILE - 1) + frame * 2) % TILE;
-  rect(ctx, x + wx, y + wy, 3, 1, PAL.waterLight);
-  px(ctx, x + ((wx + 3) % TILE), y + wy - 1, PAL.waterLight);
-  if (rng.chance(0.5)) rect(ctx, x + ((wx + 6) % TILE), y + ((wy + 5) % TILE), 2, 1, PAL.waterFoam);
+  // 물결 — 프레임마다 흘러간다
+  for (let i = 0; i < 3; i++) {
+    const wx = (rng.int(0, TILE - 1) + frame * 5) % TILE;
+    const wy = (rng.int(0, TILE - 1) + frame * 3) % TILE;
+    rect(ctx, x + wx, y + wy, 5, 1, PAL.waterLight);
+    px(ctx, x + ((wx + 5) % TILE), y + wy - 1, PAL.waterLight);
+    px(ctx, x + ((wx + 1) % TILE), y + wy + 1, PAL.waterLight);
+  }
+  if (rng.chance(0.6)) rect(ctx, x + rng.int(2, TILE - 6), y + rng.int(2, TILE - 3), 4, 1, PAL.waterFoam);
 
   // 물가: 얕은 물 띠 + 거품선
   const shallow = mix(PAL.water, PAL.waterFoam, 0.45);
-  autoEdge(ctx, x, y, m, { rim: shallow, cut: shallow, t: 3, corner: 3 });
-  const foamShift = frame % 2;
-  if (!m.n) rect(ctx, x + 2 + foamShift, y, TILE - 4, 1, PAL.waterFoam);
-  if (!m.s) rect(ctx, x + 2 - foamShift, y + TILE - 1, TILE - 4, 1, PAL.waterFoam);
-  if (!m.w) rect(ctx, x, y + 2 + foamShift, 1, TILE - 4, PAL.waterFoam);
-  if (!m.e) rect(ctx, x + TILE - 1, y + 2 - foamShift, 1, TILE - 4, PAL.waterFoam);
+  autoEdge(ctx, x, y, m, { rim: shallow, cut: shallow, t: 6, corner: 6 });
+  const foamShift = (frame % 2) * 2;
+  if (!m.n) rect(ctx, x + 4 + foamShift, y, TILE - 8, 2, PAL.waterFoam);
+  if (!m.s) rect(ctx, x + 4 - foamShift, y + TILE - 2, TILE - 8, 2, PAL.waterFoam);
+  if (!m.w) rect(ctx, x, y + 4 + foamShift, 2, TILE - 8, PAL.waterFoam);
+  if (!m.e) rect(ctx, x + TILE - 2, y + 4 - foamShift, 2, TILE - 8, PAL.waterFoam);
 }
 
 /** 풀숲 — 뒤쪽 절반(캐릭터 뒤에 그려지는 부분) */
-function drawTallGrassBack(ctx, x, y, gx, gy) {
+/**
+ * 풀숲 뒷부분.
+ * 칸마다 같은 높이에서 띠를 그리면 가로 줄무늬가 생긴다.
+ * 바탕을 칸 전체에 깔고 잎을 칸 경계를 넘나들게 심어 이어져 보이게 한다.
+ */
+function drawTallGrassBack(ctx, x, y, gx, gy, map) {
   drawGrass(ctx, x, y, gx, gy);
   const rng = at(gx, gy, 't');
-  rect(ctx, x, y + 5, TILE, TILE - 5, PAL.tall);
-  rect(ctx, x, y + TILE - 2, TILE, 2, PAL.tallDark);
-  for (let i = 0; i < 5; i++) {
-    const sx = x + rng.int(0, TILE - 3);
-    const h = rng.int(3, 6);
-    rect(ctx, sx, y + 5 - h, 2, h, PAL.tall);
-    px(ctx, sx, y + 5 - h, PAL.tallLight);
+  rect(ctx, x, y, TILE, TILE, PAL.tall);
+  // 밑동 그늘 — 위 칸도 풀숲이면 이어지므로 옅게
+  const openTop = !sameKind(map, gx, gy - 1, 'tallgrass');
+  rect(ctx, x, y + TILE - 6, TILE, 6, PAL.tallDark);
+  if (openTop) rect(ctx, x, y, TILE, 3, PAL.tallLight);
+
+  // 잎 — 위아래로 칸을 넘어가게 심는다
+  for (let i = 0; i < 16; i++) {
+    const sx = x + rng.int(-2, TILE - 2);
+    const base = y + rng.int(6, TILE + 2);
+    const h = rng.int(9, 18);
+    const dark = i % 3 === 0;
+    rect(ctx, sx, base - h, 3, h, dark ? PAL.tallDark : PAL.tall);
+    rect(ctx, sx, base - h, 1, h, dark ? PAL.tall : PAL.tallLight);
+    px(ctx, sx + 1, base - h - 1, PAL.tallLight);
   }
+  // 바닥 쪽 어두운 잔결
+  for (let i = 0; i < 5; i++) px(ctx, x + rng.int(0, TILE - 1), y + rng.int(TILE - 8, TILE - 1), PAL.tallDark);
 }
 
 /** 풀숲 — 앞쪽 잎(캐릭터 위에 덮여 '풀에 들어간' 느낌을 만든다) */
 export function drawTallGrassFront(ctx, x, y, gx, gy, sway = 0) {
   const rng = at(gx, gy, 'tf');
-  for (let i = 0; i < 6; i++) {
-    const sx = x + rng.int(0, TILE - 3) + (i % 2 ? sway : -sway);
-    const h = rng.int(4, 7);
-    rect(ctx, sx, y + TILE - h, 2, h, i % 2 ? PAL.tall : PAL.tallDark);
-    px(ctx, sx, y + TILE - h, PAL.tallLight);
+  for (let i = 0; i < 9; i++) {
+    const sx = x + rng.int(0, TILE - 4) + (i % 2 ? sway : -sway);
+    const h = rng.int(10, 20);
+    rect(ctx, sx, y + TILE - h, 3, h, i % 2 ? PAL.tall : PAL.tallDark);
+    rect(ctx, sx, y + TILE - h, 1, h, PAL.tallLight);
   }
 }
 
@@ -261,16 +287,17 @@ function drawFlower(ctx, x, y, gx, gy) {
   drawGrass(ctx, x, y, gx, gy);
   const rng = at(gx, gy, 'f');
   const colors = [PAL.petal, PAL.petalWarm, PAL.petalPink];
-  for (let i = 0; i < 3; i++) {
-    const cx = x + rng.int(2, TILE - 3);
-    const cy = y + rng.int(2, TILE - 3);
+  for (let i = 0; i < 4; i++) {
+    const cx = x + rng.int(4, TILE - 5);
+    const cy = y + rng.int(4, TILE - 6);
     const c = rng.pick(colors);
-    px(ctx, cx, cy - 1, c);
-    px(ctx, cx - 1, cy, c);
-    px(ctx, cx + 1, cy, c);
-    px(ctx, cx, cy + 1, c);
-    px(ctx, cx, cy, '#f5b942');
-    px(ctx, cx, cy + 2, PAL.grassDark);
+    // 꽃잎 4장 (2×2 픽셀씩) + 노란 꽃술 + 줄기
+    rect(ctx, cx - 2, cy - 2, 2, 2, c);
+    rect(ctx, cx + 1, cy - 2, 2, 2, c);
+    rect(ctx, cx - 2, cy + 1, 2, 2, c);
+    rect(ctx, cx + 1, cy + 1, 2, 2, c);
+    rect(ctx, cx - 1, cy - 1, 2, 2, '#f5b942');
+    rect(ctx, cx, cy + 3, 1, 3, PAL.grassDark);
   }
 }
 
@@ -278,23 +305,24 @@ function drawFlower(ctx, x, y, gx, gy) {
 
 function drawFloor(ctx, x, y, gx, gy) {
   rect(ctx, x, y, TILE, TILE, PAL.floor);
-  rect(ctx, x, y + TILE - 1, TILE, 1, PAL.floorLine);
-  rect(ctx, x + TILE - 1, y, 1, TILE, PAL.floorLine);
+  rect(ctx, x, y + TILE - 2, TILE, 2, PAL.floorLine);
+  rect(ctx, x + TILE - 2, y, 2, TILE, PAL.floorLine);
+  rect(ctx, x, y, TILE, 1, mix(PAL.floor, '#ffffff', 0.4));
   const rng = at(gx, gy, 'fl');
-  for (let i = 0; i < 2; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), PAL.floorEdge);
+  for (let i = 0; i < 5; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), PAL.floorEdge);
 }
 
 function drawIndoorWall(ctx, x, y, gx, gy, map) {
   rect(ctx, x, y, TILE, TILE, PAL.indoorWall);
-  // 벽면 타일 무늬
-  rect(ctx, x, y, TILE, 1, PAL.indoorWallLight);
-  rect(ctx, x, y + 7, TILE, 1, PAL.indoorWallDark);
-  rect(ctx, x + 7, y, 1, 7, PAL.indoorWallDark);
-  rect(ctx, x, y + 8, 1, 8, PAL.indoorWallDark);
+  // 벽면 타일 무늬 (16px 칸 4개)
+  rect(ctx, x, y, TILE, 2, PAL.indoorWallLight);
+  rect(ctx, x, y + 15, TILE, 2, PAL.indoorWallDark);
+  rect(ctx, x + 15, y, 2, 15, PAL.indoorWallDark);
+  rect(ctx, x, y + 17, 2, 15, PAL.indoorWallDark);
   // 바닥과 만나는 면에 굽도리
   if (!sameKind(map, gx, gy + 1, 'indoorwall')) {
-    rect(ctx, x, y + TILE - 4, TILE, 3, PAL.indoorWallDark);
-    rect(ctx, x, y + TILE - 4, TILE, 1, PAL.outline);
+    rect(ctx, x, y + TILE - 8, TILE, 6, PAL.indoorWallDark);
+    rect(ctx, x, y + TILE - 8, TILE, 2, PAL.outline);
   }
 }
 
@@ -303,72 +331,85 @@ function drawMat(ctx, x, y, gx, gy, map) {
   const m = mask(map, gx, gy, 'mat');
   rect(ctx, x, y, TILE, TILE, PAL.mat);
   const rng = at(gx, gy, 'mt');
-  for (let i = 0; i < 3; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), PAL.matLight);
-  autoEdge(ctx, x, y, m, { rim: PAL.matDark, cut: PAL.floor, t: 2, corner: 2 });
+  for (let i = 0; i < 8; i++) px(ctx, x + rng.int(2, TILE - 3), y + rng.int(2, TILE - 3), PAL.matLight);
+  autoEdge(ctx, x, y, m, { rim: PAL.matDark, cut: PAL.floor, t: 4, corner: 4 });
 }
 
 /* ── 오브젝트 (타일 경계를 넘어 그려도 되는 것들) ───── */
 
 function drawTreeCanopy(ctx, x, y, gx, gy, pass) {
   const rng = at(gx, gy, 'tr');
-  const cx = x + 8;
-  const cy = y + 6 + rng.int(-1, 1);
+  const cx = x + 16;
+  const cy = y + 12 + rng.int(-2, 2);
   if (pass === 'outline') {
-    ellipse(ctx, cx, cy, 9.5, 8.5, PAL.treeLine);
+    ellipse(ctx, cx, cy, 19, 17, PAL.treeLine);
   } else if (pass === 'body') {
-    ellipse(ctx, cx, cy, 8.5, 7.5, PAL.treeDark);
-    ellipse(ctx, cx, cy - 1, 7.5, 6.5, PAL.tree);
+    ellipse(ctx, cx, cy, 17, 15, PAL.treeDark);
+    ellipse(ctx, cx, cy - 2, 15, 13, PAL.tree);
   } else {
-    // 잎 덩어리 하이라이트 — 뭉친 느낌을 주는 핵심
-    for (let i = 0; i < 4; i++) {
-      ellipse(ctx, cx + rng.int(-5, 4), cy - rng.int(0, 5), rng.int(2, 4), rng.int(2, 3), PAL.treeLight);
+    // 잎 덩어리 — 뭉친 느낌을 주는 핵심. 32px 라 덩어리를 여러 겹 얹을 수 있다
+    for (let i = 0; i < 9; i++) {
+      ellipse(ctx, cx + rng.int(-11, 9), cy - rng.int(0, 11), rng.int(3, 7), rng.int(3, 6), PAL.treeLight);
     }
-    for (let i = 0; i < 2; i++) {
-      ellipse(ctx, cx + rng.int(-4, 2), cy - rng.int(2, 6), 2, 1.5, PAL.treeHi);
+    for (let i = 0; i < 5; i++) {
+      ellipse(ctx, cx + rng.int(-9, 5), cy - rng.int(4, 13), rng.int(2, 4), 2, PAL.treeHi);
+    }
+    // 잎 사이 그늘
+    for (let i = 0; i < 4; i++) {
+      ellipse(ctx, cx + rng.int(-8, 8), cy + rng.int(2, 9), rng.int(2, 4), 2, PAL.treeDark);
     }
   }
 }
 
 function drawTrunk(ctx, x, y) {
-  rect(ctx, x + 6, y + 11, 4, 5, PAL.trunk);
-  rect(ctx, x + 6, y + 11, 1, 5, PAL.trunkDark);
-  rect(ctx, x + 6, y + 15, 4, 1, PAL.outline);
+  rect(ctx, x + 12, y + 21, 8, 11, PAL.trunk);
+  rect(ctx, x + 12, y + 21, 2, 11, PAL.trunkDark);
+  rect(ctx, x + 18, y + 21, 1, 11, PAL.trunkDark);
+  rect(ctx, x + 11, y + 30, 10, 2, PAL.outline);
+  rect(ctx, x + 13, y + 24, 1, 4, mix(PAL.trunk, '#ffffff', 0.25));
 }
 
 function drawBush(ctx, x, y, gx, gy) {
   const rng = at(gx, gy, 'bs');
-  ellipse(ctx, x + 8, y + 10, 7, 5.5, PAL.treeLine);
-  ellipse(ctx, x + 8, y + 9.5, 6, 4.5, PAL.treeDark);
-  ellipse(ctx, x + 8, y + 9, 5, 3.5, PAL.tree);
-  for (let i = 0; i < 3; i++) ellipse(ctx, x + rng.int(4, 11), y + rng.int(6, 10), 2, 1.5, PAL.treeLight);
+  ellipse(ctx, x + 16, y + 21, 14, 11, PAL.treeLine);
+  ellipse(ctx, x + 16, y + 20, 12, 9, PAL.treeDark);
+  ellipse(ctx, x + 16, y + 19, 10, 7, PAL.tree);
+  for (let i = 0; i < 7; i++) ellipse(ctx, x + rng.int(8, 23), y + rng.int(13, 22), rng.int(2, 4), 2, PAL.treeLight);
+  for (let i = 0; i < 3; i++) px(ctx, x + rng.int(9, 22), y + rng.int(13, 20), PAL.treeHi);
 }
 
 function drawRock(ctx, x, y) {
-  ellipse(ctx, x + 8, y + 11, 6.5, 4.5, PAL.outline);
-  ellipse(ctx, x + 8, y + 10, 5.5, 4, PAL.rock);
-  ellipse(ctx, x + 6, y + 9, 3, 2, PAL.rockLight);
-  ellipse(ctx, x + 10, y + 12, 3, 1.5, PAL.rockDark);
+  ellipse(ctx, x + 16, y + 22, 13, 9, PAL.outline);
+  ellipse(ctx, x + 16, y + 21, 11, 8, PAL.rock);
+  ellipse(ctx, x + 12, y + 18, 6, 4, PAL.rockLight);
+  ellipse(ctx, x + 20, y + 24, 6, 3, PAL.rockDark);
+  rect(ctx, x + 14, y + 22, 5, 1, PAL.rockDark);
+  rect(ctx, x + 10, y + 20, 3, 1, PAL.rockLight);
 }
 
 function drawFence(ctx, x, y, gx, gy, map) {
-  const railY = y + 6;
-  rect(ctx, x, railY, TILE, 2, PAL.fence);
-  rect(ctx, x, railY + 2, TILE, 1, PAL.fenceDark);
-  rect(ctx, x, railY + 3, TILE, 1, PAL.fenceLine);
+  const railY = y + 12;
+  rect(ctx, x, railY, TILE, 4, PAL.fence);
+  rect(ctx, x, railY + 4, TILE, 2, PAL.fenceDark);
+  rect(ctx, x, railY + 6, TILE, 1, PAL.fenceLine);
+  rect(ctx, x, railY, TILE, 1, '#ffffff');
   // 기둥은 두 칸마다 (연속 울타리가 촘촘해 보이지 않게)
   if ((gx + gy) % 2 === 0 || !sameKind(map, gx + 1, gy, 'fence')) {
-    rect(ctx, x + 6, y + 2, 4, 13, PAL.fence);
-    rect(ctx, x + 9, y + 2, 1, 13, PAL.fenceDark);
-    rect(ctx, x + 6, y + 14, 4, 1, PAL.fenceLine);
+    rect(ctx, x + 12, y + 4, 8, 26, PAL.fence);
+    rect(ctx, x + 12, y + 4, 2, 26, '#ffffff');
+    rect(ctx, x + 18, y + 4, 2, 26, PAL.fenceDark);
+    rect(ctx, x + 12, y + 28, 8, 2, PAL.fenceLine);
   }
 }
 
 function drawSign(ctx, x, y) {
-  rect(ctx, x + 7, y + 10, 2, 5, PAL.trunkDark);
-  rect(ctx, x + 2, y + 2, 12, 9, PAL.outline);
-  rect(ctx, x + 3, y + 3, 10, 7, PAL.trunk);
-  rect(ctx, x + 3, y + 3, 10, 1, mix(PAL.trunk, '#ffffff', 0.35));
-  for (let i = 0; i < 3; i++) rect(ctx, x + 4, y + 5 + i * 2, 8, 1, PAL.trunkDark);
+  rect(ctx, x + 14, y + 20, 4, 11, PAL.trunkDark);
+  rect(ctx, x + 13, y + 30, 6, 2, PAL.outline);
+  rect(ctx, x + 4, y + 4, 24, 18, PAL.outline);
+  rect(ctx, x + 6, y + 6, 20, 14, PAL.trunk);
+  rect(ctx, x + 6, y + 6, 20, 2, mix(PAL.trunk, '#ffffff', 0.4));
+  rect(ctx, x + 6, y + 18, 20, 2, PAL.trunkDark);
+  for (let i = 0; i < 4; i++) rect(ctx, x + 9, y + 9 + i * 3, 14, 1, PAL.trunkDark);
 }
 
 /* ── 건물 ───────────────────────────────────────────── */
@@ -388,45 +429,49 @@ function drawRoofKind(ctx, x, y, gx, gy, map, kind) {
   const st = ROOF_STYLE[kind] || ROOF_STYLE.roof;
   const m = mask(map, gx, gy, kind);
   rect(ctx, x, y, TILE, TILE, st.base);
-  for (let i = 0; i < TILE; i += 4) {
-    rect(ctx, x, y + i, TILE, 1, st.dark);
-    rect(ctx, x, y + i + 1, TILE, 1, mix(st.base, st.light, 0.5));
+  // 기와 결 — 8px 간격, 밝은 면/어두운 면
+  for (let i = 0; i < TILE; i += 8) {
+    rect(ctx, x, y + i, TILE, 2, st.dark);
+    rect(ctx, x, y + i + 2, TILE, 2, mix(st.base, st.light, 0.55));
   }
   if (!m.n) {
-    rect(ctx, x, y, TILE, 2, st.light);
-    rect(ctx, x, y + 2, TILE, 1, st.dark);
-    rect(ctx, x, y, TILE, 1, PAL.outline);
+    // 용마루
+    rect(ctx, x, y, TILE, 4, st.light);
+    rect(ctx, x, y + 4, TILE, 2, st.dark);
+    rect(ctx, x, y, TILE, 2, PAL.outline);
   }
   if (!m.s) {
-    rect(ctx, x, y + TILE - 4, TILE, 3, st.dark);
-    rect(ctx, x, y + TILE - 1, TILE, 1, PAL.outline);
+    // 처마
+    rect(ctx, x, y + TILE - 7, TILE, 5, st.dark);
+    rect(ctx, x, y + TILE - 2, TILE, 2, PAL.outline);
   }
   if (!m.w) {
-    rect(ctx, x, y, 1, TILE, PAL.outline);
-    rect(ctx, x + 1, y, 1, TILE, st.trim || st.dark);
-    if (st.trim) rect(ctx, x + 2, y, 1, TILE, st.trim);
+    rect(ctx, x, y, 2, TILE, PAL.outline);
+    rect(ctx, x + 2, y, 2, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + 4, y, 2, TILE, st.trim);
   }
   if (!m.e) {
-    rect(ctx, x + TILE - 1, y, 1, TILE, PAL.outline);
-    rect(ctx, x + TILE - 2, y, 1, TILE, st.trim || st.dark);
-    if (st.trim) rect(ctx, x + TILE - 3, y, 1, TILE, st.trim);
+    rect(ctx, x + TILE - 2, y, 2, TILE, PAL.outline);
+    rect(ctx, x + TILE - 4, y, 2, TILE, st.trim || st.dark);
+    if (st.trim) rect(ctx, x + TILE - 6, y, 2, TILE, st.trim);
   }
   // 건물 심볼 — 지붕 가운데 한 칸에만
   if (st.symbol && !m.n && m.s) {
     const cx = x + TILE / 2;
-    const cy = y + TILE / 2 + 2;
+    const cy = y + TILE / 2 + 4;
     if (st.symbol === 'ball' && gx % 6 === 2) {
-      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
-      ellipse(ctx, cx, cy, 4, 4, '#f8f8f8');
-      rect(ctx, x + 3, y + Math.round(TILE / 2), 11, 1, PAL.outline);
-      ellipse(ctx, cx, cy - 2.5, 3.6, 2.4, '#e04030');
-      ellipse(ctx, cx, cy, 1.6, 1.6, PAL.outline);
-      ellipse(ctx, cx, cy, 0.9, 0.9, '#f8f8f8');
+      ellipse(ctx, cx, cy, 11, 11, PAL.outline);
+      ellipse(ctx, cx, cy, 9, 9, '#f8f8f8');
+      ellipse(ctx, cx, cy - 5, 8.4, 5, '#e04030');
+      rect(ctx, x + 6, y + Math.round(TILE / 2) + 3, 21, 2, PAL.outline);
+      ellipse(ctx, cx, cy, 3.6, 3.6, PAL.outline);
+      ellipse(ctx, cx, cy, 2, 2, '#f8f8f8');
     }
     if (st.symbol === 'badge' && gx % 9 === 4) {
-      ellipse(ctx, cx, cy, 5, 5, PAL.outline);
-      ellipse(ctx, cx, cy, 4, 4, '#ffd166');
-      ellipse(ctx, cx, cy, 2, 2, '#f0f4f8');
+      ellipse(ctx, cx, cy, 11, 11, PAL.outline);
+      ellipse(ctx, cx, cy, 9, 9, '#ffd166');
+      ellipse(ctx, cx, cy, 4.5, 4.5, '#f0f4f8');
+      ellipse(ctx, cx - 3, cy - 3, 2, 2, '#fff4c0');
     }
   }
 }
@@ -437,60 +482,66 @@ function drawRoof(ctx, x, y, gx, gy, map) {
 
 function drawWallBase(ctx, x, y, gx, gy, map) {
   rect(ctx, x, y, TILE, TILE, PAL.wall);
-  // 벽돌 줄눈
-  rect(ctx, x, y + 7, TILE, 1, PAL.wallDark);
-  rect(ctx, x, y + 15, TILE, 1, PAL.wallDark);
-  rect(ctx, x + 7, y, 1, 7, PAL.wallDark);
-  rect(ctx, x, y + 8, 1, 7, PAL.wallDark);
-  if (!sameKind(map, gx - 1, gy, 'wall') && !sameKind(map, gx - 1, gy, 'window') && !sameKind(map, gx - 1, gy, 'door')) {
-    rect(ctx, x, y, 1, TILE, PAL.wallLine);
-  }
-  if (!sameKind(map, gx + 1, gy, 'wall') && !sameKind(map, gx + 1, gy, 'window') && !sameKind(map, gx + 1, gy, 'door')) {
-    rect(ctx, x + TILE - 1, y, 1, TILE, PAL.wallLine);
-  }
-  if (!sameKind(map, gx, gy + 1, 'wall')) rect(ctx, x, y + TILE - 1, TILE, 1, PAL.outline);
+  // 벽돌 줄눈 (가로 두 줄, 세로는 엇갈리게)
+  rect(ctx, x, y + 15, TILE, 2, PAL.wallDark);
+  rect(ctx, x, y + 31, TILE, 1, PAL.wallDark);
+  rect(ctx, x + 15, y, 2, 15, PAL.wallDark);
+  rect(ctx, x, y + 17, 2, 15, PAL.wallDark);
+  rect(ctx, x, y, TILE, 2, mix(PAL.wall, '#ffffff', 0.5));
+  const joined = (dx, dy) =>
+    sameKind(map, gx + dx, gy + dy, 'wall') ||
+    sameKind(map, gx + dx, gy + dy, 'window') ||
+    sameKind(map, gx + dx, gy + dy, 'door');
+  if (!joined(-1, 0)) rect(ctx, x, y, 2, TILE, PAL.wallLine);
+  if (!joined(1, 0)) rect(ctx, x + TILE - 2, y, 2, TILE, PAL.wallLine);
+  if (!sameKind(map, gx, gy + 1, 'wall')) rect(ctx, x, y + TILE - 2, TILE, 2, PAL.outline);
 }
 
 function drawWindow(ctx, x, y, gx, gy, map) {
   drawWallBase(ctx, x, y, gx, gy, map);
-  rect(ctx, x + 2, y + 3, 12, 9, PAL.outline);
-  rect(ctx, x + 3, y + 4, 10, 7, PAL.window);
-  rect(ctx, x + 3, y + 4, 10, 2, mix(PAL.window, '#ffffff', 0.55));
-  rect(ctx, x + 3, y + 9, 10, 2, PAL.windowDark);
-  rect(ctx, x + 7, y + 4, 1, 7, PAL.outline);
+  rect(ctx, x + 4, y + 6, 24, 18, PAL.outline);
+  rect(ctx, x + 6, y + 8, 20, 14, PAL.window);
+  rect(ctx, x + 6, y + 8, 20, 4, mix(PAL.window, '#ffffff', 0.6));
+  rect(ctx, x + 6, y + 18, 20, 4, PAL.windowDark);
+  rect(ctx, x + 15, y + 8, 2, 14, PAL.outline);
+  rect(ctx, x + 6, y + 14, 20, 2, PAL.outline);
+  rect(ctx, x + 8, y + 9, 4, 2, '#ffffff');
 }
 
 function drawDoor(ctx, x, y, gx, gy, map) {
   drawWallBase(ctx, x, y, gx, gy, map);
-  rect(ctx, x + 2, y + 1, 12, 15, PAL.outline);
-  rect(ctx, x + 3, y + 2, 10, 14, PAL.door);
-  rect(ctx, x + 4, y + 3, 8, 12, mix(PAL.door, '#ffffff', 0.22));
-  rect(ctx, x + 4, y + 3, 8, 1, mix(PAL.door, '#ffffff', 0.5));
-  rect(ctx, x + 8, y + 2, 1, 14, PAL.doorDark);
-  px(ctx, x + 6, y + 9, '#ffd166');
-  px(ctx, x + 10, y + 9, '#ffd166');
+  rect(ctx, x + 4, y + 2, 24, 30, PAL.outline);
+  rect(ctx, x + 6, y + 4, 20, 28, PAL.door);
+  rect(ctx, x + 8, y + 6, 16, 24, mix(PAL.door, '#ffffff', 0.22));
+  rect(ctx, x + 8, y + 6, 16, 2, mix(PAL.door, '#ffffff', 0.5));
+  rect(ctx, x + 15, y + 4, 2, 28, PAL.doorDark);
+  // 손잡이 두 개 + 문틀 그늘
+  rect(ctx, x + 12, y + 18, 2, 3, '#ffd166');
+  rect(ctx, x + 18, y + 18, 2, 3, '#ffd166');
+  rect(ctx, x + 6, y + 28, 20, 2, PAL.doorDark);
 }
 
 /** 센터 카운터 */
 function drawCounter(ctx, x, y, gx, gy, map) {
   drawFloor(ctx, x, y, gx, gy);
-  rect(ctx, x, y + 2, TILE, 12, '#e8c890');
-  rect(ctx, x, y + 2, TILE, 2, '#f8e0b0');
-  rect(ctx, x, y + 12, TILE, 2, '#b08850');
-  rect(ctx, x, y + 14, TILE, 1, PAL.outline);
-  rect(ctx, x, y + 1, TILE, 1, PAL.outline);
-  if (!sameKind(map, gx - 1, gy, 'counter')) rect(ctx, x, y + 2, 1, 12, PAL.outline);
-  if (!sameKind(map, gx + 1, gy, 'counter')) rect(ctx, x + TILE - 1, y + 2, 1, 12, PAL.outline);
+  rect(ctx, x, y + 4, TILE, 24, '#e8c890');
+  rect(ctx, x, y + 4, TILE, 4, '#f8e0b0');
+  rect(ctx, x, y + 24, TILE, 4, '#b08850');
+  rect(ctx, x, y + 28, TILE, 2, PAL.outline);
+  rect(ctx, x, y + 2, TILE, 2, PAL.outline);
+  if (!sameKind(map, gx - 1, gy, 'counter')) rect(ctx, x, y + 4, 2, 24, PAL.outline);
+  if (!sameKind(map, gx + 1, gy, 'counter')) rect(ctx, x + TILE - 2, y + 4, 2, 24, PAL.outline);
 }
 
 function drawPlant(ctx, x, y, gx, gy) {
   drawFloor(ctx, x, y, gx, gy);
-  rect(ctx, x + 4, y + 10, 8, 6, PAL.outline);
-  rect(ctx, x + 5, y + 10, 6, 5, '#b5651d');
-  rect(ctx, x + 5, y + 10, 6, 1, '#d98d4a');
-  ellipse(ctx, x + 8, y + 7, 5.5, 5, PAL.treeLine);
-  ellipse(ctx, x + 8, y + 7, 4.5, 4, PAL.tree);
-  ellipse(ctx, x + 6, y + 5, 2, 1.5, PAL.treeLight);
+  rect(ctx, x + 8, y + 20, 16, 12, PAL.outline);
+  rect(ctx, x + 10, y + 20, 12, 10, '#b5651d');
+  rect(ctx, x + 10, y + 20, 12, 2, '#d98d4a');
+  ellipse(ctx, x + 16, y + 14, 11, 10, PAL.treeLine);
+  ellipse(ctx, x + 16, y + 14, 9, 8, PAL.tree);
+  ellipse(ctx, x + 12, y + 10, 4, 3, PAL.treeLight);
+  ellipse(ctx, x + 20, y + 16, 3, 2, PAL.treeDark);
 }
 
 /* ── 프리렌더 ───────────────────────────────────────── */

@@ -243,16 +243,16 @@ export class FieldScene {
     const target = this.game.presenter.enabled ? this.game.presenter.current() : null;
     if (target) {
       const cx = target.x * TILE - cam.x + TILE / 2;
-      const cy = target.y * TILE - cam.y - 4 + Math.round(Math.sin(time * 5) * 2);
+      const cy = target.y * TILE - cam.y - 8 + Math.round(Math.sin(time * 5) * 4);
       ctx.fillStyle = '#ffd166';
       ctx.beginPath();
-      ctx.moveTo(cx - 4, cy - 5);
-      ctx.lineTo(cx + 4, cy - 5);
-      ctx.lineTo(cx, cy + 1);
+      ctx.moveTo(cx - 8, cy - 10);
+      ctx.lineTo(cx + 8, cy - 10);
+      ctx.lineTo(cx, cy + 2);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#2a2028';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
 

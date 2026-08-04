@@ -12,8 +12,8 @@ import { makeCanvas, rect, px, ellipse } from './pixel.js';
 import { shade } from '../../core/color.js';
 import { characterAsset } from './assets.js';
 
-export const CW = 16; // 스프라이트 폭
-export const CH = 24; // 높이 (타일 16보다 커서 머리가 윗 타일을 덮는다)
+export const CW = 32; // 스프라이트 폭 (타일 32 와 같은 폭)
+export const CH = 48; // 높이 — 타일보다 커서 머리가 윗 타일을 덮는다
 export const DIRS = ['down', 'left', 'right', 'up'];
 /** 걷기 순서: 정지 - 왼발 - 정지 - 오른발 */
 export const WALK_CYCLE = [0, 1, 0, 2];
@@ -36,112 +36,132 @@ export const PALETTES = {
 function drawHair(ctx, ox, oy, dir, pal, bob) {
   const hair = pal.hair;
   const hairLit = shade(hair, 34);
-  const hairDark = shade(hair, -22);
+  const hairDark = shade(hair, -24);
   const y = oy + bob;
 
   if (pal.cap) {
     const cap = pal.cap;
-    rect(ctx, ox + 3, y + 1, 10, 4, cap);
-    rect(ctx, ox + 4, y + 1, 8, 1, shade(cap, 40));
-    rect(ctx, ox + 3, y + 4, 10, 1, shade(cap, -45));
-    // 챙 — 보는 방향으로 나온다
-    if (dir === 'down') rect(ctx, ox + 3, y + 5, 10, 1, shade(cap, -45));
-    if (dir === 'left') rect(ctx, ox + 1, y + 5, 6, 1, shade(cap, -45));
-    if (dir === 'right') rect(ctx, ox + 9, y + 5, 6, 1, shade(cap, -45));
-    if (dir === 'up') {
-      rect(ctx, ox + 3, y + 5, 10, 4, hair);
-      rect(ctx, ox + 4, y + 5, 8, 1, hairLit);
-    } else {
-      rect(ctx, ox + 3, y + 6, 2, 3, hair);
-      rect(ctx, ox + 11, y + 6, 2, 3, hair);
+    const capLit = shade(cap, 42);
+    const capDark = shade(cap, -48);
+    // 크라운
+    rect(ctx, ox + 6, y + 2, 20, 8, cap);
+    rect(ctx, ox + 8, y + 2, 14, 3, capLit);
+    rect(ctx, ox + 6, y + 8, 20, 2, capDark);
+    rect(ctx, ox + 15, y + 3, 2, 6, capLit); // 봉제선
+    // 챙 — 보는 방향으로
+    if (dir === 'down') {
+      rect(ctx, ox + 5, y + 10, 22, 3, capDark);
+      rect(ctx, ox + 7, y + 13, 18, 1, shade(cap, -60));
     }
+    if (dir === 'right') rect(ctx, ox + 18, y + 10, 12, 3, capDark);
+    if (dir === 'left') rect(ctx, ox + 2, y + 10, 12, 3, capDark);
+    if (dir === 'up') {
+      rect(ctx, ox + 6, y + 10, 20, 8, hair);
+      rect(ctx, ox + 8, y + 10, 14, 2, hairLit);
+      return;
+    }
+    // 모자 밑으로 나온 머리
+    rect(ctx, ox + 6, y + 12, 4, 7, hair);
+    rect(ctx, ox + 22, y + 12, 4, 7, hair);
     return;
   }
 
   if (dir === 'up') {
-    rect(ctx, ox + 3, y + 1, 10, 9, hair);
-    rect(ctx, ox + 4, y + 1, 7, 2, hairLit);
-    rect(ctx, ox + 3, y + 8, 10, 2, hairDark);
+    rect(ctx, ox + 6, y + 2, 20, 18, hair);
+    rect(ctx, ox + 9, y + 2, 12, 4, hairLit);
+    rect(ctx, ox + 6, y + 16, 20, 4, hairDark);
     return;
   }
-  rect(ctx, ox + 3, y + 1, 10, 4, hair);
-  rect(ctx, ox + 4, y + 1, 6, 1, hairLit);
-  rect(ctx, ox + 3, y + 5, 2, 4, hair);
-  rect(ctx, ox + 11, y + 5, 2, 4, hair);
-  if (dir === 'left') rect(ctx, ox + 3, y + 4, 5, 2, hair);
-  if (dir === 'right') rect(ctx, ox + 8, y + 4, 5, 2, hair);
+  // 앞머리 + 옆머리
+  rect(ctx, ox + 6, y + 2, 20, 8, hair);
+  rect(ctx, ox + 9, y + 2, 10, 2, hairLit);
+  rect(ctx, ox + 6, y + 10, 4, 8, hair);
+  rect(ctx, ox + 22, y + 10, 4, 8, hair);
   if (dir === 'down') {
-    rect(ctx, ox + 4, y + 4, 3, 1, hairDark);
-    rect(ctx, ox + 9, y + 4, 3, 1, hairDark);
+    // 앞머리 갈래
+    rect(ctx, ox + 8, y + 9, 6, 2, hairDark);
+    rect(ctx, ox + 18, y + 9, 6, 2, hairDark);
+    rect(ctx, ox + 14, y + 9, 4, 1, hairDark);
   }
+  if (dir === 'right') rect(ctx, ox + 16, y + 8, 10, 3, hair);
+  if (dir === 'left') rect(ctx, ox + 6, y + 8, 10, 3, hair);
 }
 
 function drawFace(ctx, ox, oy, dir, pal, bob) {
   const y = oy + bob;
   const skin = pal.skin;
-  rect(ctx, ox + 3, y + 4, 10, 6, skin);
-  rect(ctx, ox + 4, y + 10, 8, 1, skin);
-  rect(ctx, ox + 11, y + 5, 2, 5, shade(skin, -28)); // 오른쪽 그늘
+  const skinDark = shade(skin, -26);
+  // 얼굴
+  rect(ctx, ox + 7, y + 9, 18, 12, skin);
+  rect(ctx, ox + 9, y + 21, 14, 2, skin);
+  rect(ctx, ox + 21, y + 10, 4, 11, skinDark); // 오른쪽 그늘
 
   const eye = '#241f2b';
   if (dir === 'down') {
-    rect(ctx, ox + 5, y + 6, 2, 2, eye);
-    rect(ctx, ox + 9, y + 6, 2, 2, eye);
-    px(ctx, ox + 5, y + 6, '#ffffff');
-    px(ctx, ox + 9, y + 6, '#ffffff');
-    rect(ctx, ox + 7, y + 9, 2, 1, shade(skin, -45));
-  } else if (dir === 'left') {
-    rect(ctx, ox + 4, y + 6, 2, 2, eye);
-    px(ctx, ox + 4, y + 6, '#ffffff');
-    rect(ctx, ox + 3, y + 9, 2, 1, shade(skin, -45));
+    rect(ctx, ox + 10, y + 13, 4, 5, eye);
+    rect(ctx, ox + 18, y + 13, 4, 5, eye);
+    rect(ctx, ox + 10, y + 13, 2, 2, '#ffffff');
+    rect(ctx, ox + 18, y + 13, 2, 2, '#ffffff');
+    rect(ctx, ox + 15, y + 19, 3, 1, skinDark); // 입
   } else if (dir === 'right') {
-    rect(ctx, ox + 10, y + 6, 2, 2, eye);
-    px(ctx, ox + 10, y + 6, '#ffffff');
-    rect(ctx, ox + 11, y + 9, 2, 1, shade(skin, -45));
+    rect(ctx, ox + 19, y + 13, 4, 5, eye);
+    rect(ctx, ox + 19, y + 13, 2, 2, '#ffffff');
+    rect(ctx, ox + 23, y + 18, 2, 1, skinDark);
+  } else if (dir === 'left') {
+    rect(ctx, ox + 9, y + 13, 4, 5, eye);
+    rect(ctx, ox + 9, y + 13, 2, 2, '#ffffff');
+    rect(ctx, ox + 7, y + 18, 2, 1, skinDark);
   }
 }
 
 function drawBody(ctx, ox, oy, dir, frame, pal, bob) {
   const shirt = pal.shirt;
   const lit = shade(shirt, 34);
-  const dark = shade(shirt, -40);
+  const dark = shade(shirt, -42);
   const y = oy + bob;
 
-  rect(ctx, ox + 4, y + 11, 8, 6, shirt);
-  rect(ctx, ox + 4, y + 11, 8, 1, lit);
-  rect(ctx, ox + 10, y + 12, 2, 5, dark);
-  rect(ctx, ox + 4, y + 16, 8, 1, dark);
+  // 몸통
+  rect(ctx, ox + 8, y + 23, 16, 12, shirt);
+  rect(ctx, ox + 8, y + 23, 16, 2, lit);
+  rect(ctx, ox + 20, y + 25, 4, 10, dark);
+  rect(ctx, ox + 8, y + 33, 16, 2, dark);
+  // 옷깃
+  if (dir === 'down') {
+    rect(ctx, ox + 13, y + 23, 6, 2, dark);
+    rect(ctx, ox + 15, y + 25, 2, 4, dark);
+  }
 
   // 팔 — 걸을 때 앞뒤로
-  const swing = frame === 1 ? 1 : frame === 2 ? -1 : 0;
-  const armL = y + 12 + swing;
-  const armR = y + 12 - swing;
-  rect(ctx, ox + 3, armL, 2, 4, dir === 'left' ? shirt : shirt);
-  rect(ctx, ox + 12, armR, 2, 4, dir === 'right' ? shirt : dark);
-  rect(ctx, ox + 3, armL + 4, 2, 1, pal.skin);
-  rect(ctx, ox + 12, armR + 4, 2, 1, shade(pal.skin, -25));
+  const swing = frame === 1 ? 2 : frame === 2 ? -2 : 0;
+  rect(ctx, ox + 5, y + 25 + swing, 4, 8, shirt);
+  rect(ctx, ox + 23, y + 25 - swing, 4, 8, dark);
+  rect(ctx, ox + 5, y + 33 + swing, 4, 3, pal.skin); // 손
+  rect(ctx, ox + 23, y + 33 - swing, 4, 3, shade(pal.skin, -25));
 }
 
 function drawLegs(ctx, ox, oy, frame, pal) {
   const pants = pal.pants;
   const lit = shade(pants, 28);
-  const dark = shade(pants, -35);
-  // 프레임마다 한쪽 다리가 앞으로 나가 길이가 달라진다
-  const l = frame === 1 ? 4 : frame === 2 ? 6 : 5;
-  const r = frame === 1 ? 6 : frame === 2 ? 4 : 5;
-  rect(ctx, ox + 5, oy + 17, 3, l, pants);
-  rect(ctx, ox + 5, oy + 17, 1, l, lit);
-  rect(ctx, ox + 8, oy + 17, 3, r, pants);
-  rect(ctx, ox + 10, oy + 17, 1, r, dark);
-  rect(ctx, ox + 5, oy + 17 + l, 3, 1, pal.shoes);
-  rect(ctx, ox + 8, oy + 17 + r, 3, 1, pal.shoes);
+  const dark = shade(pants, -38);
+  // 프레임마다 다리 길이가 달라져 걷는 느낌이 난다
+  const l = frame === 1 ? 7 : frame === 2 ? 11 : 9;
+  const r = frame === 1 ? 11 : frame === 2 ? 7 : 9;
+  rect(ctx, ox + 10, oy + 35, 6, l, pants);
+  rect(ctx, ox + 10, oy + 35, 2, l, lit);
+  rect(ctx, ox + 16, oy + 35, 6, r, pants);
+  rect(ctx, ox + 20, oy + 35, 2, r, dark);
+  // 신발
+  rect(ctx, ox + 9, oy + 35 + l, 7, 3, pal.shoes);
+  rect(ctx, ox + 16, oy + 35 + r, 7, 3, pal.shoes);
+  rect(ctx, ox + 9, oy + 37 + l, 7, 1, shade(pal.shoes, -30));
+  rect(ctx, ox + 16, oy + 37 + r, 7, 1, shade(pal.shoes, -30));
 }
 
 function drawTrainer(ctx, ox, oy, dir, frame, pal) {
-  const bob = frame === 0 ? 0 : -1; // 걸을 때 몸이 1px 뜬다
+  const bob = frame === 0 ? 0 : -1; // 걸을 때 상체가 1px 뜬다
   drawLegs(ctx, ox, oy, frame, pal);
   drawBody(ctx, ox, oy, dir, frame, pal, bob);
-  if (dir === 'up') rect(ctx, ox + 3, oy + bob + 4, 10, 6, pal.hair);
+  if (dir === 'up') rect(ctx, ox + 7, oy + bob + 9, 18, 12, pal.hair);
   else drawFace(ctx, ox, oy, dir, pal, bob);
   drawHair(ctx, ox, oy, dir, pal, bob);
 }
@@ -168,6 +188,11 @@ function addOutline(ctx, w, h, color = OUTLINE) {
   for (const [x, y] of targets) ctx.fillRect(x, y, 1, 1);
 }
 
+/** 해상도가 2배가 되면 외곽선도 두 번 둘러야 같은 굵기로 보인다 */
+function addOutlineThick(ctx, w, h, passes = 2) {
+  for (let i = 0; i < passes; i++) addOutline(ctx, w, h);
+}
+
 /**
  * 팔레트 하나로 시트 생성 (4방향 × 3프레임 + 발밑 그림자).
  * @returns {{canvas:HTMLCanvasElement, w:number, h:number}}
@@ -181,13 +206,13 @@ export function makeCharSheet(paletteId = 'red') {
       drawTrainer(ctx, frame * CW, row * CH, dir, frame, pal);
     }
   });
-  addOutline(ctx, canvas.width, canvas.height);
+  addOutlineThick(ctx, canvas.width, canvas.height, 2);
 
   // 그림자는 외곽선 뒤에 깐다 (윤곽선이 그림자까지 두르면 안 되므로)
   ctx.globalCompositeOperation = 'destination-over';
   DIRS.forEach((_, row) => {
     for (let frame = 0; frame < 3; frame++) {
-      ellipse(ctx, frame * CW + 8, row * CH + 22, 5, 2, 'rgba(0,0,0,0.25)');
+      ellipse(ctx, frame * CW + 16, row * CH + 45, 10, 4, 'rgba(0,0,0,0.25)');
     }
   });
   ctx.globalCompositeOperation = 'source-over';

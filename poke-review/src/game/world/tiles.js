@@ -3,7 +3,7 @@
  * 새 타일을 만들려면 여기에 한 줄 추가하고 engine/tileset.js 에 그리는 법을 적으면 된다.
  */
 
-export const TILE = 16; // 타일 한 칸의 픽셀 크기
+export const TILE = 32; // 타일 한 칸의 픽셀 크기 (16 → 32 로 올려 디테일을 4배로)
 
 /**
  * kind : 그리는 방식 (tileset.js 가 참조)

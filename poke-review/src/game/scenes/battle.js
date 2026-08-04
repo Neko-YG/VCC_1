@@ -115,37 +115,37 @@ export class BattleScene {
 
     // 등장: 양쪽에서 미끄러져 들어온다
     const k = this.intro / INTRO;
-    const slideFoe = Math.round(k * k * 90);
-    const slidePlayer = Math.round(-k * k * 90);
+    const slideFoe = Math.round(k * k * 180);
+    const slidePlayer = Math.round(-k * k * 180);
 
-    const shakeX = this.shake > 0 ? Math.round(Math.sin(time * 90) * 2) : 0;
+    const shakeX = this.shake > 0 ? Math.round(Math.sin(time * 90) * 4) : 0;
     ctx.save();
     ctx.translate(shakeX, 0);
 
-    this.platform(ctx, W - 84 + slideFoe, 74, 70, 12);
-    this.platform(ctx, 8 + slidePlayer, H - 62, 86, 14);
+    this.platform(ctx, W - 168 + slideFoe, 148, 140, 24);
+    this.platform(ctx, 16 + slidePlayer, H - 124, 172, 28);
 
     drawMonster(
       ctx,
       { speciesId: `boss:${this.boss.id}`, type: this.boss.type, stage: 3, expression: faceFor(this.foeHp) },
-      { x: W - 76 + slideFoe, y: 30 + this.faint.foe * 26, size: 52, flash: this.flash.foe, alpha: 1 - this.faint.foe },
+      { x: W - 152 + slideFoe, y: 60 + this.faint.foe * 52, size: 104, flash: this.flash.foe, alpha: 1 - this.faint.foe },
     );
     drawMonster(
       ctx,
       { speciesId: this.entry.species.id, type: this.entry.species.type, stage: this.entry.form.stage, back: true },
-      { x: 20 + slidePlayer, y: H - 118 + this.faint.player * 26, size: 58, flash: this.flash.player, alpha: 1 - this.faint.player },
+      { x: 40 + slidePlayer, y: H - 236 + this.faint.player * 52, size: 116, flash: this.flash.player, alpha: 1 - this.faint.player },
     );
 
     ctx.restore();
 
-    if (this.intro <= 0) this.moveGrid(ctx, 6, 44);
+    if (this.intro <= 0) this.activeMoveChip(ctx, W - 216, H - 130);
 
     // 체력 상자는 반대편에서 들어온다
-    this.hpBox(ctx, 6 - slideFoe, 8, this.boss.name, this.boss.level, this.foeHp, null);
+    this.hpBox(ctx, 12 - slideFoe, 16, this.boss.name, this.boss.level, this.foeHp, null);
     this.hpBox(
       ctx,
-      W - 122 - slidePlayer,
-      H - 98,
+      W - 244 - slidePlayer,
+      H - 208,
       this.entry.form.name,
       this.entry.progress.level,
       this.playerHp,
@@ -154,39 +154,36 @@ export class BattleScene {
   }
 
   /**
-   * 기술 4개를 2×2 로 (4세대 기술 선택 화면의 배치).
-   * 관전 화면이라 '무엇을 썼는지'를 보여주는 용도 — 쓰인 기술에 커서가 붙는다.
+   * 지금 쓴 기술 한 칸 (4세대 기술 칸의 생김새 — 이름 + 타입 색 띠 + 위력).
+   * 4개를 늘 띄우면 몬스터·체력 상자와 자리를 다투므로, 쓰는 순간만 보여준다.
    */
-  moveGrid(ctx, x, y) {
-    const cw = 58;
-    const ch = 24;
+  activeMoveChip(ctx, x, y) {
+    const mv = this.moves[this.activeMove];
+    if (!mv) return;
+    const w = 200;
+    const h = 34;
+    const type = TYPES[mv.type];
+    roundRect(ctx, x, y, w, h, 6, '#fffbe8', '#e8a020');
+    ctx.fillStyle = type?.color || '#888';
+    ctx.fillRect(x + 6, y + h - 7, w - 12, 4);
+
     ctx.textBaseline = 'top';
-    this.moves.forEach((mv, i) => {
-      const cx = x + (i % 2) * (cw + 3);
-      const cy = y + Math.floor(i / 2) * (ch + 3);
-      const active = i === this.activeMove;
-      const type = TYPES[mv.type];
-      roundRect(ctx, cx, cy, cw, ch, 4, active ? '#fffbe8' : 'rgba(248,244,232,0.82)', active ? '#e8a020' : '#6a6058');
-      // 타입 띠 — 4세대 기술 칸의 타입 표시
-      ctx.fillStyle = type?.color || '#888';
-      ctx.fillRect(cx + 3, cy + ch - 5, cw - 6, 3);
-      ctx.fillStyle = '#3a3430';
-      ctx.font = 'bold 8px system-ui, sans-serif';
-      ctx.fillText(KPI_BY_ID[mv.kpiId]?.name || mv.name, cx + (active ? 10 : 5), cy + 3);
-      ctx.fillStyle = '#8a8078';
-      ctx.font = '7px system-ui, sans-serif';
-      ctx.fillText(`위력 ${mv.power}`, cx + 5, cy + 12);
-      ctx.font = 'bold 8px system-ui, sans-serif';
-      if (active) {
-        ctx.fillStyle = '#e8a020';
-        ctx.beginPath();
-        ctx.moveTo(cx + 4, cy + 4);
-        ctx.lineTo(cx + 8, cy + 7);
-        ctx.lineTo(cx + 4, cy + 10);
-        ctx.closePath();
-        ctx.fill();
-      }
-    });
+    ctx.fillStyle = '#e8a020';
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + 8);
+    ctx.lineTo(x + 15, y + 13);
+    ctx.lineTo(x + 8, y + 18);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#3a3430';
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.fillText(KPI_BY_ID[mv.kpiId]?.name || mv.name, x + 22, y + 6);
+    ctx.fillStyle = '#8a8078';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`위력 ${mv.power}`, x + w - 10, y + 9);
+    ctx.textAlign = 'left';
   }
 
   /** 하늘 → 지평선 → 배틀 필드 */
@@ -200,16 +197,16 @@ export class BattleScene {
     ctx.fillRect(0, 0, W, H);
 
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillRect(0, Math.round(H * 0.44) - 2, W, 2);
+    ctx.fillRect(0, Math.round(H * 0.44) - 4, W, 4);
     ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    for (let y = Math.round(H * 0.5); y < H; y += 6) ctx.fillRect(0, y, W, 1);
+    for (let y = Math.round(H * 0.5); y < H; y += 12) ctx.fillRect(0, y, W, 2);
   }
 
   /** 타원 발판 */
   platform(ctx, x, y, w, h) {
     ctx.fillStyle = 'rgba(0,0,0,0.14)';
     ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2 + 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w / 2, y + h / 2 + 4, w / 2, h / 2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#8ecf62';
     ctx.beginPath();
@@ -217,7 +214,7 @@ export class BattleScene {
     ctx.fill();
     ctx.fillStyle = '#6aa845';
     ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h / 2 + 2, w / 2 - 3, h / 2 - 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + w / 2, y + h / 2 + 4, w / 2 - 6, h / 2 - 4, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -226,43 +223,43 @@ export class BattleScene {
    * @param {number|null} expRatio 내 쪽만 EXP 막대를 그린다
    */
   hpBox(ctx, x, y, name, level, ratio, expRatio) {
-    const w = 116;
-    const h = expRatio === null ? 30 : 36;
-    roundRect(ctx, x, y, w, h, 5, '#f8f4e8', '#3a3430');
+    const w = 232;
+    const h = expRatio === null ? 60 : 72;
+    roundRect(ctx, x, y, w, h, 10, '#f8f4e8', '#3a3430');
 
     ctx.fillStyle = '#3a3430';
-    ctx.font = 'bold 9px system-ui, sans-serif';
+    ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.textBaseline = 'top';
-    ctx.fillText(name, x + 7, y + 5);
+    ctx.fillText(name, x + 14, y + 10);
     ctx.textAlign = 'right';
-    ctx.fillText(`Lv${level}`, x + w - 7, y + 5);
+    ctx.fillText(`Lv${level}`, x + w - 14, y + 10);
     ctx.textAlign = 'left';
 
-    const barX = x + 24;
-    const barY = y + 18;
-    const barW = w - 32;
+    const barX = x + 48;
+    const barY = y + 36;
+    const barW = w - 64;
     ctx.fillStyle = '#c8a03a';
-    ctx.font = 'bold 8px system-ui, sans-serif';
-    ctx.fillText('HP', x + 8, barY - 1);
+    ctx.font = 'bold 16px system-ui, sans-serif';
+    ctx.fillText('HP', x + 16, barY - 2);
 
-    roundRect(ctx, barX, barY, barW, 6, 3, '#4a4038', null);
+    roundRect(ctx, barX, barY, barW, 12, 6, '#4a4038', null);
     const hpColor = ratio > 0.5 ? '#58d858' : ratio > 0.2 ? '#f8c838' : '#f05038';
-    const fill = Math.max(0, Math.round((barW - 2) * ratio));
+    const fill = Math.max(0, Math.round((barW - 4) * ratio));
     if (fill > 0) {
-      roundRect(ctx, barX + 1, barY + 1, fill, 4, 2, hpColor, null);
+      roundRect(ctx, barX + 2, barY + 2, fill, 8, 4, hpColor, null);
       ctx.fillStyle = shade(hpColor, 45);
-      ctx.fillRect(barX + 1, barY + 1, fill, 1);
+      ctx.fillRect(barX + 2, barY + 2, fill, 2);
     }
 
     if (expRatio !== null && expRatio !== undefined) {
-      const ex = x + 8;
-      const ew = w - 16;
+      const ex = x + 16;
+      const ew = w - 32;
       ctx.fillStyle = '#3a6ea8';
-      ctx.font = 'bold 7px system-ui, sans-serif';
-      ctx.fillText('EXP', ex, y + h - 11);
-      roundRect(ctx, ex + 20, y + h - 9, ew - 20, 4, 2, '#4a4038', null);
-      const efill = Math.max(0, Math.round((ew - 22) * expRatio));
-      if (efill > 0) roundRect(ctx, ex + 21, y + h - 8, efill, 2, 1, '#58c8f8', null);
+      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.fillText('EXP', ex, y + h - 22);
+      roundRect(ctx, ex + 40, y + h - 18, ew - 40, 8, 4, '#4a4038', null);
+      const efill = Math.max(0, Math.round((ew - 44) * expRatio));
+      if (efill > 0) roundRect(ctx, ex + 42, y + h - 16, efill, 4, 2, '#58c8f8', null);
     }
   }
 

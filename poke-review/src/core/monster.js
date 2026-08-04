@@ -10,7 +10,7 @@
  */
 import { createRng } from './rng.js';
 
-export const MONSTER_GRID = 24;
+export const MONSTER_GRID = 48; // 몬스터 도트 해상도 (24 → 48)
 
 /** 칸의 색 역할 */
 export const TONE = {
@@ -38,24 +38,39 @@ export function monsterShape({ speciesId = 'ember', stage = 1, back = false, exp
   const rng = createRng(`${speciesId}:animal`);
   const m = new Uint8Array(G * G);
   const idx = (x, y) => y * G + x;
+
+  /**
+   * 도형은 24칸 기준으로 적고, 실제 격자(G)에 맞춰 확대해 찍는다.
+   * 곡선은 확대된 해상도에서 다시 계산되므로 격자를 키우면 실제로 매끄러워진다.
+   * (숫자를 전부 고쳐 쓰지 않아도 해상도를 바꿀 수 있다)
+   */
+  const U = G / 24;
+  const setPx = (x, y, tone) => {
+    if (x < 0 || y < 0 || x >= G || y >= G) return;
+    m[idx(x, y)] = tone;
+  };
+  /** 24칸 기준 한 칸 = U×U 픽셀 */
   const put = (x, y, tone) => {
-    const xi = Math.round(x);
-    const yi = Math.round(y);
-    if (xi < 0 || yi < 0 || xi >= G || yi >= G) return;
-    m[idx(xi, yi)] = tone;
+    const px0 = Math.round(x * U);
+    const py0 = Math.round(y * U);
+    for (let dy = 0; dy < U; dy++) for (let dx = 0; dx < U; dx++) setPx(px0 + dx, py0 + dy, tone);
   };
   const mirror = (x, y, tone) => {
     put(x, y, tone);
-    put(G - 1 - x, y, tone);
+    put(23 - x, y, tone);
   };
   const disc = (cx, cy, rx, ry, tone, { mirrorX = false } = {}) => {
-    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
-      for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
-        const dx = (x - cx) / rx;
-        const dy = (y - cy) / ry;
+    const CXp = cx * U;
+    const CYp = cy * U;
+    const RXp = rx * U;
+    const RYp = ry * U;
+    for (let y = Math.floor(CYp - RYp); y <= Math.ceil(CYp + RYp); y++) {
+      for (let x = Math.floor(CXp - RXp); x <= Math.ceil(CXp + RXp); x++) {
+        const dx = (x - CXp) / RXp;
+        const dy = (y - CYp) / RYp;
         if (dx * dx + dy * dy <= 1) {
-          put(x, y, tone);
-          if (mirrorX) put(G - 1 - x, y, tone);
+          setPx(x, y, tone);
+          if (mirrorX) setPx(G - 1 - x, y, tone);
         }
       }
     }
@@ -200,16 +215,18 @@ export function monsterShape({ speciesId = 'ember', stage = 1, back = false, exp
     }
   }
 
-  /* 외곽선 */
+  /* 외곽선 — 해상도가 커지면 선도 같이 두꺼워져야 한다 */
   const filled = (x, y) => x >= 0 && y >= 0 && x < G && y < G && m[idx(x, y)] !== TONE.EMPTY;
-  const outline = [];
-  for (let y = 0; y < G; y++) {
-    for (let x = 0; x < G; x++) {
-      if (filled(x, y)) continue;
-      if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) outline.push([x, y]);
+  for (let pass = 0; pass < Math.max(1, Math.round(U)); pass++) {
+    const outline = [];
+    for (let y = 0; y < G; y++) {
+      for (let x = 0; x < G; x++) {
+        if (filled(x, y)) continue;
+        if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) outline.push([x, y]);
+      }
     }
+    for (const [x, y] of outline) m[idx(x, y)] = TONE.OUTLINE;
   }
-  for (const [x, y] of outline) m[idx(x, y)] = TONE.OUTLINE;
 
   const cells = [];
   for (let y = 0; y < G; y++) {

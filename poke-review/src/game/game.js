@@ -15,8 +15,9 @@ import { loadAssets } from './engine/assets.js';
 import { FieldScene } from './scenes/field.js';
 import { BattleScene } from './scenes/battle.js';
 
-export const VIEW_W = 256; // DS 상단 화면과 같은 논리 해상도
-export const VIEW_H = 192;
+// 보이는 칸 수(16×12)는 DS 와 같게 두고, 타일을 32px 로 키운 만큼 해상도도 2배.
+export const VIEW_W = 512;
+export const VIEW_H = 384;
 
 const HINTS = {
   keyboard: '이동 방향키 · 대화/확인 Z·Space · 취소 X · 달리기 Shift · 화면을 클릭하면 그 자리로 걸어간다',
